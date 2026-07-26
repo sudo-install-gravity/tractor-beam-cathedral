@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing / typing / linting
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LibreOffice / Office lock files
+.~lock.*#
+~$*
+
+# Simulation output — large field grids and rendered frames are regenerable
+# from the run manifest, so they are never committed.
+output/
+*.vtk
+*.vti
+*.vtu
+*.npy
+*.npz
+*.h5

@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwtb"
+version = "0.1.0"
+description = "Gravitational-wave tractor beam: modeling and simulation of engineered gravitational radiation for asteroid deflection"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "Tractor Beam Cathedral contributors" }]
+keywords = [
+    "gravitational-waves",
+    "general-relativity",
+    "phased-array",
+    "asteroid-deflection",
+    "planetary-defense",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "numba>=0.58",
+    "matplotlib>=3.7",
+    "astropy>=5.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4", "mypy>=1.8"]
+viz = ["pyvista>=0.43"]
+
+[project.urls]
+Homepage = "https://github.com/Thanatos7777/tractor_beam_cathedral"
+Repository = "https://github.com/Thanatos7777/tractor_beam_cathedral"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# "." makes the `tests` package importable so benchmark helpers can be shared;
+# "tools" exposes the CI scripts to their own tests.
+pythonpath = ["src", ".", "tools"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "NPY"]
+# Physics code uses single-character names (h, r, n, Q, L) that match the
+# published equations. Renaming them to satisfy a linter would make the code
+# harder to audit against its citations, which is the opposite of this
+# project's goal.
+ignore = ["E741"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

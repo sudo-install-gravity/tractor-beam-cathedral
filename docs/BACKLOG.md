@@ -17,6 +17,12 @@ an ADR in `docs/adr/`, never production code, and runs at higher capability than
 
 ## Sprint 0 — Foundation & Governance ✅ complete (24 pts)
 
+**Carry-over: T-0.9 branch protection.** GitHub returns 403 —
+`Upgrade to GitHub Pro or make this repository public to enable this feature`.
+Branch protection on `main` requiring green CI is therefore **deferred until the repo
+goes public**, which the plan schedules for no later than gate G1 (end of Sprint 2).
+Tracked as **T-2.9** below. Everything else in T-0.9 is complete.
+
 | ID | Task | pts | deps | Status |
 |---|---|---|---|---|
 | T-0.1 | Repo scaffold, `pyproject.toml`, package tree | 3 | — | ✅ |
@@ -27,7 +33,7 @@ an ADR in `docs/adr/`, never production code, and runs at higher capability than
 | T-0.6 | Citation-discipline CI check | 3 | T-0.5 | ✅ |
 | T-0.7 | Validation harness skeleton | 3 | T-0.1 | ✅ |
 | T-0.8 | This backlog | 2 | T-0.4 | ✅ |
-| T-0.9 | LICENSE, CONTRIBUTING, CoC, PR template | 2 | T-0.1 | ✅ |
+| T-0.9 | LICENSE, CONTRIBUTING, CoC, PR template | 2 | T-0.1 | ⚠️ partial |
 
 ---
 
@@ -149,6 +155,13 @@ without a freeze the ledger chases interface changes all project long.
 `tests/benchmarks/test_spinning_rod.py`. `P = (2/45)(G/c⁵) M² L⁴ ω⁶`.
 *Citation:* `[verify]`.
 *AC:* rtol 1e-6 against the analytic expression.
+
+**T-2.9 · Branch protection (carried from T-0.9) · 1 pt · deps repo made public**
+`repo-level`. Require green CI on `main`; block force-push and deletion.
+*AC:* `gh api repos/Thanatos7777/tractor_beam_cathedral/branches/main/protection` returns a
+`required_status_checks` block listing `test (3.10)`, `test (3.11)`, `test (3.12)`.
+*Blocked by:* GitHub plan limits — private repos on the free tier cannot set branch
+protection. Unblocks the moment the repo is made public.
 
 **SPIKE-4.4 · Two-element spin-2 superposition prototype · 3 pts · deps T-1.7, T-1.6** ⚠️
 Scratch prototype only. Superpose two quadrupole sources of differing orientation at a common

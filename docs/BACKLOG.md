@@ -37,7 +37,7 @@ Tracked as **T-2.9** below. Everything else in T-0.9 is complete.
 
 ---
 
-## Sprint 1 — Source Physics Engine, part 1 (28 pts) ⚠️ over velocity
+## Sprint 1 — Source Physics Engine, part 1 (30 pts) ⚠️ over velocity
 
 Gate: none. Feeds **G1**.
 
@@ -57,15 +57,37 @@ ERR-002. T-1.9 must use the corrected forms.
 **All tasks assume [ADR-0002](adr/0002-array-conventions.md):** `masses (N,)`, `positions (N,3)`,
 tensors with trailing indices, `n_hat` unit-validated, SI units, float64, `Q_ij` trace-free.
 
-**Over-commit, stated deliberately.** 28 points against a ~22 velocity. **Drop candidate: T-1.9**
+**Over-commit, stated deliberately.** 30 points against a ~22 velocity. **Drop candidate: T-1.9**
 — it moves to Sprint 2 alongside T-2.8 without endangering gate G1, which closes at the end of
 Sprint 2. T-1.10 is *not* a drop candidate despite also being a benchmark: it was pulled forward
 precisely because discovering a dipole surprise late is the expensive failure mode.
 
+**T-1.0 · Canonical circular-binary fixture · 2 pts · deps T-0.7**
+`tests/benchmarks/helpers.py` — add `circular_binary(m1, m2, a, t)` returning
+`(masses, positions, velocities, accelerations, jerks)` in **ADR-0002 shapes and SI units**, for
+two bodies in a circular orbit about their common barycentre in the xy-plane:
+
+```
+M = m1 + m2 ;  mu = m1 m2 / M ;  omega = sqrt(G M / a^3)     (Kepler)
+relative displacement   x_rel(t) = ( a cos(omega t), a sin(omega t), 0 )
+body 1 at  +(m2/M) x_rel(t) ,  body 2 at  -(m1/M) x_rel(t)
+v, acc, jerk are the analytic 1st/2nd/3rd derivatives of those positions
+```
+
+Also add fixture `binary_si()` returning the canonical parameter set used by every Sprint 1
+benchmark: `m1 = m2 = 1.0e30 kg`, `a = 1.0e9 m`, `r = 1.0e20 m`, evaluated at `t = 0.3 / omega`.
+*AC:* `sum_A m_A x_A == 0` to atol 1e-9 (barycentric); numerical derivative of `positions`
+matches `velocities` to rtol 1e-6 at step `h = 1e-3/omega`, and likewise `accelerations`,
+`jerks`; `omega` satisfies Kepler's third law to rtol 1e-12.
+*Why this exists:* T-1.4, T-1.5, T-1.8 and T-1.9 all assert "on a circular binary" but none
+defined one. Four tasks would each invent a fixture and they would differ — the same
+cross-cutting gap ADR-0002 fixed for array shapes.
+
 **T-1.1 · Physical constants · 2 pts · deps T-0.1**
 `src/gwtb/core/constants.py`. Module-level `float` constants, each with a source comment:
 `G = 6.67430e-11` (CODATA 2018), `c = 299792458.0` (SI exact), `AU = 1.495978707e11` (IAU 2012
-exact), `M_SUN = 1.98892e30`, `PARSEC = 3.0856775814913673e16`. Derived: `G_OVER_C4`, `G_OVER_C5`.
+exact), `M_SUN = 1.98892e30` (IAU 2015 nominal solar mass parameter GM_sun/G),
+`PARSEC = 3.0856775814913673e16` (IAU 2015, = 648000/pi x AU). Derived: `G_OVER_C4`, `G_OVER_C5`.
 *AC:* `G == 6.67430e-11` and `c == 299792458.0` exactly; `G_OVER_C4 == 8.2627176397e-45` and
 `G_OVER_C5 == 2.7561459334e-53`, both to rtol 1e-9.
 
@@ -90,7 +112,7 @@ Implement as `einsum('a,ai,aj->ij', m, x, x) - eye(3) * einsum('a,ai,ai->', m, x
 `(1,0,0)` returns `diag(2/3, -1/3, -1/3)` to rtol 1e-15; a 50-point spherically symmetric shell
 returns zeros to atol 1e-12; raises on shape mismatch or float32 input.
 
-**T-1.4 · Analytic second derivative of Q · 3 pts · deps T-1.3**
+**T-1.4 · Analytic second derivative of Q · 3 pts · deps T-1.3, T-1.0**
 `src/gwtb/bodies/multipole.py` — `quadrupole_second_derivative(masses, positions, velocities,
 accelerations) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
 
@@ -107,7 +129,7 @@ Qdd_ij = sum_A m_A ( a_i x_j + 2 v_i v_j + x_i a_j )
 on a circular binary to **rtol 1e-5 using step `h = 1e-3` in units where `omega = 1`**
 (second derivatives are roundoff-dominated below `h ~ 1e-4`).
 
-**T-1.5 · Analytic third derivative of Q · 3 pts · deps T-1.4**
+**T-1.5 · Analytic third derivative of Q · 3 pts · deps T-1.4, T-1.0**
 `src/gwtb/bodies/multipole.py` — `quadrupole_third_derivative(masses, positions, velocities,
 accelerations, jerks) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
 
@@ -118,8 +140,11 @@ Qddd_ij = sum_A m_A ( j_i x_j + 3 a_i v_j + 3 v_i a_j + x_i j_j )
 
 *Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3` (differentiated). Claim
 category **B**.
-*AC:* traceless to atol 1e-12; symmetric; matches a 5-point central difference of
-`quadrupole_second_derivative` to **rtol 1e-5 at step `h = 1e-3`** (in units `omega = 1`).
+*AC:* traceless to atol 1e-12; symmetric; matches the **first** derivative of
+`quadrupole_second_derivative` taken with the 5-point central stencil
+`(-f(t+2h) + 8f(t+h) - 8f(t-h) + f(t-2h)) / (12h)` at step `h = 1e-3 / omega`, to **rtol 1e-5**.
+Differentiating `Qdd` once this way measures 5.9e-13; do **not** instead build a third-derivative
+stencil directly on `quadrupole_moment`, which is roundoff-dominated (see the table below).
 ⚠️ **The tolerance is step-size dependent and this is not negotiable.** Third-derivative
 finite differences are roundoff-dominated as `eps/h^3`: measured relative error is `1.1e-1` at
 `h = 1e-5` and `1.1e+2` at `h = 1e-6`, versus `8.0e-7` at `h = 1e-3`. A test written with a
@@ -146,8 +171,13 @@ transverse (`n_i (Lambda:M)_ij == 0`) to atol 1e-12; `ValueError` if `|n_hat| !=
 `src/gwtb/source/quadrupole.py` — `strain_tt(q_ddot, r, n_hat) -> np.ndarray` of shape `(3,3)`:
 
 ```
-h_ij^TT = (2G / (c^4 r)) * Lambda_ijkl * Qdd_kl        [retarded at t - r/c]
+h_ij^TT = (2G / (c^4 r)) * Lambda_ijkl * Qdd_kl
 ```
+
+**This function does not compute retarded time.** It takes `q_ddot` as an already-evaluated
+`(3,3)` array; the caller is responsible for having evaluated it at `t - r/c`. Do **not** add a
+time parameter or perform retardation here — that belongs in `propagate/retarded.py` (Sprint 6),
+where retardation must be computed per source element rather than from an array centroid.
 
 *Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2`
 *AC:* traceless and transverse to atol 1e-12; halving `r` doubles `|h|` to rtol 1e-12;
@@ -155,7 +185,7 @@ dimensionless (a dimensional-consistency test asserts SI units cancel); `ValueEr
 **Note:** [FH] eq. 4.23 gives this in geometric units (`G = c = 1`); the `2G/c^4` prefactor per
 ADR-0002 §4 is mandatory here.
 
-**T-1.8 · GW luminosity · 2 pts · deps T-1.5**
+**T-1.8 · GW luminosity · 2 pts · deps T-1.5, T-1.0**
 `src/gwtb/source/quadrupole.py` — `luminosity(q_dddot) -> float`:
 
 ```
@@ -168,7 +198,7 @@ F = (G / (5 c^5)) * Qddd_ij * Qddd_ij
 identity, not an approximation, and was confirmed numerically at 4.1e-16. Equivalently
 `L = (32/5)(G^4/c^5) m1^2 m2^2 M / a^5` under Kepler's third law. Returns a non-negative float.
 
-**T-1.9 · Benchmark: circular binary · 3 pts · deps T-1.7, T-1.8**
+**T-1.9 · Benchmark: circular binary · 3 pts · deps T-1.7, T-1.8, T-1.0**
 `tests/benchmarks/test_binary.py`. Equal-mass circular binary, separation `a`, orbital angular
 frequency `omega`, reduced mass `mu = m1 m2 / (m1 + m2)`, observer at distance `r`,
 inclination `iota`:
@@ -179,6 +209,17 @@ h_plus         = -A * (1 + cos^2 iota)/2 * cos(2 omega t)
 h_cross        = -A * cos(iota)          * sin(2 omega t)
 L              = (32/5)(G/c^5) mu^2 a^4 omega^6
 ```
+
+**The signs above hold only under these two conventions, which are binding for this test:**
+
+1. **Phase origin:** relative displacement `x_rel(t) = (a cos(omega t), a sin(omega t), 0)` with
+   `t = 0` at `x_rel = (a, 0, 0)` — i.e. the fixture from T-1.0, used unmodified.
+2. **Polarization extraction:** `h_plus := (h_11 - h_22) / 2` and `h_cross := h_12`.
+
+Swapping the phase origin to `(a sin, a cos, 0)` **flips the sign of `h_plus`**, and the AC below
+compares *signed* values at rtol 1e-6, so a mismatched convention fails with no obvious cause.
+Verified: under conventions (1) and (2) the implementation reproduces the closed forms to 2.7e-7
+(finite-difference limited).
 
 For the face-on case (`iota = 0`, `n_hat = z_hat`) the trace-free `Qdd` is already transverse,
 so TT projection is the identity — use this as the simplest assertion.
@@ -213,7 +254,7 @@ configuration, so the test cannot pass vacuously.
 
 ---
 
-## Sprint 2 — Conservation auditing, dipole flagging, ledger v0 (24 pts) → **GATE G1**
+## Sprint 2 — Conservation auditing, dipole flagging, ledger v0 (26 pts) → **GATE G1**
 
 **T-2.1 · Stress-energy conservation auditor · 3 pts · deps T-1.3**
 `src/gwtb/source/conservation.py` — `audit(masses, accelerations) -> ConservationReport` with
@@ -259,6 +300,16 @@ without a freeze the ledger chases interface changes all project long.
 `tests/benchmarks/test_spinning_rod.py`. `P = (2/45)(G/c⁵) M² L⁴ ω⁶`.
 *Citation:* `[verify]`.
 *AC:* rtol 1e-6 against the analytic expression.
+
+**T-2.10 · Convention enforcement tests · 2 pts · deps T-1.7**
+`tests/unit/test_conventions.py`. Assert the ADR-0002 contracts against every public function
+shipped so far: `(N,)`/`(N,3)` input shapes accepted and wrong shapes rejected; trailing tensor
+indices; `n_hat` non-unit input raises `ValueError`; float32 input raises rather than upcasting;
+returned arrays are float64.
+*AC:* every public function in `bodies/`, `propagate/`, `source/` is covered by at least one
+shape-rejection and one dtype-rejection assertion.
+*Why here:* [ADR-0002](adr/0002-array-conventions.md) states these are enforced by this file, but
+no Sprint 1 task created it — an ADR promising an artifact nothing delivered.
 
 **T-2.9 · Branch protection (carried from T-0.9) · 1 pt · deps repo made public**
 `repo-level`. Require green CI on `main`; block force-push and deletion.
@@ -724,8 +775,8 @@ repo-level (tag, release notes, Zenodo). Tag, release notes, Zenodo DOI for cita
 | Sprint | Focus | Points | Gate |
 |---|---|---|---|
 | 0 | Foundation & governance | 24 | — |
-| 1 | Source physics, part 1 | 28 | — |
-| 2 | Conservation, dipole flagging, ledger v0 | 24 | **G1** |
+| 1 | Source physics, part 1 | 30 | — |
+| 2 | Conservation, dipole flagging, ledger v0 | 26 | **G1** |
 | 3 | Finite maneuver kinematics | 22 | — |
 | 4 | Body parameterization | 23 | — |
 | 5 | Spin-2 foundations, array geometry | 22 | — |
@@ -736,9 +787,9 @@ repo-level (tag, release notes, Zenodo). Tag, release notes, Zenodo DOI for cita
 | 10 | Focus metrics and band sweep | 21 | **G3** |
 | 11 | Compute backend | 21 | — |
 | 12 | Integration and release | 20 | **G4** |
-| | **Total** | **295** | |
+| | **Total** | **299** | |
 
-**113 tasks**, all ≤3 points, all with explicit file paths.
+**115 tasks**, all ≤3 points, all with explicit file paths.
 
 ### Critical path
 

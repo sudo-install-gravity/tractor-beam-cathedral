@@ -104,5 +104,6 @@ and the literature must be translated at each point of use rather than transcrib
 translation is precisely where errors would otherwise be introduced silently, so the cost is
 accepted deliberately.
 
-**Enforcement:** `tests/unit/test_conventions.py` asserts these contracts against the public API
-as it grows.
+**Enforcement:** per-task acceptance criteria in Sprint 1 (each function rejects wrong shapes and
+float32 input), then `tests/unit/test_conventions.py` from **T-2.10** in Sprint 2, which asserts
+the contracts uniformly across the public API as it grows.

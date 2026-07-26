@@ -75,6 +75,28 @@ defective — not the wall.
 `docs/CLAIMS.md`). Cite Grishchuk & Sazhin 1974, never Baker. If a source traces to
 gravwave.com, drrobertbaker.com, or HFGW patent literature, flag it and stop.
 
+## Which model runs a task
+
+Every task in `docs/BACKLOG.md` carries a tier: `sonnet-low` (fully specified,
+zero open decisions), `sonnet` (moderate judgment), or `opus` (**heavy lift** —
+spikes, physics derivations, cross-cutting interfaces, anything with no reference
+implementation to check against).
+
+**Do not walk the backlog in task order.** Model switches cost a session boundary,
+paid per switch rather than per task. Ask the scheduler what to run next:
+
+```bash
+python tools/schedule.py --next
+```
+
+It batches every reachable heavy task into one Opus session, then hands the bulk
+back to Sonnet. `--plan` shows the whole run order; `--done T-1.1,T-1.2` recomputes
+as work lands. It also reports externally blocked tasks and anything transitively
+stranded behind them.
+
+The three support agents (`researcher`, `code-reviewer`, `indexer`) are **not** a
+tier — they run on every task regardless of which model implements it.
+
 ## Definition of Ready
 
 A task may only be started if it has: an exact file path, an exact function signature, the

@@ -70,6 +70,13 @@ pip install -e ".[dev]"
 pytest
 ```
 
+See what to work on next — the scheduler batches tasks by execution tier and
+dependency order:
+
+```bash
+python tools/schedule.py --next
+```
+
 ## License
 
 Apache-2.0. The explicit patent grant is deliberate: this project invites outside innovators to

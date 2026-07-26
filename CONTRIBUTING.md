@@ -155,6 +155,24 @@ pytest
 ruff check src tests tools && mypy src && python tools/check_citations.py
 ```
 
+## Picking up work
+
+Tasks in [`docs/BACKLOG.md`](docs/BACKLOG.md) carry an execution tier —
+`sonnet-low`, `sonnet`, or `opus` — and a dependency list. Rather than reading the
+backlog top to bottom, ask the scheduler what is actually runnable:
+
+```bash
+python tools/schedule.py --next
+```
+
+```bash
+python tools/schedule.py --plan
+```
+
+It groups heavy `opus` tasks into as few sessions as the dependency graph allows,
+reports what each session unblocks, and names anything stranded behind an external
+blocker. Mark progress with `--done T-1.1,T-1.2` to recompute.
+
 ## Pull requests
 
 Branch from `main`, keep changes scoped to one module where possible, and fill in the PR

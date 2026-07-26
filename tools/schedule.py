@@ -312,7 +312,18 @@ def _effort(t: Task) -> str:
     return {"sonnet-low": "low", "sonnet": "standard", "opus": "high"}.get(t.tier, "low")
 
 
-def render(sessions: list[Session], tasks: dict[str, Task], only_next: bool = False) -> str:
+def render(
+    sessions: list[Session],
+    tasks: dict[str, Task],
+    only_next: bool = False,
+    extra_done: set[str] | None = None,
+) -> str:
+    """Format a session plan.
+
+    ``extra_done`` must carry whatever was passed to :func:`plan` — otherwise
+    tasks completed via ``--done`` are neither scheduled nor recognised as
+    finished, and get misreported as unreachable.
+    """
     lines: list[str] = []
     shown = sessions[:1] if only_next else sessions
 
@@ -360,21 +371,24 @@ def render(sessions: list[Session], tasks: dict[str, Task], only_next: bool = Fa
         # gate the v1.0 release through a `deps all`, and that should be visible
         # rather than showing up as tasks quietly missing from the plan.
         scheduled = {t.id for s in sessions for t in s.tasks}
-        done_ids = {t.id for t in tasks.values() if t.done}
+        done_ids = {t.id for t in tasks.values() if t.done} | (extra_done or set())
         direct = {t.id for t in blocked}
         stranded = sorted(set(tasks) - scheduled - done_ids - direct)
         if stranded:
             lines.append("")
             lines.append(f"UNREACHABLE ({len(stranded)}) — transitively blocked:")
             for tid in stranded:
-                roots = _blocking_roots(tid, tasks, set())
+                roots = _blocking_roots(tid, tasks, set(), done_ids)
                 lines.append(f"  {tid:<10} waits on {', '.join(sorted(roots)) or '?'}")
     return "\n".join(lines)
 
 
-def _blocking_roots(tid: str, tasks: dict[str, Task], seen: set[str]) -> set[str]:
+def _blocking_roots(
+    tid: str, tasks: dict[str, Task], seen: set[str], done: set[str] | None = None
+) -> set[str]:
     """Trace a stranded task back to the externally-blocked tasks gating it."""
-    if tid in seen:
+    done = done or set()
+    if tid in seen or tid in done:
         return set()
     seen.add(tid)
     t = tasks.get(tid)
@@ -384,7 +398,7 @@ def _blocking_roots(tid: str, tasks: dict[str, Task], seen: set[str]) -> set[str
         return {f"{tid} ({t.external_block})"}
     roots: set[str] = set()
     for d in t.deps:
-        roots |= _blocking_roots(d, tasks, seen)
+        roots |= _blocking_roots(d, tasks, seen, done)
     return roots
 
 
@@ -457,7 +471,7 @@ def main() -> int:
         print("nothing to schedule — all tasks complete or externally blocked")
         return 0
 
-    print(render(sessions, tasks, only_next=args.next))
+    print(render(sessions, tasks, only_next=args.next, extra_done=extra))
     return 0
 
 

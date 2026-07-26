@@ -179,3 +179,24 @@ def test_batching_beats_naive_switching(tasks: dict[str, Task]) -> None:
     heavy_scheduled = sum(len(s.tasks) for s in opus_sessions)
     assert heavy_scheduled > len(opus_sessions), "no batching happened at all"
     assert len(opus_sessions) <= 4, "too many Opus boundaries"
+
+
+def test_render_recognises_cli_completed_tasks(tasks: dict[str, Task]) -> None:
+    """Tasks completed via ``--done`` must not be reported as unreachable.
+
+    Regression: ``render`` computed completion from the parsed ``done`` flag
+    alone, so anything passed through ``--done`` was neither scheduled nor
+    recognised as finished, and landed in the "UNREACHABLE" list with an
+    unresolvable blocking root. Same silent-misreporting class as the T-2.9
+    parse bug.
+    """
+    from schedule import render
+
+    done = {f"T-1.{n}" for n in range(11)}
+    out = render(plan(tasks, done), tasks, extra_done=done)
+
+    for tid in sorted(done):
+        assert f"  {tid:<10} waits on" not in out, f"{tid} misreported as unreachable"
+    assert "waits on ?" not in out, "a stranded task has an unresolvable blocking root"
+    # The genuine external block must still be reported.
+    assert "T-2.9" in out

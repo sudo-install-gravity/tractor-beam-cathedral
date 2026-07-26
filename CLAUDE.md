@@ -97,6 +97,32 @@ stranded behind them.
 The three support agents (`researcher`, `code-reviewer`, `indexer`) are **not** a
 tier — they run on every task regardless of which model implements it.
 
+### Dispatch rule — binding
+
+**Always dispatch a task batch to a subagent whose model matches the batch's
+tier. Never execute a lower-tier batch directly from a higher-tier session.**
+
+| Batch tier | Dispatch to |
+|---|---|
+| `sonnet-low` | subagent, `model: sonnet`, low reasoning effort |
+| `sonnet` | subagent, `model: sonnet` |
+| `opus` | run in an Opus session (or subagent with `model: opus`) |
+
+This is a cost rule, not a quality rule. An Opus session executing 118 points of
+`sonnet-low` work bills every one of those points at Opus rates for work
+explicitly classified as not needing Opus. Tiering the backlog without
+dispatching to match it captures none of the benefit.
+
+The cold-start cost of handing a batch to a fresh subagent is what the
+Definition of Ready pays for: exact paths, signatures, formulas, citations, and
+test assertions mean a subagent needs no conversational context to execute. If a
+task cannot survive that handoff, it was not Ready.
+
+**What stays in the higher-tier session:** writing the subagent's brief, the
+`code-reviewer` pass over its output, resolving Critical findings, and any
+`opus`-tier task. Review is not delegated down-tier — that would defeat the
+gate.
+
 ## Definition of Ready
 
 A task may only be started if it has: an exact file path, an exact function signature, the

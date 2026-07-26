@@ -4,7 +4,7 @@ Maintained by the `indexer` agent. This is the central knowledge store for the p
 defense against future archaeology. A contributor arriving decades from now should be able to
 audit the foundations from here without reverse-engineering the code.
 
-**Last updated:** 2026-07-26 (Sprint 1 planning — citations verified)
+**Last updated:** 2026-07-26 (Sprint 1 core implemented — T-1.0 through T-1.10)
 
 ---
 
@@ -16,23 +16,19 @@ extension of a cited result), `CONJECTURE` (not yet grounded).
 
 | ID | Equation | Source + eq. no. | Implemented in | Tested by | Status |
 |----|----------|------------------|----------------|-----------|--------|
-| — | *No equations implemented yet. Sprint 0 is foundation only.* | | | | |
+| EQ-001 | Trace-free quadrupole `Q_ij` | [B] eq. 3 | `bodies/multipole.py:quadrupole_moment` | `tests/unit/test_multipole.py` | VERIFIED |
+| EQ-002 | Analytic `Q̈_ij` | [B] eq. 3, differentiated | `bodies/multipole.py:quadrupole_second_derivative` | `tests/unit/test_multipole.py` | DERIVED |
+| EQ-003 | Analytic `Q⃛_ij` | [B] eq. 3, differentiated | `bodies/multipole.py:quadrupole_third_derivative` | `tests/unit/test_multipole.py` | DERIVED |
+| EQ-004 | TT projector `Λ_ij,kl` | [FH] eq. 4.22 (proj. at 4.20) | `propagate/tt_projection.py:tt_projector`, `apply_tt` | `tests/unit/test_tt_projection.py` | VERIFIED |
+| EQ-005 | Quadrupole strain `h_ij^TT` | [B] eq. 2 | `source/quadrupole.py:strain_tt` | `tests/benchmarks/test_binary.py` | VERIFIED |
+| EQ-006 | GW luminosity `F` | [B] eq. 4 | `source/quadrupole.py:luminosity` | `tests/benchmarks/test_binary.py` | VERIFIED |
+| EQ-007 | Circular-binary amplitude | [FH] eq. 4.43 | *(benchmark only)* | `tests/benchmarks/test_binary.py` | VERIFIED |
 
 **Citations verified 2026-07-26** for all Sprint 1 equations. Sources are open access with
 checkable equation numbers:
 
 - **[B]** Blanchet, *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528
 - **[FH]** Flanagan & Hughes, *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041
-
-| ID | Equation | Verified source | Target module | Status |
-|----|----------|-----------------|---------------|--------|
-| EQ-001 | Trace-free quadrupole `Q_ij` | [B] eq. 3 | `bodies/multipole.py` | VERIFIED |
-| EQ-002 | Analytic `Q̈_ij` | [B] eq. 3, differentiated | `bodies/multipole.py` | DERIVED |
-| EQ-003 | Analytic `Q⃛_ij` | [B] eq. 3, differentiated | `bodies/multipole.py` | DERIVED |
-| EQ-004 | TT projector `Λ_ij,kl` | [FH] eq. 4.22 (proj. at 4.20) | `propagate/tt_projection.py` | VERIFIED |
-| EQ-005 | Quadrupole strain `h_ij^TT` | [B] eq. 2 | `source/quadrupole.py` | VERIFIED |
-| EQ-006 | GW luminosity `F` | [B] eq. 4 | `source/quadrupole.py` | VERIFIED |
-| EQ-007 | Circular-binary amplitude | [FH] eq. 4.43 | `tests/benchmarks/test_binary.py` | VERIFIED |
 
 **Textbook citations were rejected during verification.** Maggiore and MTW equation numbers could
 not be confirmed without the physical books. A citation a contributor cannot check is not a
@@ -49,19 +45,19 @@ affected.
 
 | Module | Purpose | Public API | Depends on |
 |---|---|---|---|
-| `core/constants.py` | Physical constants with sources | *(Sprint 1)* | — |
-| `core/units.py` | Scaled strain representation | *(Sprint 1)* | `constants` |
+| `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4/5`, `TARGET_RANGE` | — |
+| `core/units.py` | Scaled strain representation | **live** — `StrainScale` | `constants` |
 | `core/backend.py` | Array-API shim (numpy / numba / future GPU) | *(Sprint 11)* | — |
 | `bodies/sphere.py` | Rigid uniform sphere; degeneracy guard | *(Sprint 4)* | `constants` |
 | `bodies/elastic.py` | Love-number deformation; breaks R/ρ degeneracy | *(Sprint 4)* | `sphere` |
-| `bodies/multipole.py` | Mass multipole moments and derivatives | *(Sprint 1)* | `constants` |
+| `bodies/multipole.py` | Mass multipole moments and derivatives | **live** — `quadrupole_moment`, `_second_derivative`, `_third_derivative` | `constants` |
 | `kinematics/profiles.py` | Finite-maneuver acceleration profiles | *(Sprint 3)* | — |
 | `kinematics/oscillators.py` | Prime-frequency drive synthesis | *(Sprint 9)* | `profiles` |
-| `source/quadrupole.py` | Quadrupole radiation and luminosity | *(Sprint 1)* | `multipole`, `tt_projection` |
+| `source/quadrupole.py` | Quadrupole radiation and luminosity | **live** — `strain_tt`, `luminosity` | `multipole`, `tt_projection` |
 | `source/multipole_rad.py` | Higher multipoles; dipole term (flagged) | *(Sprint 2)* | `multipole` |
 | `source/memory.py` | Linear GW memory from finite maneuvers | *(Sprint 3)* | `quadrupole` |
 | `source/conservation.py` | ∂_μT^μν audit; `UNPHYSICAL` stamping | *(Sprint 2)* | — |
-| `propagate/tt_projection.py` | Transverse-traceless projector | *(Sprint 1)* | — |
+| `propagate/tt_projection.py` | Transverse-traceless projector | **live** — `tt_projector`, `apply_tt`, `transverse_projector` | — |
 | `propagate/polarization.py` | Spin-2 basis; e^(2iψ) rotation | *(Sprint 5)* | `tt_projection` |
 | `propagate/retarded.py` | Retarded-time field evaluation to 40 AU | *(Sprint 6)* | `quadrupole` |
 | `array/geometry.py` | Element placement | *(Sprint 5)* | — |
@@ -73,6 +69,7 @@ affected.
 | `target/deflection.py` | Orbit propagation; Δv → miss distance | *(Sprint 8)* | `coupling` |
 | `ledger/gap_report.py` | Feasibility ledger | *(Sprint 2)* | most modules |
 | `viz/*` | Field slices, beam patterns, volumetric | *(Sprint 7)* | — |
+| `core/validation.py` | ADR-0002 shape/dtype/unit-vector guards | **live** — `as_masses`, `as_body_array`, `as_tensor_3x3`, `as_unit_vector` | — |
 
 ---
 
@@ -102,10 +99,10 @@ passing.
 
 | Benchmark | Validates | Status |
 |---|---|---|
-| Circular binary (h₊, h×, L) | EQ-005, EQ-006, EQ-007 | Not implemented |
+| Circular binary (h₊, h×, L) | EQ-005, EQ-006, EQ-007 | **PASSING** rtol 1e-6 |
 | Hulse–Taylor PSR B1913+16 period decay | EQ-006 | Not implemented |
-| Spinning rod power | EQ-006 | Not implemented |
-| **Dipole cancellation** | Conservation auditor | Not implemented — *highest-value test in the suite* |
+| Spinning rod power | EQ-006 | Not implemented (T-2.8) |
+| **Dipole cancellation** | Momentum conservation (decision 1) | **PASSING** — ratio < 1e-12 over 20 seeded configs, plus a positive control > 1e-3. *OQ-1 resolved: the dipole does cancel as expected.* |
 | Linear memory (hyperbolic scattering) | `source/memory.py` | Not implemented |
 | Array factor vs. arraytool | `array/beamform.py` | Not implemented |
 | Diffraction limit `w ≈ λr/D` | `array/focus.py` | Not implemented |
@@ -117,7 +114,8 @@ passing.
 
 | ID | Question | Context |
 |---|---|---|
-| OQ-1 | Does the dipole term cancel numerically to the precision we expect in a momentum-conserving two-body configuration? | Validates the project's central physics framing (decision 1). Scheduled Sprint 1 — pulled forward from Sprint 2 because a surprise here reframes everything downstream |
+| ~~OQ-1~~ | **RESOLVED 2026-07-26** — the dipole cancels to <1e-12 relative in momentum-conserving configurations, confirming decision 1. | |
+| OQ-1 (orig) | Does the dipole term cancel numerically to the precision we expect in a momentum-conserving two-body configuration? | Validates the project's central physics framing (decision 1). Scheduled Sprint 1 — pulled forward from Sprint 2 because a surprise here reframes everything downstream |
 | OQ-2 | How is polarization-mismatch loss correctly formulated for spin-2 array elements of differing orientation? | No external reference implementation exists. `SPIKE-4.4` (Sprint 2) attacks this early because it sits on the critical path |
 | OQ-3 | At what R/λ does the long-wavelength quadrupole approximation fail badly enough to matter? | Determines whether `bodies/` finite-size corrections are a refinement or a requirement |
 | OQ-4 | Is a sparse (non-filled) array viable given the 6×10⁹-wavelength aperture requirement? | Sparse arrays relax element count but raise sidelobes — directly opposed to requirement 6's single-point focus |

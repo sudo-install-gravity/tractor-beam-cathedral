@@ -99,9 +99,15 @@ v, acc, jerk are the analytic 1st/2nd/3rd derivatives of those positions
 
 Also add fixture `binary_si()` returning the canonical parameter set used by every Sprint 1
 benchmark: `m1 = m2 = 1.0e30 kg`, `a = 1.0e9 m`, `r = 1.0e20 m`, evaluated at `t = 0.3 / omega`.
-*AC:* `sum_A m_A x_A == 0` to atol 1e-9 (barycentric); numerical derivative of `positions`
-matches `velocities` to rtol 1e-6 at step `h = 1e-3/omega`, and likewise `accelerations`,
-`jerks`; `omega` satisfies Kepler's third law to rtol 1e-12.
+*AC:* barycentric to **relative** precision — `|sum_A m_A x_A| / max_A|m_A x_A| < 1e-14`;
+numerical derivative of `positions` matches `velocities` to rtol 1e-6 at step `h = 1e-3/omega`,
+and likewise `accelerations`, `jerks`; `omega` satisfies Kepler's third law to rtol 1e-12.
+⚠️ **The barycentric criterion must be relative, not absolute.** An earlier draft specified
+`atol 1e-9`, which is unachievable at astronomical scale: with `m ~ 1e30` and `x ~ 1e9`, the
+products are `~1e39` and the FP64 roundoff floor is `~1e23` — thirty-two orders above the
+stated tolerance. It appeared to pass only because the canonical set is **equal-mass**, where
+`f1 = +0.5` and `f2 = -0.5` cancel exactly; at any other mass ratio it fails. Measured
+residuals: `0.0` at 1:1 and 1:2, `1.5e23` at 1:3 and 1.3:2.7.
 *Why this exists:* T-1.4, T-1.5, T-1.8 and T-1.9 all assert "on a circular binary" but none
 defined one. Four tasks would each invent a fixture and they would differ — the same
 cross-cutting gap ADR-0002 fixed for array shapes.

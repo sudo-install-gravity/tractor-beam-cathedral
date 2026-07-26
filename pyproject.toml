@@ -57,11 +57,17 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "NPY"]
-# Physics code uses single-character names (h, r, n, Q, L) that match the
-# published equations. Renaming them to satisfy a linter would make the code
-# harder to audit against its citations, which is the opposite of this
-# project's goal.
-ignore = ["E741"]
+# Physics identifiers match the published equations rather than PEP 8. This is
+# deliberate and load-bearing: auditability against a cited source is this
+# project's core requirement, and `G_over_c5` is checkable against G/c^5 in a
+# way `g_over_c5` is not — lowercase `g` conventionally means surface gravity,
+# so "fixing" the case would introduce a genuine physics ambiguity.
+#
+#   E741 — single-char names (h, r, n, Q, L, I) that ARE the symbols
+#   N802 — function/property names like `G_over_c5`, `Q_ddot`
+#   N803 — argument names like `Q_ij`, `M`, `R`, `n_hat`
+#   N806 — locals like `Lambda`, `P_ij` inside derivations
+ignore = ["E741", "N802", "N803", "N806"]
 
 [tool.mypy]
 python_version = "3.10"

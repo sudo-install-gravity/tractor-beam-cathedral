@@ -14,8 +14,8 @@ derived, and what we merely guessed. **Optimize for auditability over speed.**
 **No physics formula is ever implemented from memory.**
 
 Before writing physics code, confirm the governing equation, its primary source, and its
-**exact equation number**. "MTW ch. 36" is not a citation. "MTW eq. 36.1" is — an auditor must
-be able to open one page and check one line.
+**exact equation number**. "Blanchet ch. 3" is not a citation; "Blanchet eq. 3" is — an auditor
+must be able to open one page and check one line.
 
 Every public function in `src/gwtb/source/`, `propagate/`, `bodies/`, and `array/` carries:
 
@@ -23,7 +23,7 @@ Every public function in `src/gwtb/source/`, `propagate/`, `bodies/`, and `array
 def strain_tt(q_ddot, r, n_hat):
     """Transverse-traceless strain from a source quadrupole.
 
-    Source: Maggiore Vol. 1, eq. 3.72
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2
     """
 ```
 
@@ -109,13 +109,23 @@ change makes one disappear, the change is defective — not the wall.
 
 ## Sourcing standards
 
-Preferred references, in order:
+**Prefer sources whose equation numbers a stranger can check.** In order:
 
-1. Misner, Thorne & Wheeler, *Gravitation* (1973)
-2. Maggiore, *Gravitational Waves* Vol. 1 (2008)
-3. Poisson & Will, *Gravity* (2014)
-4. Balanis, *Antenna Theory*, 4th ed. — array and beamforming results
-5. Peer-reviewed papers where no textbook covers it
+1. Blanchet, *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528 — open access
+2. Flanagan & Hughes, *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041 — open access
+3. Other peer-reviewed open-access literature
+4. Textbooks (MTW, Maggiore, Poisson & Will, Balanis) — **only** when you can confirm the
+   exact equation number
+
+A citation a contributor cannot check is not a citation. This project may outlive us; a
+contributor in 2075 will not necessarily own the books, and "Maggiore ch. 3" is not
+auditable by anyone. Sprint 1 replaced every planned textbook citation with an open-access
+equivalent for exactly this reason.
+
+**Published sources contain errors.** We found and numerically confirmed two in an otherwise
+reliable reference — see [`docs/ERRATA.md`](docs/ERRATA.md). If you find another, record it
+there rather than silently working around it. Never "fix" correct code to match a printed
+typo.
 
 **Epistemic firewall.** This project sits adjacent to a discredited literature. The
 high-frequency gravitational wave (HFGW) claims of Baker et al. were reviewed and rejected by

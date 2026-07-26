@@ -40,7 +40,16 @@ from adjacent sections of the same text.
 
 **1. Citation discipline.** Every public function in `source/`, `propagate/`, `bodies/`, or
 `array/` carries a docstring line of the form `Source: <reference>, eq. <number>`. CI fails
-without it. "MTW ch. 36" is not a citation; "MTW eq. 36.1" is.
+without it. "Blanchet ch. 3" is not a citation; "Blanchet eq. 3" is.
+
+Prefer sources whose equation numbers a stranger can check — open-access first:
+**[B]** Blanchet, *Living Rev. Relativ.* 17:2 (2014), arXiv:1310.1528;
+**[FH]** Flanagan & Hughes, *New J. Phys.* 7:204 (2005), arXiv:gr-qc/0501041.
+Cite a textbook only when you can confirm the exact equation number. A contributor in 2075
+will not necessarily own the books.
+
+Published sources contain errors: see `docs/ERRATA.md` for two we verified numerically.
+Never "fix" correct code to match a printed typo.
 
 **2. Conservation auditing.** Any result computed from a non-momentum-conserving source is
 stamped `UNPHYSICAL: violates d_mu T^mu-nu = 0`. **Never strip that stamp.** Mass-dipole

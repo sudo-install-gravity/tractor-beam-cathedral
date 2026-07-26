@@ -4,7 +4,7 @@ Maintained by the `indexer` agent. This is the central knowledge store for the p
 defense against future archaeology. A contributor arriving decades from now should be able to
 audit the foundations from here without reverse-engineering the code.
 
-**Last updated:** 2026-07-26 (Sprint 0)
+**Last updated:** 2026-07-26 (Sprint 1 planning — citations verified)
 
 ---
 
@@ -18,15 +18,30 @@ extension of a cited result), `CONJECTURE` (not yet grounded).
 |----|----------|------------------|----------------|-----------|--------|
 | — | *No equations implemented yet. Sprint 0 is foundation only.* | | | | |
 
-**Planned for Sprint 1** (citations to be confirmed by `researcher` at sprint planning):
+**Citations verified 2026-07-26** for all Sprint 1 equations. Sources are open access with
+checkable equation numbers:
 
-| ID | Equation | Intended source | Target module |
-|----|----------|-----------------|---------------|
-| EQ-001 | Mass quadrupole moment `Q_ij` | Maggiore Vol. 1 ch. 3 | `bodies/multipole.py` |
-| EQ-002 | Second derivative `Q̈_ij` (analytic) | derived from EQ-001 | `bodies/multipole.py` |
-| EQ-003 | TT projector `Λ_ij,kl` | Maggiore Vol. 1 ch. 1 | `propagate/tt_projection.py` |
-| EQ-004 | Quadrupole strain `h_ij^TT` | Maggiore Vol. 1 ch. 3 | `source/quadrupole.py` |
-| EQ-005 | GW luminosity `L_GW` | Maggiore Vol. 1 ch. 3 | `source/quadrupole.py` |
+- **[B]** Blanchet, *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528
+- **[FH]** Flanagan & Hughes, *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041
+
+| ID | Equation | Verified source | Target module | Status |
+|----|----------|-----------------|---------------|--------|
+| EQ-001 | Trace-free quadrupole `Q_ij` | [B] eq. 3 | `bodies/multipole.py` | VERIFIED |
+| EQ-002 | Analytic `Q̈_ij` | [B] eq. 3, differentiated | `bodies/multipole.py` | DERIVED |
+| EQ-003 | Analytic `Q⃛_ij` | [B] eq. 3, differentiated | `bodies/multipole.py` | DERIVED |
+| EQ-004 | TT projector `Λ_ij,kl` | [FH] eq. 4.22 (proj. at 4.20) | `propagate/tt_projection.py` | VERIFIED |
+| EQ-005 | Quadrupole strain `h_ij^TT` | [B] eq. 2 | `source/quadrupole.py` | VERIFIED |
+| EQ-006 | GW luminosity `F` | [B] eq. 4 | `source/quadrupole.py` | VERIFIED |
+| EQ-007 | Circular-binary amplitude | [FH] eq. 4.43 | `tests/benchmarks/test_binary.py` | VERIFIED |
+
+**Textbook citations were rejected during verification.** Maggiore and MTW equation numbers could
+not be confirmed without the physical books. A citation a contributor cannot check is not a
+citation, so open-access sources were substituted throughout. This is now the project's standing
+preference — see `CONTRIBUTING.md`.
+
+⚠️ **[FH] eqs. (4.41) and (4.42) contain typos.** See [`ERRATA.md`](ERRATA.md) ERR-001/ERR-002.
+The derivations we rely on ([FH] 4.17–4.23) are correct; only the worked binary example is
+affected.
 
 ---
 
@@ -87,14 +102,14 @@ passing.
 
 | Benchmark | Validates | Status |
 |---|---|---|
-| Circular binary (h₊, h×, L) | EQ-004, EQ-005 | Not implemented |
-| Hulse–Taylor PSR B1913+16 period decay | EQ-005 | Not implemented |
-| Spinning rod power | EQ-005 | Not implemented |
+| Circular binary (h₊, h×, L) | EQ-005, EQ-006, EQ-007 | Not implemented |
+| Hulse–Taylor PSR B1913+16 period decay | EQ-006 | Not implemented |
+| Spinning rod power | EQ-006 | Not implemented |
 | **Dipole cancellation** | Conservation auditor | Not implemented — *highest-value test in the suite* |
 | Linear memory (hyperbolic scattering) | `source/memory.py` | Not implemented |
 | Array factor vs. arraytool | `array/beamform.py` | Not implemented |
 | Diffraction limit `w ≈ λr/D` | `array/focus.py` | Not implemented |
-| Energy conservation over distant sphere | EQ-005 | Not implemented |
+| Energy conservation over distant sphere | EQ-006 | Not implemented |
 
 ---
 

@@ -42,12 +42,17 @@ own gap would be indistinguishable from the literature above.
 
 Textbook or well-replicated peer-reviewed results. We implement these; we do not defend them.
 
+Sources marked ✅ were independently verified 2026-07-26 against open-access literature:
+**[B]** Blanchet, *Living Rev. Relativ.* **17**:2 (2014); **[FH]** Flanagan & Hughes,
+*New J. Phys.* **7**:204 (2005). Remaining textbook references are placeholders and will be
+replaced at the sprint planning that precedes their use.
+
 | ID | Claim | Source |
 |---|---|---|
-| A-1 | Linearized Einstein equations admit a retarded-Green's-function solution for a weak, slowly-moving source | MTW ch. 18–19; Maggiore Vol. 1 ch. 1 |
-| A-2 | Leading-order gravitational radiation is quadrupolar; mass monopole and mass dipole radiation vanish for an isolated system | MTW §36.1; Maggiore Vol. 1 §3.3 |
-| A-3 | The quadrupole luminosity formula `L = (G/5c⁵)⟨Q⃛_ij Q⃛_ij⟩` | Maggiore Vol. 1 ch. 3 |
-| A-4 | Gravitational waves are transverse-traceless and carry two polarizations, h₊ and h×, separated by 45° | MTW §35.6 |
+| A-1 | Linearized Einstein equations admit a retarded-Green's-function solution for a weak, slowly-moving source | **[B] eq. 1** ✅ verified |
+| A-2 | Leading-order gravitational radiation is quadrupolar; mass monopole and mass dipole radiation vanish for an isolated system | **[B] eq. 3**; [FH] §4.3 ✅ verified |
+| A-3 | The quadrupole luminosity formula `F = (G/5c⁵) Q⃛_ab Q⃛_ab` | **[B] eq. 4** ✅ verified |
+| A-4 | Gravitational waves are transverse-traceless and carry two polarizations, h₊ and h×, separated by 45° | **[FH] eq. 4.22** ✅ verified |
 | A-5 | Gravitational radiation is spin-2: polarization transforms as e^(2iψ) under rotation about the propagation direction | MTW §35–36 |
 | A-6 | A passing GW produces tidal geodesic deviation, not net center-of-mass acceleration of a free body | MTW §37.2 |
 | A-7 | Linear GW memory: a finite burst leaves a permanent strain offset | Zel'dovich & Polnarev (1974); Braginsky & Thorne, *Nature* **327**:123 (1987) |
@@ -68,6 +73,7 @@ Results we derive by combining Category A results. Each must show its derivation
 | B-3 | Required aperture for a focused spot is `D/λ ≳ r/w`, i.e. ~6×10⁹ wavelengths for a 1 km spot at 40 AU, independent of frequency | **Not yet derived** | A-9 |
 | B-4 | Mutually incommensurate (prime-valued) drive frequencies produce a spatiotemporal focus with peak amplitude N·A against a √N·A background, and a pattern recurrence period equal to the product of the primes | **Not yet derived** | A-8 |
 | B-5 | Radiated GW momentum flux delivers negligible impulse to an asteroid; any real coupling must be near-zone gravitational gradient (A-10), not radiative | **Not yet derived** | A-6, A-10 |
+| B-6 | Analytic 2nd/3rd time derivatives of the trace-free quadrupole moment for point masses | **Derived & validated** 2026-07-26 | A-3, Blanchet eq. 3 |
 
 *"Not yet derived" means the claim is currently a scoping estimate. It is not usable in any
 published result until it carries a derivation and a validating test.*
@@ -99,3 +105,6 @@ Stated so they are not silently assumed. **No code depends on anything in this t
 | Date | Change |
 |---|---|
 | 2026-07-26 | Registry created at Sprint 0. All Category B claims are scoping estimates pending derivation. |
+| 2026-07-26 | B-6 added and validated: analytic Q̈ and Q⃛ derived from Blanchet eq. (3). Luminosity built from Q⃛ reproduces the closed form `L = (32/5)(G/c⁵)μ²a⁴ω⁶` to 4.1e-16. |
+| 2026-07-26 | Source policy changed: open-access citations preferred over textbooks, since textbook equation numbers could not be independently confirmed. See `PHYSICS.md` header. |
+| 2026-07-26 | `ERRATA.md` created — two verified typos in Flanagan & Hughes (2005) eqs. (4.41), (4.42). |

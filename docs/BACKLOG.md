@@ -41,71 +41,175 @@ Tracked as **T-2.9** below. Everything else in T-0.9 is complete.
 
 Gate: none. Feeds **G1**.
 
-**Over-commit, stated deliberately.** 28 points against a ~22 velocity. This sprint carries
-the full citation-verification load for the source physics, so it may not fit. **Drop
-candidate: T-1.9** (circular-binary benchmark) — it moves to Sprint 2 alongside T-2.8 without
-endangering gate G1, which closes at the end of Sprint 2. T-1.10 is *not* a drop candidate
-despite also being a benchmark: it was pulled forward precisely because discovering a dipole
-surprise late is the expensive failure mode.
+**Citations verified 2026-07-26.** All Sprint 1 equations resolved to open-access, peer-reviewed
+sources with checkable equation numbers. Textbook citations (Maggiore, MTW) were *rejected*
+during verification: their exact equation numbers could not be confirmed without the physical
+books, and a citation a contributor cannot check is not a citation. Primary sources are now:
+
+- **[B]** Blanchet, L., "Gravitational Radiation from Post-Newtonian Sources and Inspiralling
+  Compact Binaries," *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528. Open access.
+- **[FH]** Flanagan, É.É. & Hughes, S.A., "The basics of gravitational wave theory,"
+  *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041. Open access.
+
+⚠️ **[FH] Eqs. (4.41) and (4.42) contain typos** — see [`docs/ERRATA.md`](ERRATA.md), ERR-001 and
+ERR-002. T-1.9 must use the corrected forms.
+
+**All tasks assume [ADR-0002](adr/0002-array-conventions.md):** `masses (N,)`, `positions (N,3)`,
+tensors with trailing indices, `n_hat` unit-validated, SI units, float64, `Q_ij` trace-free.
+
+**Over-commit, stated deliberately.** 28 points against a ~22 velocity. **Drop candidate: T-1.9**
+— it moves to Sprint 2 alongside T-2.8 without endangering gate G1, which closes at the end of
+Sprint 2. T-1.10 is *not* a drop candidate despite also being a benchmark: it was pulled forward
+precisely because discovering a dipole surprise late is the expensive failure mode.
 
 **T-1.1 · Physical constants · 2 pts · deps T-0.1**
-`src/gwtb/core/constants.py`. Module-level floats `G`, `c`, `AU`, `M_SUN`, `PARSEC`, each with a
-source comment (CODATA 2018 / IAU). Derived `G_OVER_C4`, `G_OVER_C5`.
-*AC:* `G == 6.67430e-11`, `c == 299792458.0` exactly; `G_OVER_C5` matches `2.7561459334e-53` to
-rtol 1e-9; `G_OVER_C4` matches `8.2627176397e-45` to rtol 1e-9.
+`src/gwtb/core/constants.py`. Module-level `float` constants, each with a source comment:
+`G = 6.67430e-11` (CODATA 2018), `c = 299792458.0` (SI exact), `AU = 1.495978707e11` (IAU 2012
+exact), `M_SUN = 1.98892e30`, `PARSEC = 3.0856775814913673e16`. Derived: `G_OVER_C4`, `G_OVER_C5`.
+*AC:* `G == 6.67430e-11` and `c == 299792458.0` exactly; `G_OVER_C4 == 8.2627176397e-45` and
+`G_OVER_C5 == 2.7561459334e-53`, both to rtol 1e-9.
 
 **T-1.2 · Scaled strain units · 3 pts · deps T-1.1**
-`src/gwtb/core/units.py`. `class StrainScale` with `to_scaled(h: float) -> float`,
-`from_scaled(h_s: float) -> float`, attribute `reference` (default `1e-40`).
-*AC:* round-trip identity to rtol 1e-15 over `h ∈ [1e-45, 1e-35]`; `to_scaled(1e-40) == 1.0`;
-raises on `reference <= 0`.
+`src/gwtb/core/units.py` — `class StrainScale` with `__init__(self, reference: float = 1e-40)`,
+`to_scaled(self, h: float | np.ndarray) -> float | np.ndarray` returning `h / reference`, and
+`from_scaled(self, h_s)` returning `h_s * reference`. Accepts scalars and arrays.
+*AC:* `from_scaled(to_scaled(x)) == x` to rtol 1e-15 for `x` in `np.logspace(-45, -35, 50)`;
+`to_scaled(1e-40) == 1.0` exactly; `ValueError` on `reference <= 0` or non-finite.
 
-**T-1.3 · Mass quadrupole moment · 3 pts · deps T-1.1**
-`src/gwtb/bodies/multipole.py` — `quadrupole_moment(masses, positions) -> np.ndarray` (3,3).
-`Q_ij = Σ_A m_A (x_i x_j − ⅓ δ_ij |x|²)`.
-*Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
-*AC:* traceless to atol 1e-12; symmetric; single unit mass at (1,0,0) → `diag(2/3,−1/3,−1/3)`;
-spherically symmetric shell → zeros to atol 1e-12.
+**T-1.3 · Trace-free mass quadrupole moment · 3 pts · deps T-1.1**
+`src/gwtb/bodies/multipole.py` — `quadrupole_moment(masses, positions) -> np.ndarray` of shape
+`(3,3)`. For point masses, Blanchet eq. (3) with `rho = sum_A m_A delta^3(x - x_A)`:
 
-**T-1.4 · Analytic Q̈ · 3 pts · deps T-1.3**
+```
+Q_ij = sum_A m_A ( x_i x_j - (1/3) delta_ij |x|^2 )
+```
+
+Implement as `einsum('a,ai,aj->ij', m, x, x) - eye(3) * einsum('a,ai,ai->', m, x, x) / 3`.
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3`
+*AC:* traceless to atol 1e-12 (relative to `max|Q|`); symmetric to atol 1e-15; unit mass at
+`(1,0,0)` returns `diag(2/3, -1/3, -1/3)` to rtol 1e-15; a 50-point spherically symmetric shell
+returns zeros to atol 1e-12; raises on shape mismatch or float32 input.
+
+**T-1.4 · Analytic second derivative of Q · 3 pts · deps T-1.3**
 `src/gwtb/bodies/multipole.py` — `quadrupole_second_derivative(masses, positions, velocities,
-accelerations) -> np.ndarray`. **Analytic, never finite-difference.**
-*AC:* matches central difference of `quadrupole_moment` on a circular-binary trajectory to
-rtol 1e-6; traceless to atol 1e-12.
+accelerations) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
 
-**T-1.5 · Analytic Q⃛ · 3 pts · deps T-1.4**
-`src/gwtb/bodies/multipole.py` — `quadrupole_third_derivative(..., jerks) -> np.ndarray`.
-*AC:* matches central difference of `quadrupole_second_derivative` to rtol 1e-5; traceless.
+Differentiating Blanchet eq. (3) twice for point masses:
+
+```
+Qdd_ij = sum_A m_A ( a_i x_j + 2 v_i v_j + x_i a_j )
+         - (2/3) delta_ij sum_A m_A ( v.v + x.a )
+```
+
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3` (differentiated; see
+`docs/PHYSICS.md` §2.1). Claim category **B** (derived) in `CLAIMS.md`.
+*AC:* traceless to atol 1e-12; symmetric; matches a central difference of `quadrupole_moment`
+on a circular binary to **rtol 1e-5 using step `h = 1e-3` in units where `omega = 1`**
+(second derivatives are roundoff-dominated below `h ~ 1e-4`).
+
+**T-1.5 · Analytic third derivative of Q · 3 pts · deps T-1.4**
+`src/gwtb/bodies/multipole.py` — `quadrupole_third_derivative(masses, positions, velocities,
+accelerations, jerks) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
+
+```
+Qddd_ij = sum_A m_A ( j_i x_j + 3 a_i v_j + 3 v_i a_j + x_i j_j )
+          - (2/3) delta_ij sum_A m_A ( 3 v.a + x.j )
+```
+
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3` (differentiated). Claim
+category **B**.
+*AC:* traceless to atol 1e-12; symmetric; matches a 5-point central difference of
+`quadrupole_second_derivative` to **rtol 1e-5 at step `h = 1e-3`** (in units `omega = 1`).
+⚠️ **The tolerance is step-size dependent and this is not negotiable.** Third-derivative
+finite differences are roundoff-dominated as `eps/h^3`: measured relative error is `1.1e-1` at
+`h = 1e-5` and `1.1e+2` at `h = 1e-6`, versus `8.0e-7` at `h = 1e-3`. A test written with a
+"tighter" step **will fail against correct code**. This is the concrete reason ADR-0001 and
+`code-reviewer.md` forbid numerical differentiation of `Q`.
 
 **T-1.6 · TT projector · 3 pts · deps T-1.1**
-`src/gwtb/propagate/tt_projection.py` — `tt_projector(n_hat) -> np.ndarray` (3,3,3,3).
-`Λ_ij,kl = P_ik P_jl − ½ P_ij P_kl`, `P_ij = δ_ij − n_i n_j`.
-*Citation:* Maggiore Vol. 1, ch. 1 `[verify]`.
-*AC:* idempotent (`Λ:Λ:M == Λ:M`) to rtol 1e-12; `Λ:M` traceless and transverse
-(`n_i (Λ:M)_ij == 0`) to atol 1e-12, over 20 random `n_hat` and random symmetric `M`.
+`src/gwtb/propagate/tt_projection.py` — `tt_projector(n_hat) -> np.ndarray` of shape
+`(3,3,3,3)`:
+
+```
+P_ij       = delta_ij - n_i n_j
+Lambda_ijkl = P_ik P_jl - (1/2) P_ij P_kl
+```
+
+Also `apply_tt(tensor, n_hat) -> np.ndarray` contracting `Lambda_ijkl T_kl`.
+*Citation:* `Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.22` (projector defined
+at eq. 4.20; equivalent form at Blanchet eq. 2).
+*AC:* over 20 random `n_hat` and 20 random symmetric `M`: idempotent
+(`apply_tt(apply_tt(M)) == apply_tt(M)`) to rtol 1e-12; result traceless to atol 1e-12;
+transverse (`n_i (Lambda:M)_ij == 0`) to atol 1e-12; `ValueError` if `|n_hat| != 1` to atol 1e-12.
 
 **T-1.7 · Quadrupole strain · 3 pts · deps T-1.4, T-1.6**
-`src/gwtb/source/quadrupole.py` — `strain_tt(q_ddot, r, n_hat) -> np.ndarray`.
-`h_ij^TT = (2G/c⁴r) Λ_ij,kl Q̈_kl`.
-*Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
-*AC:* traceless and transverse; scales exactly as 1/r; dimensionless.
+`src/gwtb/source/quadrupole.py` — `strain_tt(q_ddot, r, n_hat) -> np.ndarray` of shape `(3,3)`:
+
+```
+h_ij^TT = (2G / (c^4 r)) * Lambda_ijkl * Qdd_kl        [retarded at t - r/c]
+```
+
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2`
+*AC:* traceless and transverse to atol 1e-12; halving `r` doubles `|h|` to rtol 1e-12;
+dimensionless (a dimensional-consistency test asserts SI units cancel); `ValueError` on `r <= 0`.
+**Note:** [FH] eq. 4.23 gives this in geometric units (`G = c = 1`); the `2G/c^4` prefactor per
+ADR-0002 §4 is mandatory here.
 
 **T-1.8 · GW luminosity · 2 pts · deps T-1.5**
-`src/gwtb/source/quadrupole.py` — `luminosity(q_dddot) -> float`. `L = (G/5c⁵) Q⃛_ij Q⃛_ij`.
-*Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
-*AC:* circular binary reproduces `L = (32/5)(G⁴/c⁵) m₁²m₂²(m₁+m₂)/r⁵` to rtol 1e-6.
+`src/gwtb/source/quadrupole.py` — `luminosity(q_dddot) -> float`:
+
+```
+F = (G / (5 c^5)) * Qddd_ij * Qddd_ij
+```
+
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 4`
+*AC:* for an equal-mass circular binary reproduces
+`L = (32/5)(G/c^5) mu^2 a^4 omega^6` (with `a` the **separation**) to **rtol 1e-12** — an exact algebraic
+identity, not an approximation, and was confirmed numerically at 4.1e-16. Equivalently
+`L = (32/5)(G^4/c^5) m1^2 m2^2 M / a^5` under Kepler's third law. Returns a non-negative float.
 
 **T-1.9 · Benchmark: circular binary · 3 pts · deps T-1.7, T-1.8**
-`tests/benchmarks/test_binary.py`. Textbook `h₊`, `h×`, `L` for an equal-mass circular binary.
-*AC:* all three to rtol 1e-6.
+`tests/benchmarks/test_binary.py`. Equal-mass circular binary, separation `a`, orbital angular
+frequency `omega`, reduced mass `mu = m1 m2 / (m1 + m2)`, observer at distance `r`,
+inclination `iota`:
+
+```
+amplitude  A   = 4 G mu omega^2 a^2 / (c^4 r)
+h_plus         = -A * (1 + cos^2 iota)/2 * cos(2 omega t)
+h_cross        = -A * cos(iota)          * sin(2 omega t)
+L              = (32/5)(G/c^5) mu^2 a^4 omega^6
+```
+
+For the face-on case (`iota = 0`, `n_hat = z_hat`) the trace-free `Qdd` is already transverse,
+so TT projection is the identity — use this as the simplest assertion.
+*Citation:* `Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.43` (amplitude);
+luminosity per T-1.8.
+*AC:* `h_plus`, `h_cross`, and `L` each to rtol 1e-6.
+⚠️ **Include a test named `test_errata_flanagan_hughes_4_41_4_42`** asserting the **corrected**
+forms from [`docs/ERRATA.md`](ERRATA.md): `I_22 = mu R^2 (sin^2 wt - 1/3)`, and `Qdd` symmetric
+with `(2,1) = +sin(2wt)` inside the `-2 omega^2 mu R^2` prefactor. The as-printed `(4.42)` is
+non-symmetric and differs from ground truth by 3.98 in units `mu = R = omega = 1`. **Do not
+"fix" this test to match the paper.**
 
 **T-1.10 · Benchmark: dipole cancellation · 3 pts · deps T-1.3, T-1.7** ⚠️ **pulled forward**
-`tests/benchmarks/test_dipole_cancellation.py`. A momentum-conserving two-body configuration
-must produce a mass-dipole second derivative numerically consistent with zero.
-*AC:* `|d̈_i| / (M·a_char) < 1e-12` for 20 random momentum-conserving configurations.
-*Why here:* validates the project's central physics framing (decision 1). Originally Sprint 2;
-moved because a surprise reframes everything downstream and the test is cheap. **Open question
-OQ-1.**
+`tests/benchmarks/test_dipole_cancellation.py`. In a momentum-conserving configuration the mass
+dipole's second derivative must vanish:
+
+```
+d_i     = sum_A m_A x_i                 (mass dipole)
+ddd_i   = sum_A m_A a_i                 (equals dP/dt, the net external force)
+a_char  = max_A |a_A|                   (characteristic acceleration scale)
+M_total = sum_A m_A
+```
+
+Generate configurations by drawing `N = 5` random masses and accelerations, then subtracting the
+mass-weighted mean acceleration so `sum_A m_A a_A = 0` exactly.
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3` (multipole structure; the
+dipole's non-radiation follows from momentum conservation — see `docs/PHYSICS.md` §2).
+*AC:* `|ddd_i| / (M_total * a_char) < 1e-12` for 20 random momentum-conserving configurations;
+and a positive control asserting the ratio **exceeds 1e-3** for a deliberately unbalanced
+configuration, so the test cannot pass vacuously.
+*Why here:* validates the project's central physics framing (decision 1). **Open question OQ-1.**
 
 ---
 

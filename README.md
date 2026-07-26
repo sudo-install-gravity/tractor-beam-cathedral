@@ -54,6 +54,7 @@ Pre-alpha. Sprint 0 (foundation and governance). Nothing here computes physics y
 | [`docs/CLAIMS.md`](docs/CLAIMS.md) | Established physics vs. our derivation vs. conjecture |
 | [`docs/INDEX.md`](docs/INDEX.md) | Equation registry, module map, assumption ledger |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | Sprint plan and task specifications |
+| [`docs/ERRATA.md`](docs/ERRATA.md) | Verified errors found in cited literature |
 | [`docs/adr/`](docs/adr/) | Architecture decision records |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
 

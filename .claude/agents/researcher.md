@@ -14,12 +14,23 @@ This project's central governance rule is that no physics formula is ever implem
 memory. Before any physics code is written, verify:
 
 1. **The governing equation** — exact form, with all numerical factors and index placement.
-2. **Primary source** — prefer, in order:
-   - Misner, Thorne & Wheeler, *Gravitation* (1973)
-   - Maggiore, *Gravitational Waves* Vol. 1 (2008)
-   - Poisson & Will, *Gravity* (2014)
-   - Balanis, *Antenna Theory* (4th ed.) — for array/beamforming equations
-   - Peer-reviewed papers where no textbook covers it
+2. **Primary source** — prefer sources whose equation numbers you can actually *check*:
+   - Blanchet, *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528 — open access
+   - Flanagan & Hughes, *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041 — open access
+   - Other peer-reviewed open-access literature (Living Reviews, arXiv-hosted journals)
+   - Textbooks (MTW, Maggiore, Poisson & Will, Balanis) **only when the exact equation
+     number can be confirmed**
+
+   **A citation a contributor cannot check is not a citation.** This project is expected to
+   outlive its founders; a future contributor may not own a $150 textbook, and "Maggiore
+   ch. 3" cannot be audited by anyone. If you cannot confirm a textbook's exact equation
+   number, find an open-access source for the same result rather than guessing at the
+   number. Report `UNVERIFIED` if neither is possible.
+
+   Verify the equation *content*, not just that a plausible number exists. Published
+   sources contain errors — see `docs/ERRATA.md` for two we found and confirmed
+   numerically in an otherwise reliable reference. When a result can be checked against
+   an independent derivation or closed form, do it.
 3. **Exact equation number** — "MTW eq. 36.1", never "MTW ch. 36". An implementer must be
    able to open the book to one page and check the line.
 4. **Assumptions and validity domain** — slow-motion? weak-field? long-wavelength (R ≪ λ)?

@@ -3,9 +3,19 @@
 First-principles derivation of what `gwtb` computes. A contributor should be able to audit the
 foundations from this document alone, without reading the code.
 
-**Status: skeleton.** Equations are recorded with their intended sources; each is marked
-`[UNVERIFIED]` until the `researcher` agent confirms the exact equation number and conventions.
-Nothing here is implemented yet.
+**Status: Sprint 1 equations verified (2026-07-26); later sprints pending.** Equations carry
+`[UNVERIFIED]` until their exact equation number and conventions are confirmed, which happens at
+the sprint planning that precedes their implementation. Nothing here is implemented yet.
+
+Verification substituted **open-access sources for textbooks**. Maggiore and MTW equation numbers
+could not be confirmed without the physical books, and a citation a contributor cannot check is
+not a citation — a real constraint for a project meant to outlive its founders. Primary sources:
+
+- **[B]** Blanchet, L., *Living Rev. Relativ.* **17**:2 (2014), arXiv:1310.1528
+- **[FH]** Flanagan, É.É. & Hughes, S.A., *New J. Phys.* **7**:204 (2005), arXiv:gr-qc/0501041
+
+⚠️ [FH] eqs. (4.41)–(4.42) contain typos we verified numerically — see
+[`ERRATA.md`](ERRATA.md). The derivations we depend on ([FH] 4.17–4.23) are sound.
 
 ---
 
@@ -45,7 +55,7 @@ equation with the retarded solution:
 h̄^μν(t, x) = (4G/c⁴) ∫ T^μν(t − |x − x'|/c, x') / |x − x'| d³x'
 ```
 
-*Source: MTW ch. 18 / Maggiore Vol. 1 ch. 1 — `[UNVERIFIED]`*
+*Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 1 — **VERIFIED** 2026-07-26*
 
 ---
 
@@ -59,7 +69,8 @@ Expanding the retarded integral in multipoles:
   **no radiation.**
 - **Mass quadrupole** — first non-vanishing term.
 
-*Source: MTW §36.1 / Maggiore Vol. 1 §3.3 — `[UNVERIFIED]`*
+*Follows from momentum conservation; multipole structure per Blanchet,
+Living Rev. Relativ. 17:2 (2014), eq. 3 — **VERIFIED** 2026-07-26*
 
 **This is the single most important constraint on the project.** The kickoff specification says
 we need not care where the accelerating force comes from. Physically, we must: the reaction is
@@ -92,7 +103,41 @@ Luminosity:
 L_GW = (G / 5c⁵) ⟨ d³Q_ij/dt³ · d³Q_ij/dt³ ⟩
 ```
 
-*Source: Maggiore Vol. 1 ch. 3 — `[UNVERIFIED]`*
+*Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eqs. 2 (strain), 3 (moment),
+4 (luminosity); TT projector at Flanagan & Hughes, New J. Phys. 7:204 (2005),
+eq. 4.22 — **VERIFIED** 2026-07-26*
+
+### 2.1 Analytic derivatives of the quadrupole moment (derived)
+
+For point masses, `rho(x,t) = sum_A m_A delta^3(x - x_A(t))`, Blanchet eq. (3) becomes
+`Q_ij = sum_A m_A (x_i x_j - (1/3) delta_ij |x|^2)`. Differentiating in time:
+
+```
+Qdd_ij  = sum_A m_A ( a_i x_j + 2 v_i v_j + x_i a_j )
+          - (2/3) delta_ij sum_A m_A ( v.v + x.a )
+
+Qddd_ij = sum_A m_A ( j_i x_j + 3 a_i v_j + 3 v_i a_j + x_i j_j )
+          - (2/3) delta_ij sum_A m_A ( 3 v.a + x.j )
+```
+
+Claim category **B** (derived) in [`CLAIMS.md`](CLAIMS.md).
+
+**Validation (2026-07-26).** Both confirmed on an equal-mass circular binary. `Qdd` agrees with a
+central difference to 2.5e-6. `Qddd` agrees to 8.0e-7 at optimal step `h = 1e-3`; more decisively,
+the luminosity built from `Qddd` via eq. (4) reproduces the independent closed form
+`L = (32/5)(G/c^5) mu^2 a^4 omega^6` to **4.1e-16** — an exact algebraic identity, which is far
+stronger evidence than any finite-difference comparison.
+
+**Why finite differences are forbidden here — measured.** Third-derivative central differences are
+roundoff-dominated as `eps/h^3`. Relative error against the analytic form:
+
+| step `h` | 1e-6 | 1e-5 | 1e-4 | **1e-3** | 1e-2 | 1e-1 |
+|---|---|---|---|---|---|---|
+| rel. err | 1.1e+2 | 1.1e-1 | 5.3e-5 | **8.0e-7** | 6.9e-5 | 6.9e-3 |
+
+The classic U-curve: roundoff dominates below `h ~ 1e-4`, truncation above. At `h = 1e-6` the
+finite difference is wrong by a factor of 100. This is the concrete justification for the
+analytic-derivative rule in [`../CLAUDE.md`](../CLAUDE.md) and `code-reviewer.md`.
 
 **Implementation note:** the luminosity needs the *third* time derivative. Finite differencing
 at that order amplifies noise catastrophically, so `Q̈` and `Q⃛` are computed **analytically**

@@ -332,7 +332,7 @@ without a freeze the ledger chases interface changes all project long.
 *Citation:* `[verify]`.
 *AC:* rtol 1e-6 against the analytic expression.
 
-**T-2.10 · Convention enforcement tests · 2 pts · `sonnet-low` · deps T-1.7**
+**T-2.10 · Convention enforcement tests · 2 pts · `sonnet-low` · deps T-1.7** ✅
 `tests/unit/test_conventions.py`. Assert the ADR-0002 contracts against every public function
 shipped so far: `(N,)`/`(N,3)` input shapes accepted and wrong shapes rejected; trailing tensor
 indices; `n_hat` non-unit input raises `ValueError`; float32 input raises rather than upcasting;
@@ -769,9 +769,21 @@ FP32 **fails** the same check — documenting why the decomposition exists.
 `examples/deflection_scenario.py` — 1 km asteroid at 40 AU, N-element array, prime-band drive.
 *AC:* runs to completion; emits field visualization, beam pattern, Δv, miss distance, gap report.
 
-**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8**
+**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8** 🚫 **blocked, not Ready**
 `tests/benchmarks/test_hulse_taylor.py` — PSR B1913+16 orbital decay.
 *AC:* reproduces −2.4e-12 s/s to rtol 1e-2.
+*Blocked 2026-07-27:* needs the Peters (1964) eccentric-orbit decay formula
+(⟨da/dt⟩, ⟨de/dt⟩ with the 73/24, 37/96, 121/304 coefficients — content
+verified via multiple secondary sources) with an exact, checkable equation
+number. Two `researcher` passes could not reach a fetchable primary source:
+the Caltech-hosted PDF refuses the connection from this environment
+(`ECONNREFUSED`), and Blanchet arXiv:1310.1528's PDF text could not be
+parsed for the specific equation. PSR B1913+16 system parameters (masses,
+period, eccentricity, observed Ṗ_b) are separately verified via arXiv:1606.04581
+(Weisberg & Huang 2016) but implementing without a pinned decay-rate equation
+number would violate citation discipline. Escalate to a spike to pin the
+equation number (e.g. via a session with normal internet/library access, or
+by deriving it from already-cited multipole formulas) before implementing.
 
 **T-12.3 · Benchmark: energy conservation · 3 pts · `sonnet-low` · deps T-6.8**
 `tests/benchmarks/test_energy_conservation.py` — Radiated energy integrated over a distant sphere vs. the quadrupole luminosity integral.

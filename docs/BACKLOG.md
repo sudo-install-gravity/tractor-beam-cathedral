@@ -394,7 +394,7 @@ n_hat)`. `Δh_ij^TT = (4G/c⁴r) Λ_ij,kl Δ[Σ_A M_A v^k v^l]`.
 *Citation:* Braginsky & Thorne, *Nature* 327:123 (1987) `[verify]`.
 *AC:* traceless/transverse; zero when velocities unchanged; scales as 1/r.
 
-**T-3.8 · Waveform from a maneuver · 3 pts · `sonnet-low` · deps T-3.1, T-1.7**
+**T-3.8 · Waveform from a maneuver · 3 pts · `sonnet-low` · deps T-3.1, T-1.7** ✅
 `src/gwtb/source/quadrupole.py` — `waveform_from_profile(body, profile, r, n_hat, times)`.
 *AC:* strain returns to the memory offset (not zero) after the maneuver ends, to rtol 1e-6.
 
@@ -541,7 +541,7 @@ signature that distinguishes spin-2 from spin-1.
 *AC:* zero loss for identical orientations; maximal at the spin-2 mismatch angle (45°, **not**
 90°); period π.
 
-**T-6.7 · Retarded-time field evaluation · 3 pts · `sonnet-low` · deps T-1.7**
+**T-6.7 · Retarded-time field evaluation · 3 pts · `sonnet-low` · deps T-1.7** ✅
 `src/gwtb/propagate/retarded.py` — `field_at(sources, field_point, time)`. Retarded time per
 **element**, not array center.
 *AC:* a single source reproduces `strain_tt` exactly; retarded time uses per-element distance —

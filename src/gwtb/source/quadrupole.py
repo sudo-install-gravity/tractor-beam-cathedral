@@ -15,8 +15,11 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from gwtb.bodies.multipole import quadrupole_second_derivative
+from gwtb.bodies.sphere import Sphere
 from gwtb.core.constants import G_OVER_C4, G_OVER_C5
-from gwtb.core.validation import as_tensor_3x3
+from gwtb.core.validation import as_float64, as_tensor_3x3, as_unit_vector
+from gwtb.kinematics.profiles import AccelerationProfile
 from gwtb.propagate.tt_projection import apply_tt
 
 
@@ -93,4 +96,108 @@ def luminosity(q_dddot: ArrayLike) -> float:
     return float(G_OVER_C5 / 5.0 * np.einsum("ij,ij->", q3, q3))
 
 
-__all__ = ["luminosity", "strain_tt"]
+_MANEUVER_AXIS = np.array([1.0, 0.0, 0.0])
+
+
+def _coasting_kinematics(
+    profile: AccelerationProfile, t: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Scalar position/velocity/acceleration along the profile's axis for
+    ``t`` possibly beyond ``profile.duration``.
+
+    ``AccelerationProfile`` is defined only on ``[0, duration]``
+    (``_validate_domain``); its own docstring names this function as the
+    intended caller needing "coasting" behavior past that point. For
+    ``t > duration`` the body coasts at ``velocity(duration)`` with zero
+    acceleration, starting from ``position(duration)``.
+    """
+    duration = profile.duration
+    clamped = np.minimum(t, duration)
+    x_end = float(profile.position(duration))
+    v_end = float(profile.velocity(duration))
+
+    x = np.asarray(profile.position(clamped), dtype=np.float64)
+    v = np.asarray(profile.velocity(clamped), dtype=np.float64)
+    a = np.asarray(profile.acceleration(clamped), dtype=np.float64)
+
+    coasting = t > duration
+    if np.any(coasting):
+        x = np.where(coasting, x_end + v_end * (t - duration), x)
+        v = np.where(coasting, v_end, v)
+        a = np.where(coasting, 0.0, a)
+    return x, v, a
+
+
+def waveform_from_profile(
+    body: Sphere,
+    profile: AccelerationProfile,
+    r: float,
+    n_hat: ArrayLike,
+    times: ArrayLike,
+) -> NDArray[np.float64]:
+    """Strain waveform radiated by a sphere executing a finite maneuver.
+
+    **Modeling decision (this function's own, not an external citation):** a
+    single accelerating point mass is not an isolated, momentum-conserving
+    source (CLAUDE.md rule 2) — its mass dipole does not cancel. Rather than
+    silently accept that artifact, this function models the maneuvering
+    sphere as one half of a symmetric two-body system: two point masses of
+    ``body.mass / 2`` at ``+x(t)`` and ``-x(t)`` along a fixed axis
+    (``_MANEUVER_AXIS``, the x-axis), where ``x(t)`` is the profile's scalar
+    position. The configuration is momentum-conserving by construction (the
+    center of mass never moves), so its quadrupole is a physical radiating
+    source with no hidden dipole term.
+
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 3 (quadrupole
+    second derivative, via :func:`gwtb.bodies.multipole.
+    quadrupole_second_derivative`, applied to the symmetric two-body
+    construction above)
+
+    Parameters
+    ----------
+    body
+        Supplies the total mass (radius/density otherwise unused: the rigid
+        long-wavelength model, per T-4.2, radiates only through mass and
+        trajectory).
+    profile
+        The single-axis maneuver, evaluated with post-maneuver coasting for
+        ``times`` beyond ``profile.duration``.
+    r
+        Observer distance, m.
+    n_hat
+        Shape ``(3,)`` unit vector from source to observer.
+    times
+        Shape ``(T,)``, s. May extend beyond ``profile.duration``.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(T, 3, 3)``, dimensionless strain at each requested time.
+        After the maneuver ends, the strain settles to the memory offset
+        (rather than zero), since the coasting configuration still has a
+        nonzero, constant quadrupole second derivative contribution from
+        each body's fixed final velocity — see T-3.8's acceptance test.
+    """
+    t = as_float64(times, "times")
+    if t.ndim != 1:
+        raise ValueError(f"times must have shape (T,), got {t.shape}")
+    n = as_unit_vector(n_hat, "n_hat")
+    if not np.isfinite(r) or r <= 0.0:
+        raise ValueError(f"r must be positive and finite, got {r!r}")
+
+    x, v, a = _coasting_kinematics(profile, t)
+
+    half_mass = body.mass / 2.0
+    masses = np.array([half_mass, half_mass])
+
+    result = np.empty((t.size, 3, 3), dtype=np.float64)
+    for i in range(t.size):
+        positions = np.array([x[i] * _MANEUVER_AXIS, -x[i] * _MANEUVER_AXIS])
+        velocities = np.array([v[i] * _MANEUVER_AXIS, -v[i] * _MANEUVER_AXIS])
+        accelerations = np.array([a[i] * _MANEUVER_AXIS, -a[i] * _MANEUVER_AXIS])
+        q_ddot = quadrupole_second_derivative(masses, positions, velocities, accelerations)
+        result[i] = strain_tt(q_ddot, r, n)
+    return result
+
+
+__all__ = ["luminosity", "strain_tt", "waveform_from_profile"]

@@ -393,6 +393,11 @@ maneuver planning.
 n_hat)`. `Δh_ij^TT = (4G/c⁴r) Λ_ij,kl Δ[Σ_A M_A v^k v^l]`.
 *Citation:* Braginsky & Thorne, *Nature* 327:123 (1987) `[verify]`.
 *AC:* traceless/transverse; zero when velocities unchanged; scales as 1/r.
+⚠️ **A validated target already exists.** The settled (post-maneuver) value of
+`waveform_from_profile` reaches the linear memory by the independent quadrupole route, and the
+two agree to **0.0 relative difference** — see [ADR-0004](adr/0004-maneuvering-body-model.md).
+Add a benchmark asserting `linear_memory(...)` reproduces that settled value to machine
+precision; it is a far stronger check than any standalone tolerance.
 
 **T-3.8 · Waveform from a maneuver · 3 pts · `sonnet-low` · deps T-3.1, T-1.7** ✅
 `src/gwtb/source/quadrupole.py` — `waveform_from_profile(body, profile, r, n_hat, times)`.

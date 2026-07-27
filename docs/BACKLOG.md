@@ -573,11 +573,11 @@ colormap centered at zero; annotate the scaled-strain reference.
 `src/gwtb/viz/slices.py` — `animate_propagation(...)`.
 *AC:* frame count matches the time array; writes an mp4/gif headless.
 
-**T-7.4 · Beam pattern: polar · 2 pts · `sonnet` · deps T-6.3**
+**T-7.4 · Beam pattern: polar · 2 pts · `sonnet` · deps T-6.3** ✅
 `src/gwtb/viz/patterns.py` — `plot_pattern_polar(...)` in dB with configurable floor.
 *AC:* main lobe at the steered direction; sidelobe structure visible at −40 dB floor.
 
-**T-7.5 · Beam pattern: 3D · 3 pts · `sonnet` · deps T-7.4**
+**T-7.5 · Beam pattern: 3D · 3 pts · `sonnet` · deps T-7.4** ✅
 `src/gwtb/viz/patterns.py` — `plot_pattern_3d(...)`.
 *AC:* renders headless; peak direction matches `steering_phases` to 1e-3 rad.
 

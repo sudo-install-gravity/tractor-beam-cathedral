@@ -68,7 +68,7 @@ Results we derive by combining Category A results. Each must show its derivation
 
 | ID | Claim | Status | Reduces to |
 |---|---|---|---|
-| B-1 | Phased-array synthesis extended from spin-1 (EM) to spin-2 (GW) fields, including polarization-mismatch loss between differently-oriented elements | **Not yet derived** | A-5, A-8 |
+| B-1 | Phased-array synthesis extended from spin-1 (EM) to spin-2 (GW) fields: superposition acts on the TT-projected tensor; element mismatch factor is `cos(2Δψ)`; array gain is N² only for co-oriented elements; alignment tolerance `exp(−4σ²)` | **Derived & validated** 2026-07-27 — [ADR-0003](adr/0003-spin2-superposition.md) | A-5, A-8 |
 | B-2 | For a rigid uniform sphere in the long-wavelength limit, radius and density are degenerate with total mass; the degeneracy is broken only by elastic deformation, finite-size retardation, or rotational oblateness | **Partially derived**: rigid-model degeneracy and oblateness-breaking implemented (`bodies/sphere.py`, T-4.1/4.2/4.6); elastic deformation (T-4.3) and finite-size retardation (T-4.5) remain `opus`-tier, not yet implemented | A-2 |
 | B-3 | Required aperture for a focused spot is `D/λ ≳ r/w`, i.e. ~6×10⁹ wavelengths for a 1 km spot at 40 AU, independent of frequency | **Not yet derived** | A-9 |
 | B-4 | Mutually incommensurate (prime-valued) drive frequencies produce a spatiotemporal focus with peak amplitude N·A against a √N·A background, and a pattern recurrence period equal to the product of the primes | **Not yet derived** | A-8 |
@@ -108,3 +108,4 @@ Stated so they are not silently assumed. **No code depends on anything in this t
 | 2026-07-26 | B-6 added and validated: analytic Q̈ and Q⃛ derived from Blanchet eq. (3). Luminosity built from Q⃛ reproduces the closed form `L = (32/5)(G/c⁵)μ²a⁴ω⁶` to 4.1e-16. |
 | 2026-07-26 | Source policy changed: open-access citations preferred over textbooks, since textbook equation numbers could not be independently confirmed. See `PHYSICS.md` header. |
 | 2026-07-26 | `ERRATA.md` created — two verified typos in Flanagan & Hughes (2005) eqs. (4.41), (4.42). |
+| 2026-07-27 | **B-1 discharged** by SPIKE-4.4 / ADR-0003. Two-element prototype reproduced the analytic TT form to 1e-14 and confirmed the mismatch factor is `cos(2Δψ)`: elements 45° apart are polarization-orthogonal (EM needs 90°), and elements **90° apart cancel completely** where EM intuition predicts 2× power. Alignment tolerance `exp(−4σ²)` verified to ~1e-4; 1% loss at σ = 2.87°, exactly 2× tighter than spin-1. |

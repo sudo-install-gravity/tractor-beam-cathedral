@@ -621,7 +621,7 @@ cross-section.
 *AC:* for a 1 km asteroid at 40 AU the result is below 1e-30 N — **the smallness is the finding**,
 asserted rather than hidden.
 
-**T-8.5 · Coupling channel 3: near-zone gradient · 3 pts · `sonnet` · deps T-4.1**
+**T-8.5 · Coupling channel 3: near-zone gradient · 3 pts · `sonnet` · deps T-4.1** ✅
 `src/gwtb/target/coupling.py` — `channel_gravity_tractor(tractor_mass, separation, asteroid_mass)`.
 *Citation:* Lu & Love, *Nature* 438:177 (2005) `[verify]`.
 *AC:* reproduces the paper's worked example to rtol 1e-2. **Open question OQ-5.**
@@ -726,7 +726,7 @@ power**, the dominant design lever.
 
 ## Sprint 11 — Compute backend and performance (21 pts)
 
-**T-11.1 · Backend shim · 3 pts · `sonnet-low` · deps T-1.1**
+**T-11.1 · Backend shim · 3 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/core/backend.py` — `get_backend(name)` dispatching to numpy or numba; uniform array
 API.
 *AC:* identical results across backends to rtol 1e-12; unknown backend raises.

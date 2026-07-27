@@ -8,6 +8,7 @@ cathedral built on a sign error is a ruin.
 
 | File | What it tells you |
 |---|---|
+| `docs/HANDOVER.md` | **Start here if you are picking this up cold** — state, next steps, traps |
 | `docs/INDEX.md` | Codebase map, equation registry, assumption ledger (maintained by `indexer`) |
 | `docs/CLAIMS.md` | What is established physics vs. our extension vs. conjecture |
 | `docs/PHYSICS.md` | First-principles derivation of the framework |
@@ -90,38 +91,50 @@ python tools/schedule.py --next
 ```
 
 It batches every reachable heavy task into one Opus session, then hands the bulk
-back to Sonnet. `--plan` shows the whole run order; `--done T-1.1,T-1.2` recomputes
-as work lands. It also reports externally blocked tasks and anything transitively
-stranded behind them.
+back to Sonnet. `--plan` shows the whole run order. It also reports externally
+blocked tasks and anything transitively stranded behind them.
+
+Completion is read from ✅ markers on the task headers in `docs/BACKLOG.md`, so
+the plan always matches reality — **mark a task ✅ when you finish it.** (`--done`
+exists only for what-if queries, not for tracking.)
 
 The three support agents (`researcher`, `code-reviewer`, `indexer`) are **not** a
-tier — they run on every task regardless of which model implements it.
+tier — they run on every task regardless of which model implements it. They are
+short, single-purpose passes and remain worth invoking; the caution below is
+about handing a *batch of implementation work* to a fresh agent, which is a
+different thing.
 
-### Dispatch rule — binding
+### How to run a batch at the right tier
 
-**Always dispatch a task batch to a subagent whose model matches the batch's
-tier. Never execute a lower-tier batch directly from a higher-tier session.**
+**Switch the session's model to match the batch. Do not spawn subagents for
+this.**
 
-| Batch tier | Dispatch to |
+| Batch tier | Run it in |
 |---|---|
-| `sonnet-low` | subagent, `model: sonnet`, low reasoning effort |
-| `sonnet` | subagent, `model: sonnet` |
-| `opus` | run in an Opus session (or subagent with `model: opus`) |
+| `sonnet-low` | a Sonnet session (low reasoning effort) |
+| `sonnet` | a Sonnet session |
+| `opus` | an Opus session |
 
-This is a cost rule, not a quality rule. An Opus session executing 118 points of
-`sonnet-low` work bills every one of those points at Opus rates for work
-explicitly classified as not needing Opus. Tiering the backlog without
-dispatching to match it captures none of the benefit.
+⚠️ **Subagent dispatch was tried and abandoned — measured 2026-07-26.** Four
+consecutive dispatches failed. The last one, given five fully-specified 2-point
+tasks, spent **190,175 tokens across 37 tool calls in 27 minutes and wrote zero
+files** — the entire session budget went on re-reading `CLAUDE.md`, ADR-0002,
+the 700-line backlog, and several source modules just to learn house style. An
+earlier dispatch delivered work but lost its report to a harness error, leaving
+two of twelve tasks half-written and needing reverse-engineering from the file
+system.
 
-The cold-start cost of handing a batch to a fresh subagent is what the
-Definition of Ready pays for: exact paths, signatures, formulas, citations, and
-test assertions mean a subagent needs no conversational context to execute. If a
-task cannot survive that handoff, it was not Ready.
+The Definition of Ready makes a cold handoff *possible*. It does not make it
+*cheap*: the task spec is small, but this project's surrounding context is not,
+and that cost recurs in full on every dispatch.
 
-**What stays in the higher-tier session:** writing the subagent's brief, the
-`code-reviewer` pass over its output, resolving Critical findings, and any
-`opus`-tier task. Review is not delegated down-tier — that would defeat the
-gate.
+So: **switch models, keep the context.** No cold start, no boundary at which
+work or reports can vanish, and correct billing.
+
+**What still must not drop a tier:** the `code-reviewer` pass, resolving
+Critical findings, and any `opus`-tier task — notably `SPIKE-4.4`, T-6.5 and
+T-6.6, where the spin-2 risk lives. Switch back to Opus for those rather than
+attempting them at Sonnet.
 
 ## Definition of Ready
 

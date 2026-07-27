@@ -49,6 +49,7 @@ Pre-alpha. Sprint 0 (foundation and governance). Nothing here computes physics y
 
 | Document | Purpose |
 |---|---|
+| [`docs/HANDOVER.md`](docs/HANDOVER.md) | **Start here** — current state, what to run next, known traps |
 | [`CLAUDE.md`](CLAUDE.md) | Operating instructions for AI agents working on this repo |
 | [`docs/PHYSICS.md`](docs/PHYSICS.md) | First-principles derivation of the framework |
 | [`docs/CLAIMS.md`](docs/CLAIMS.md) | Established physics vs. our derivation vs. conjecture |

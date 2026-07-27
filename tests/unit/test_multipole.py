@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from gwtb.bodies.multipole import (
+    octupole_moment,
     quadrupole_moment,
     quadrupole_second_derivative,
     quadrupole_third_derivative,
@@ -204,3 +205,67 @@ def test_quadrupole_third_derivative_matches_five_point_stencil_on_binary() -> N
     # is exactly zero and both sides are pure noise for that entry.
     atol = 1e-9 * np.max(np.abs(analytic))
     np.testing.assert_allclose(analytic, stencil, rtol=1e-5, atol=atol)
+
+
+# --- T-2.5 -------------------------------------------------------------------
+
+
+def test_octupole_moment_is_fully_symmetric() -> None:
+    rng = np.random.default_rng(5)
+    masses, positions = _random_bodies(rng)
+    Q = octupole_moment(masses, positions)
+    scale = np.max(np.abs(Q))
+    np.testing.assert_allclose(Q, np.transpose(Q, (1, 0, 2)), atol=1e-12 * scale)
+    np.testing.assert_allclose(Q, np.transpose(Q, (0, 2, 1)), atol=1e-12 * scale)
+    np.testing.assert_allclose(Q, np.transpose(Q, (2, 1, 0)), atol=1e-12 * scale)
+    for perm in itertools.permutations((0, 1, 2)):
+        np.testing.assert_allclose(Q, np.transpose(Q, perm), atol=1e-12 * scale)
+
+
+def test_octupole_moment_is_traceless_on_every_index_pair() -> None:
+    rng = np.random.default_rng(6)
+    masses, positions = _random_bodies(rng)
+    Q = octupole_moment(masses, positions)
+    scale = np.max(np.abs(Q))
+
+    trace_ij = np.einsum("iik->k", Q)
+    trace_jk = np.einsum("ijj->i", Q)
+    trace_ki = np.einsum("iji->j", Q)
+
+    assert np.max(np.abs(trace_ij)) <= 1e-12 * scale
+    assert np.max(np.abs(trace_jk)) <= 1e-12 * scale
+    assert np.max(np.abs(trace_ki)) <= 1e-12 * scale
+
+
+def test_octupole_moment_zero_for_symmetric_pair() -> None:
+    """Equal masses at +x and -x: an odd-order moment must vanish exactly,
+    same reasoning as the dipole (test_multipole_rad.py)."""
+    masses = [3.0, 3.0]
+    positions = [[2.0, 0.0, 0.0], [-2.0, 0.0, 0.0]]
+    Q = octupole_moment(masses, positions)
+    np.testing.assert_allclose(Q, np.zeros((3, 3, 3)), atol=1e-12)
+
+
+def test_octupole_moment_rejects_shape_mismatch() -> None:
+    with pytest.raises(ValueError):
+        octupole_moment([1.0, 2.0, 3.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+
+
+def test_octupole_moment_rejects_float32() -> None:
+    masses = np.array([1.0, 2.0], dtype=np.float32)
+    positions = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float64)
+    with pytest.raises(TypeError):
+        octupole_moment(masses, positions)
+
+    masses64 = np.array([1.0, 2.0], dtype=np.float64)
+    positions32 = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
+    with pytest.raises(TypeError):
+        octupole_moment(masses64, positions32)
+
+
+def test_octupole_moment_is_float64_and_correct_shape() -> None:
+    rng = np.random.default_rng(7)
+    masses, positions = _random_bodies(rng)
+    Q = octupole_moment(masses, positions)
+    assert Q.dtype == np.float64
+    assert Q.shape == (3, 3, 3)

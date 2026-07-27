@@ -44,7 +44,9 @@ bulk back to `sonnet-low`. Tiering tasks without batching them would pay that co
 `Upgrade to GitHub Pro or make this repository public to enable this feature`.
 Branch protection on `main` requiring green CI is therefore **deferred until the repo
 goes public**, which the plan schedules for no later than gate G1 (end of Sprint 2).
-Tracked as **T-2.9** below. Everything else in T-0.9 is complete.
+Tracked as **T-2.9** below, which carries the remaining acceptance criterion. T-0.9 itself is
+complete (LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, PR template all present) and is marked ✅ so
+the scheduler stops offering it.
 
 | ID | Task | pts | agent | deps | Status |
 |---|---|---|---|---|---|
@@ -56,7 +58,7 @@ Tracked as **T-2.9** below. Everything else in T-0.9 is complete.
 | T-0.6 | Citation-discipline CI check | 3 | `sonnet-low` | T-0.5 | ✅ |
 | T-0.7 | Validation harness skeleton | 3 | `sonnet-low` | T-0.1 | ✅ |
 | T-0.8 | This backlog | 2 | `opus` | T-0.4 | ✅ |
-| T-0.9 | LICENSE, CONTRIBUTING, CoC, PR template | 2 | `sonnet-low` | T-0.1 | ⚠️ partial |
+| T-0.9 | LICENSE, CONTRIBUTING, CoC, PR template | 2 | `sonnet-low` | T-0.1 | ✅ |
 
 ---
 

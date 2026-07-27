@@ -175,7 +175,66 @@ def quadrupole_third_derivative(
     return result
 
 
+def octupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float64]:
+    """Trace-free mass octupole moment ``Q_ijk`` of a system of point masses.
+
+    The ``l=3`` symmetric trace-free (STF) mass multipole. For a point-mass
+    distribution, the STF projection of ``sum_A m_A x_i x_j x_k`` is
+
+    .. code-block:: text
+
+        Q_ijk = sum_A m_A [ x_i x_j x_k
+                            - (r_A^2 / 5) (delta_ij x_k + delta_jk x_i + delta_ki x_j) ]
+
+    where ``r_A^2 = x_A . x_A``. This is fully symmetric under permutation of
+    any two indices and traceless on every index pair (``ij``, ``jk``,
+    ``ki``) by construction, mirroring the quadrupole's trace-free property
+    (ADR-0002 §6) one multipole order up.
+
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 123a
+
+    Blanchet's Theorem 6 (eq. 123a) gives the general STF source multipole
+    ``I_L`` for all ``l >= 2``; eq. (126) states explicitly that this reduces
+    to the Newtonian quadrupole (eq. 3) at leading PN order, and the same
+    Newtonian-order reduction applies term-by-term at ``l=3``. Cross-checked
+    against Blanchet's explicit two-body Newtonian octupole (eq. 302a),
+    ``I_ijk = -nu m Delta x_<ijk>``: substituting ``y_1 = (m2/m) x``,
+    ``y_2 = -(m1/m) x`` into the point-mass sum above reproduces that form
+    identically.
+
+    Parameters
+    ----------
+    masses
+        Shape ``(N,)``, kg.
+    positions
+        Shape ``(N, 3)``, m.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(3, 3, 3)``, kg m^3. Fully symmetric; traceless on every
+        index pair.
+    """
+    m = as_masses(masses)
+    x = as_body_array(positions, "positions", n_bodies=m.size)
+
+    r2 = np.einsum("ai,ai->a", x, x)
+    triple = np.einsum("a,ai,aj,ak->ijk", m, x, x, x)
+    s = np.einsum("a,ak->k", m * r2, x)
+
+    correction = (
+        np.einsum("ij,k->ijk", _IDENTITY, s)
+        + np.einsum("jk,i->ijk", _IDENTITY, s)
+        + np.einsum("ki,j->ijk", _IDENTITY, s)
+    )
+    # einsum's numpy stub returns Any; annotate so mypy narrows the result back
+    # to NDArray[np.float64] rather than silently widening the return type.
+    result: NDArray[np.float64] = triple - correction / 5.0
+    return result
+
+
 __all__ = [
+    "octupole_moment",
     "quadrupole_moment",
     "quadrupole_second_derivative",
     "quadrupole_third_derivative",

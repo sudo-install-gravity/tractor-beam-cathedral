@@ -27,6 +27,12 @@ Usage::
     python tools/schedule.py --status            # tier and completion summary
     python tools/schedule.py --plan --done T-1.1,T-1.2
     python tools/schedule.py --plan --json
+
+Completion lives in ``docs/BACKLOG.md``: a spec header ending in a checkmark is
+treated as done, matching the Sprint 0 table's Status column. That file is the
+single record of progress, so the plan cannot drift from it. ``--done`` remains
+for what-if queries — "what would the plan look like if these also landed" —
+not for tracking.
 """
 
 from __future__ import annotations
@@ -42,11 +48,11 @@ BACKLOG = Path(__file__).resolve().parent.parent / "docs" / "BACKLOG.md"
 
 HEAVY = "opus"
 
-# Detailed spec header:
-#   **T-1.0 · Title · 2 pts · `sonnet` · deps T-0.7**
+# Detailed spec header, with an optional completion marker:
+#   **T-1.0 · Title · 2 pts · `sonnet` · deps T-0.7** ✅
 SPEC_RE = re.compile(
     r"\*\*(?P<id>T-\d+\.\d+|SPIKE-[\d.]+) · (?P<title>.+?) · (?P<pts>\d+) pts · "
-    r"`(?P<tier>[a-z-]+)` · deps (?P<deps>[^*]*?)\*\*"
+    r"`(?P<tier>[a-z-]+)` · deps (?P<deps>[^*]*?)\*\*(?P<done>[ \t]*\u2705)?"
 )
 # Sprint 0 table row:
 #   | T-0.1 | Title | 3 | `sonnet-low` | — | ✅ |
@@ -149,7 +155,7 @@ def load_tasks(path: Path = BACKLOG) -> dict[str, Task]:
                 m.group("tier"),
                 m.group("deps"),
                 sprint_at(m.start()),
-                False,
+                m.group("done") is not None,
             )
         )
     for m in ROW_RE.finditer(text):

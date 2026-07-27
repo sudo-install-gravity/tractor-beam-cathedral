@@ -87,7 +87,7 @@ tensors with trailing indices, `n_hat` unit-validated, SI units, float64, `Q_ij`
 Sprint 2. T-1.10 is *not* a drop candidate despite also being a benchmark: it was pulled forward
 precisely because discovering a dipole surprise late is the expensive failure mode.
 
-**T-1.0 · Canonical circular-binary fixture · 2 pts · `sonnet` · deps T-0.7**
+**T-1.0 · Canonical circular-binary fixture · 2 pts · `sonnet` · deps T-0.7** ✅
 `tests/benchmarks/helpers.py` — add `circular_binary(m1, m2, a, t)` returning
 `(masses, positions, velocities, accelerations, jerks)` in **ADR-0002 shapes and SI units**, for
 two bodies in a circular orbit about their common barycentre in the xy-plane:
@@ -114,7 +114,7 @@ residuals: `0.0` at 1:1 and 1:2, `1.5e23` at 1:3 and 1.3:2.7.
 defined one. Four tasks would each invent a fixture and they would differ — the same
 cross-cutting gap ADR-0002 fixed for array shapes.
 
-**T-1.1 · Physical constants · 2 pts · `sonnet-low` · deps T-0.1**
+**T-1.1 · Physical constants · 2 pts · `sonnet-low` · deps T-0.1** ✅
 `src/gwtb/core/constants.py`. Module-level `float` constants, each with a source comment:
 `G = 6.67430e-11` (CODATA 2018), `c = 299792458.0` (SI exact), `AU = 1.495978707e11` (IAU 2012
 exact), `M_SUN = 1.98892e30` (IAU 2015 nominal solar mass parameter GM_sun/G),
@@ -122,14 +122,14 @@ exact), `M_SUN = 1.98892e30` (IAU 2015 nominal solar mass parameter GM_sun/G),
 *AC:* `G == 6.67430e-11` and `c == 299792458.0` exactly; `G_OVER_C4 == 8.2627176397e-45` and
 `G_OVER_C5 == 2.7561459334e-53`, both to rtol 1e-9.
 
-**T-1.2 · Scaled strain units · 3 pts · `sonnet-low` · deps T-1.1**
+**T-1.2 · Scaled strain units · 3 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/core/units.py` — `class StrainScale` with `__init__(self, reference: float = 1e-40)`,
 `to_scaled(self, h: float | np.ndarray) -> float | np.ndarray` returning `h / reference`, and
 `from_scaled(self, h_s)` returning `h_s * reference`. Accepts scalars and arrays.
 *AC:* `from_scaled(to_scaled(x)) == x` to rtol 1e-15 for `x` in `np.logspace(-45, -35, 50)`;
 `to_scaled(1e-40) == 1.0` exactly; `ValueError` on `reference <= 0` or non-finite.
 
-**T-1.3 · Trace-free mass quadrupole moment · 3 pts · `sonnet-low` · deps T-1.1**
+**T-1.3 · Trace-free mass quadrupole moment · 3 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/bodies/multipole.py` — `quadrupole_moment(masses, positions) -> np.ndarray` of shape
 `(3,3)`. For point masses, Blanchet eq. (3) with `rho = sum_A m_A delta^3(x - x_A)`:
 
@@ -143,7 +143,7 @@ Implement as `einsum('a,ai,aj->ij', m, x, x) - eye(3) * einsum('a,ai,ai->', m, x
 `(1,0,0)` returns `diag(2/3, -1/3, -1/3)` to rtol 1e-15; a 50-point spherically symmetric shell
 returns zeros to atol 1e-12; raises on shape mismatch or float32 input.
 
-**T-1.4 · Analytic second derivative of Q · 3 pts · `sonnet-low` · deps T-1.3, T-1.0**
+**T-1.4 · Analytic second derivative of Q · 3 pts · `sonnet-low` · deps T-1.3, T-1.0** ✅
 `src/gwtb/bodies/multipole.py` — `quadrupole_second_derivative(masses, positions, velocities,
 accelerations) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
 
@@ -160,7 +160,7 @@ Qdd_ij = sum_A m_A ( a_i x_j + 2 v_i v_j + x_i a_j )
 on a circular binary to **rtol 1e-5 using step `h = 1e-3` in units where `omega = 1`**
 (second derivatives are roundoff-dominated below `h ~ 1e-4`).
 
-**T-1.5 · Analytic third derivative of Q · 3 pts · `sonnet-low` · deps T-1.4, T-1.0**
+**T-1.5 · Analytic third derivative of Q · 3 pts · `sonnet-low` · deps T-1.4, T-1.0** ✅
 `src/gwtb/bodies/multipole.py` — `quadrupole_third_derivative(masses, positions, velocities,
 accelerations, jerks) -> np.ndarray` of shape `(3,3)`. **Analytic. Never finite-difference.**
 
@@ -182,7 +182,7 @@ finite differences are roundoff-dominated as `eps/h^3`: measured relative error 
 "tighter" step **will fail against correct code**. This is the concrete reason ADR-0001 and
 `code-reviewer.md` forbid numerical differentiation of `Q`.
 
-**T-1.6 · TT projector · 3 pts · `sonnet-low` · deps T-1.1**
+**T-1.6 · TT projector · 3 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/propagate/tt_projection.py` — `tt_projector(n_hat) -> np.ndarray` of shape
 `(3,3,3,3)`:
 
@@ -198,7 +198,7 @@ at eq. 4.20; equivalent form at Blanchet eq. 2).
 (`apply_tt(apply_tt(M)) == apply_tt(M)`) to rtol 1e-12; result traceless to atol 1e-12;
 transverse (`n_i (Lambda:M)_ij == 0`) to atol 1e-12; `ValueError` if `|n_hat| != 1` to atol 1e-12.
 
-**T-1.7 · Quadrupole strain · 3 pts · `sonnet-low` · deps T-1.4, T-1.6**
+**T-1.7 · Quadrupole strain · 3 pts · `sonnet-low` · deps T-1.4, T-1.6** ✅
 `src/gwtb/source/quadrupole.py` — `strain_tt(q_ddot, r, n_hat) -> np.ndarray` of shape `(3,3)`:
 
 ```
@@ -216,7 +216,7 @@ dimensionless (a dimensional-consistency test asserts SI units cancel); `ValueEr
 **Note:** [FH] eq. 4.23 gives this in geometric units (`G = c = 1`); the `2G/c^4` prefactor per
 ADR-0002 §4 is mandatory here.
 
-**T-1.8 · GW luminosity · 2 pts · `sonnet-low` · deps T-1.5, T-1.0**
+**T-1.8 · GW luminosity · 2 pts · `sonnet-low` · deps T-1.5, T-1.0** ✅
 `src/gwtb/source/quadrupole.py` — `luminosity(q_dddot) -> float`:
 
 ```
@@ -229,7 +229,7 @@ F = (G / (5 c^5)) * Qddd_ij * Qddd_ij
 identity, not an approximation, and was confirmed numerically at 4.1e-16. Equivalently
 `L = (32/5)(G^4/c^5) m1^2 m2^2 M / a^5` under Kepler's third law. Returns a non-negative float.
 
-**T-1.9 · Benchmark: circular binary · 3 pts · `sonnet-low` · deps T-1.7, T-1.8, T-1.0**
+**T-1.9 · Benchmark: circular binary · 3 pts · `sonnet-low` · deps T-1.7, T-1.8, T-1.0** ✅
 `tests/benchmarks/test_binary.py`. Equal-mass circular binary, separation `a`, orbital angular
 frequency `omega`, reduced mass `mu = m1 m2 / (m1 + m2)`, observer at distance `r`,
 inclination `iota`:
@@ -263,7 +263,7 @@ with `(2,1) = +sin(2wt)` inside the `-2 omega^2 mu R^2` prefactor. The as-printe
 non-symmetric and differs from ground truth by 3.98 in units `mu = R = omega = 1`. **Do not
 "fix" this test to match the paper.**
 
-**T-1.10 · Benchmark: dipole cancellation · 3 pts · `sonnet-low` · deps T-1.3, T-1.7** ⚠️ **pulled forward**
+**T-1.10 · Benchmark: dipole cancellation · 3 pts · `sonnet-low` · deps T-1.3, T-1.7** ✅ ⚠️ **pulled forward**
 `tests/benchmarks/test_dipole_cancellation.py`. In a momentum-conserving configuration the mass
 dipole's second derivative must vanish:
 
@@ -287,7 +287,7 @@ configuration, so the test cannot pass vacuously.
 
 ## Sprint 2 — Conservation auditing, dipole flagging, ledger v0 (26 pts) → **GATE G1**
 
-**T-2.1 · Stress-energy conservation auditor · 3 pts · `sonnet-low` · deps T-1.3**
+**T-2.1 · Stress-energy conservation auditor · 3 pts · `sonnet-low` · deps T-1.3** ✅
 `src/gwtb/source/conservation.py` — `audit(masses, accelerations) -> ConservationReport` with
 fields `net_force`, `is_conserving`, `residual`.
 *AC:* returns `is_conserving=True` for balanced configurations, `False` otherwise; residual
@@ -300,7 +300,7 @@ scales linearly with imposed imbalance.
 *AC:* stamp survives arithmetic, slicing, and `str()`; a test asserts it cannot be silently
 dropped by `np.asarray`.
 
-**T-2.3 · Mass dipole moment · 2 pts · `sonnet-low` · deps T-1.3**
+**T-2.3 · Mass dipole moment · 2 pts · `sonnet-low` · deps T-1.3** ✅
 `src/gwtb/source/multipole_rad.py` — `dipole_moment(masses, positions)` and
 `dipole_second_derivative(masses, accelerations)`.
 *Citation:* MTW §36.1 `[verify]`.
@@ -311,7 +311,7 @@ dropped by `np.asarray`.
 *AC:* always returns a stamped result; raises if called with a momentum-conserving source
 unless `allow_trivial=True`.
 
-**T-2.5 · Mass octupole moment · 3 pts · `sonnet-low` · deps T-1.3**
+**T-2.5 · Mass octupole moment · 3 pts · `sonnet-low` · deps T-1.3** ✅
 `src/gwtb/bodies/multipole.py` — `octupole_moment(masses, positions) -> np.ndarray` (3,3,3).
 *Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
 *AC:* fully symmetric; traceless on all index pairs to atol 1e-12.
@@ -327,7 +327,7 @@ without a freeze the ledger chases interface changes all project long.
 `src/gwtb/ledger/gap_report.py` — `emission_gap(luminosity, target_impulse, duration)`.
 *AC:* for a 10 t / 10 m / 1 kHz rod reports a gap within 0.5 decades of 1e-19 W.
 
-**T-2.8 · Benchmark: spinning rod · 2 pts · `sonnet` · deps T-1.8**
+**T-2.8 · Benchmark: spinning rod · 2 pts · `sonnet` · deps T-1.8** ✅
 `tests/benchmarks/test_spinning_rod.py`. `P = (2/45)(G/c⁵) M² L⁴ ω⁶`.
 *Citation:* `[verify]`.
 *AC:* rtol 1e-6 against the analytic expression.
@@ -361,29 +361,29 @@ implementation. Four sprints of lead time on a conceptual error. **Open question
 
 ## Sprint 3 — Finite maneuver kinematics (22 pts)
 
-**T-3.1 · Profile base class · 2 pts · `sonnet-low` · deps T-1.1**
+**T-3.1 · Profile base class · 2 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/kinematics/profiles.py` — `class AccelerationProfile` (ABC) with
 `acceleration(t)`, `velocity(t)`, `position(t)`, `jerk(t)`, property `duration`.
 *AC:* subclass contract enforced; velocity/position match analytic integrals to rtol 1e-9.
 
-**T-3.2 · Bang-bang profile · 2 pts · `sonnet-low` · deps T-3.1**
+**T-3.2 · Bang-bang profile · 2 pts · `sonnet-low` · deps T-3.1** ✅
 `src/gwtb/kinematics/profiles.py` — `BangBangProfile(a_max, duration)`. Rectangular acceleration.
 *AC:* Δv = a_max·duration/2 for the symmetric case; spectrum shows −13 dB first sidelobe.
 
-**T-3.3 · Jerk-limited S-curve · 3 pts · `sonnet-low` · deps T-3.1**
+**T-3.3 · Jerk-limited S-curve · 3 pts · `sonnet-low` · deps T-3.1** ✅
 `src/gwtb/kinematics/profiles.py` — `SCurveProfile(a_max, j_max, duration)` — trapezoidal acceleration, standard in spacecraft
 maneuver planning.
 *AC:* `|jerk| ≤ j_max` everywhere; `|a| ≤ a_max`; C¹ continuous.
 
-**T-3.4 · Quintic polynomial profile · 2 pts · `sonnet-low` · deps T-3.1**
+**T-3.4 · Quintic polynomial profile · 2 pts · `sonnet-low` · deps T-3.1** ✅
 `src/gwtb/kinematics/profiles.py` — `QuinticProfile(delta_v, duration)`. Zero acceleration and jerk at both endpoints.
 *AC:* endpoint derivatives zero to atol 1e-12; Δv exact to rtol 1e-12.
 
-**T-3.5 · Raised-cosine profile · 2 pts · `sonnet-low` · deps T-3.1**
+**T-3.5 · Raised-cosine profile · 2 pts · `sonnet-low` · deps T-3.1** ✅
 `src/gwtb/kinematics/profiles.py` — `RaisedCosineProfile(delta_v, duration)`.
 *AC:* matches a Hann window in spectral rolloff to rtol 1e-6.
 
-**T-3.6 · Spectral analysis of profiles · 3 pts · `sonnet` · deps T-3.2–T-3.5**
+**T-3.6 · Spectral analysis of profiles · 3 pts · `sonnet` · deps T-3.2–T-3.5** ✅
 `src/gwtb/kinematics/profiles.py` — `spectrum(profile, n_fft) -> (freqs, magnitude)`.
 *AC:* Parseval holds to rtol 1e-9; first-sidelobe levels match the window-function analogues
 (rect −13 dB, Hann −31 dB) to ±1 dB.

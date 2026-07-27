@@ -200,3 +200,56 @@ def test_render_recognises_cli_completed_tasks(tasks: dict[str, Task]) -> None:
     assert "waits on ?" not in out, "a stranded task has an unresolvable blocking root"
     # The genuine external block must still be reported.
     assert "T-2.9" in out
+
+
+# --------------------------------------------------------------------------
+# Completion markers in the backlog
+# --------------------------------------------------------------------------
+
+
+def test_checkmark_marks_a_task_complete(tmp_path) -> None:
+    """A trailing ✅ on a spec header means done."""
+    b = tmp_path / "BACKLOG.md"
+    b.write_text(
+        "## Sprint 1 — x\n\n"
+        "**T-1.1 · Finished · 2 pts · `sonnet-low` · deps —** ✅\n\n"
+        "**T-1.2 · Not finished · 2 pts · `sonnet-low` · deps T-1.1**\n\n"
+        "**T-1.3 · Finished with trailing note · 1 pts · `opus` · deps —** ✅ ⚠️ **note**\n",
+        encoding="utf-8",
+    )
+    tasks = load_tasks(b)
+    assert tasks["T-1.1"].done is True
+    assert tasks["T-1.2"].done is False
+    assert tasks["T-1.3"].done is True, "a ✅ followed by other markers must still count"
+
+
+def test_completed_tasks_are_not_scheduled(tmp_path) -> None:
+    b = tmp_path / "BACKLOG.md"
+    b.write_text(
+        "## Sprint 1 — x\n\n"
+        "**T-1.1 · Done · 2 pts · `sonnet-low` · deps —** ✅\n\n"
+        "**T-1.2 · Todo · 2 pts · `sonnet-low` · deps T-1.1**\n",
+        encoding="utf-8",
+    )
+    scheduled = {t.id for s in plan(load_tasks(b)) for t in s.tasks}
+    assert scheduled == {"T-1.2"}
+
+
+def test_backlog_markers_agree_with_done_flag(tasks: dict[str, Task]) -> None:
+    """The ✅ markers must produce the same plan as passing --done explicitly.
+
+    The backlog is now the single record of progress. This asserts the CLI flag
+    and the file cannot drift into disagreeing about what is finished.
+    """
+    marked = {t.id for t in tasks.values() if t.done}
+    assert len(marked) >= 30, "expected Sprint 0 plus Sprint 1 core to be marked"
+
+    from_markers = [{t.id for t in s.tasks} for s in plan(tasks)]
+    # Re-plan pretending nothing is marked, supplying the same set via --done.
+    for t in tasks.values():
+        t.done = False
+    from_flag = [{t.id for t in s.tasks} for s in plan(tasks, marked)]
+    for t in tasks.values():  # restore
+        t.done = t.id in marked
+
+    assert from_markers == from_flag

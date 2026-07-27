@@ -1,7 +1,7 @@
 # Handover — start here
 
-Current as of **2026-07-26**, commit `9b464c1`. Working tree clean, CI green,
-146 tests passing.
+Current as of **2026-07-27**, commit `eceb03b`. Working tree clean, CI green,
+241 tests passing.
 
 This file is the entry point for a session picking the project up cold. Read it,
 then `../CLAUDE.md`, then get to work — everything else is referenced from those
@@ -36,14 +36,20 @@ Use the venv for **everything**: `.venv/bin/python`, `.venv/bin/pytest`,
 
 | | |
 |---|---|
-| Complete | **30 of 116 tasks** — Sprint 0 in full, Sprint 1 core (T-1.0–T-1.10), 10 of Sprint 2/3 |
-| Next up | **25 tasks / 62 pts**, all Sonnet tier — starts T-2.10, T-3.8, T-4.1 |
-| After that | A **13-task Opus batch** — switch models for it (§4) |
-| Blocked | **T-2.9** (branch protection) needs the repo made public; it transitively strands the six Sprint 12 release tasks |
+| Complete | **54 of 116 tasks** — Sprint 0 in full, Sprint 1 core, Sprint 2/3 partial, plus 24 of the 25-task Sonnet batch (T-4.1/4.2/4.6, T-5.5-5.8, T-6.1-6.4/6.7/6.9, T-9.1-9.4, T-3.8, T-11.1, T-8.5, T-7.4/7.5, T-2.10) |
+| Next up | A **13-task Opus batch** (SPIKE-4.4, T-6.5, T-6.6, and other spin-2/heavy-lift tasks) — switch models for it (§4) |
+| Blocked | **T-2.9** (branch protection) needs the repo public, stranding the Sprint 12 release tasks. **T-12.2** (Hulse–Taylor benchmark) is blocked separately: two `researcher` passes could not pin an exact equation number for the Peters (1964) eccentric-orbit decay formula (Caltech PDF connection refused; Blanchet arXiv:1310.1528 PDF unparseable in this environment) — see `BACKLOG.md:772`. Needs a session with normal network/library access, or a from-scratch derivation, before it can be implemented. |
 
-Live modules: `core/{constants,units,validation}`, `bodies/multipole`,
-`propagate/tt_projection`, `source/{quadrupole,conservation,multipole_rad}`,
-`kinematics/profiles`.
+Live modules: `core/{constants,units,validation,backend}`, `bodies/{multipole,sphere}`,
+`propagate/{tt_projection,retarded}`, `source/{quadrupole,conservation,multipole_rad}`,
+`kinematics/{profiles,oscillators}`, `array/{geometry,grating,beamform}`,
+`target/coupling`, `viz/patterns`.
+
+**`array/beamform.py` is deliberately the scalar (spin-1-style) baseline** — it treats
+elements as isotropic point radiators combining complex scalar weights, exactly like an
+ordinary EM phased array. It is the known-good reference the spin-2 tensor superposition
+(`superpose_tt`, T-6.5, next up) must reduce to for co-oriented elements. Do not read
+gravitational-radiation physics into it.
 
 **Gate G1** closes at the end of Sprint 2 and needs `SPIKE-4.4` plus the
 `opus`-tier Sprint 2 tasks. The dipole-cancellation benchmark — the one that

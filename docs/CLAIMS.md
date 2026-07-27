@@ -69,7 +69,7 @@ Results we derive by combining Category A results. Each must show its derivation
 | ID | Claim | Status | Reduces to |
 |---|---|---|---|
 | B-1 | Phased-array synthesis extended from spin-1 (EM) to spin-2 (GW) fields, including polarization-mismatch loss between differently-oriented elements | **Not yet derived** | A-5, A-8 |
-| B-2 | For a rigid uniform sphere in the long-wavelength limit, radius and density are degenerate with total mass; the degeneracy is broken only by elastic deformation, finite-size retardation, or rotational oblateness | **Not yet derived** | A-2 |
+| B-2 | For a rigid uniform sphere in the long-wavelength limit, radius and density are degenerate with total mass; the degeneracy is broken only by elastic deformation, finite-size retardation, or rotational oblateness | **Partially derived**: rigid-model degeneracy and oblateness-breaking implemented (`bodies/sphere.py`, T-4.1/4.2/4.6); elastic deformation (T-4.3) and finite-size retardation (T-4.5) remain `opus`-tier, not yet implemented | A-2 |
 | B-3 | Required aperture for a focused spot is `D/λ ≳ r/w`, i.e. ~6×10⁹ wavelengths for a 1 km spot at 40 AU, independent of frequency | **Not yet derived** | A-9 |
 | B-4 | Mutually incommensurate (prime-valued) drive frequencies produce a spatiotemporal focus with peak amplitude N·A against a √N·A background, and a pattern recurrence period equal to the product of the primes | **Not yet derived** | A-8 |
 | B-5 | Radiated GW momentum flux delivers negligible impulse to an asteroid; any real coupling must be near-zone gravitational gradient (A-10), not radiative | **Not yet derived** | A-6, A-10 |

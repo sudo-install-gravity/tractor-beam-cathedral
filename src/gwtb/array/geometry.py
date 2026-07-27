@@ -86,9 +86,11 @@ def sparse_array(n_elements: int, aperture: float, seed: int) -> NDArray[np.floa
     """A reproducible, uniformly-random element layout within a circular
     aperture in the z=0 plane.
 
-    Source: this project's own construction, eq. n/a (no external equation to cite): uniform-disk random sampling
-    used to instantiate a sparse/thinned array geometry per BACKLOG.md T-5.7's open question OQ-4. Orfanidis, EM
-    Waves and Antennas, ch. 19 discusses sparse/thinned arrays qualitatively but gives no equation for this scheme.
+    Source: this project's own construction, eq. n/a (no external equation to
+    cite): uniform-disk random sampling used to instantiate a sparse/thinned
+    array geometry per BACKLOG.md T-5.7's open question OQ-4. Orfanidis, EM
+    Waves and Antennas, ch. 19 discusses sparse/thinned arrays qualitatively
+    but gives no equation for this scheme.
 
     Parameters
     ----------

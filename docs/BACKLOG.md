@@ -508,22 +508,22 @@ frequency** — the frequency-independence is the assertion.
 
 ## Sprint 6 — Phased array and propagation (24 pts) → **GATE G2**
 
-**T-6.1 · Scalar array factor · 3 pts · `sonnet` · deps T-5.5**
+**T-6.1 · Scalar array factor · 3 pts · `sonnet` · deps T-5.5** ✅
 `src/gwtb/array/beamform.py` — `array_factor(geometry, weights, wavelength, direction)`.
 `AF = Σ_n w_n exp[i(k·r_n + φ_n)]`.
 *Citation:* Balanis ch. 6 `[verify]`.
 *AC:* uniform broadside array reproduces the analytic `sin(Nψ/2)/sin(ψ/2)` to rtol 1e-9;
 **matches `arraytool` output to rtol 1e-9** — the known-good baseline before departing to spin-2.
 
-**T-6.2 · Beam steering · 2 pts · `sonnet-low` · deps T-6.1**
+**T-6.2 · Beam steering · 2 pts · `sonnet-low` · deps T-6.1** ✅
 `src/gwtb/array/beamform.py` — `steering_phases(geometry, wavelength, target_direction) -> np.ndarray`.
 *AC:* peak of the steered pattern lies within 1e-6 rad of the requested direction.
 
-**T-6.3 · Beamwidth and sidelobes · 2 pts · `sonnet-low` · deps T-6.1**
+**T-6.3 · Beamwidth and sidelobes · 2 pts · `sonnet-low` · deps T-6.1** ✅
 `src/gwtb/array/beamform.py` — `beamwidth_3db(...)`, `peak_sidelobe_level(...)`.
 *AC:* uniform array reproduces `θ_3dB ≈ 0.886 λ/(Nd)` to rtol 1e-3 and −13.2 dB PSL to ±0.2 dB.
 
-**T-6.4 · Amplitude tapering · 3 pts · `sonnet` · deps T-6.1**
+**T-6.4 · Amplitude tapering · 3 pts · `sonnet` · deps T-6.1** ✅
 `src/gwtb/array/beamform.py` — `taper(n, kind)` for `uniform`, `hann`, `hamming`,
 `chebyshev(sll)`, `taylor(sll, nbar)`.
 *AC:* Chebyshev taper achieves the requested sidelobe level to ±0.5 dB; beamwidth broadens
@@ -552,7 +552,7 @@ asserted by a test where array-center retardation would give a detectably differ
 *AC:* amplitude scales as 1/r to rtol 1e-9 over `r ∈ [1e9, 6e12]` m; phase accumulation is FP64
 throughout (asserted by dtype check).
 
-**T-6.9 · Benchmark: array factor vs. arraytool · 2 pts · `sonnet-low` · deps T-6.1**
+**T-6.9 · Benchmark: array factor vs. arraytool · 2 pts · `sonnet-low` · deps T-6.1** ✅
 `tests/benchmarks/test_array_factor.py`.
 *AC:* rtol 1e-9 across 5 geometries and 3 tapers.
 

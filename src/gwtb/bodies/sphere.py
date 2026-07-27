@@ -24,7 +24,8 @@ from gwtb.core.constants import G
 class Sphere:
     """A rigid, uniform-density sphere.
 
-    Source: Fitzpatrick, Newtonian Dynamics, eq. 1361 (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
+    Source: Fitzpatrick, Newtonian Dynamics, eq. 1361
+        (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
 
     Parameters
     ----------
@@ -47,7 +48,8 @@ class Sphere:
     def mass(self) -> float:
         """Total mass, kg: ``M = (4/3) pi R^3 rho``.
 
-        Source: Fitzpatrick, Newtonian Dynamics, eq. 1361 (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
+        Source: Fitzpatrick, Newtonian Dynamics, eq. 1361
+        (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
         """
         return (4.0 / 3.0) * math.pi * self.radius**3 * self.density
 
@@ -55,7 +57,8 @@ class Sphere:
     def moment_of_inertia(self) -> float:
         """Moment of inertia about any diameter, kg m^2: ``I = (2/5) M R^2``.
 
-        Source: Fitzpatrick, Newtonian Dynamics, eq. 1361 (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
+        Source: Fitzpatrick, Newtonian Dynamics, eq. 1361
+        (farside.ph.utexas.edu/teaching/301/lectures/node103.html)
         """
         return (2.0 / 5.0) * self.mass * self.radius**2
 
@@ -122,7 +125,8 @@ def oblateness_quadrupole(sphere: Sphere, spin_rate: float) -> NDArray[np.float6
 
         epsilon = (5/4) m,   m = Omega^2 R^3 / (G M)
 
-    Source: Fitzpatrick, Theoretical Fluid Mechanics, eq. 2.130 (farside.ph.utexas.edu/teaching/336L/Fluidhtml/node35.html)
+    Source: Fitzpatrick, Theoretical Fluid Mechanics, eq. 2.130
+    (farside.ph.utexas.edu/teaching/336L/Fluidhtml/node35.html)
 
     Converting that flattening to the trace-free quadrupole moment
     ``Q_ij`` used throughout ``gwtb`` is this project's own derivation, not

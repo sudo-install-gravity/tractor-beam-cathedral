@@ -406,11 +406,11 @@ n_hat)`. `Δh_ij^TT = (4G/c⁴r) Λ_ij,kl Δ[Σ_A M_A v^k v^l]`.
 
 ## Sprint 4 — Body parameterization (23 pts)
 
-**T-4.1 · Rigid uniform sphere · 2 pts · `sonnet-low` · deps T-1.1**
+**T-4.1 · Rigid uniform sphere · 2 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/bodies/sphere.py` — `@dataclass Sphere(radius, density)` with `mass`, `moment_of_inertia`.
 *AC:* `mass == (4/3)πR³ρ` to rtol 1e-12; rejects non-positive radius or density.
 
-**T-4.2 · Degeneracy guard · 3 pts · `sonnet-low` · deps T-4.1** ⚠️
+**T-4.2 · Degeneracy guard · 3 pts · `sonnet-low` · deps T-4.1** ✅ ⚠️
 `src/gwtb/bodies/sphere.py` — `Sphere.self_quadrupole()` returns exact zeros, and
 `degeneracy_warning()` explains that R and ρ enter only through M in the rigid
 long-wavelength model.
@@ -435,7 +435,7 @@ osmium, and a nominal degenerate-matter placeholder, each with a source.
 the leading correction in `R/λ`.
 *AC:* → 1 as `R/λ → 0`; departs from unity by >1% when `R/λ > 0.1`. **Open question OQ-3.**
 
-**T-4.6 · Rotational oblateness · 2 pts · `sonnet-low` · deps T-4.1**
+**T-4.6 · Rotational oblateness · 2 pts · `sonnet-low` · deps T-4.1** ✅
 `src/gwtb/bodies/sphere.py` — `oblateness_quadrupole(sphere, spin_rate)`.
 *AC:* zero at zero spin; scales as spin²; matches the Maclaurin spheroid limit to rtol 1e-3.
 
@@ -479,19 +479,19 @@ by ψ about `n_hat` transforms the amplitudes by e^(2iψ) — asserted directly,
 *AC:* linear pattern is zero on-axis (θ=0) and maximal at θ=π/2 — **the opposite of a dipole
 antenna pattern**, asserted explicitly to catch spin-1 substitution.
 
-**T-5.5 · Array geometry: linear · 2 pts · `sonnet-low` · deps T-1.1**
+**T-5.5 · Array geometry: linear · 2 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/array/geometry.py` — `linear_array(n_elements, spacing) -> np.ndarray` (N,3).
 *AC:* correct count; uniform spacing to rtol 1e-12; centered on origin.
 
-**T-5.6 · Array geometry: planar · 2 pts · `sonnet-low` · deps T-5.5**
+**T-5.6 · Array geometry: planar · 2 pts · `sonnet-low` · deps T-5.5** ✅
 `src/gwtb/array/geometry.py` — `planar_array(nx, ny, dx, dy)`.
 *AC:* `nx*ny` elements; all coplanar to atol 1e-12.
 
-**T-5.7 · Array geometry: sparse/random · 2 pts · `sonnet` · deps T-5.5**
+**T-5.7 · Array geometry: sparse/random · 2 pts · `sonnet` · deps T-5.5** ✅
 `src/gwtb/array/geometry.py` — `sparse_array(n_elements, aperture, seed)`.
 *AC:* reproducible for a fixed seed; all elements within the aperture. **Open question OQ-4.**
 
-**T-5.8 · Grating-lobe constraint · 2 pts · `sonnet-low` · deps T-5.5**
+**T-5.8 · Grating-lobe constraint · 2 pts · `sonnet-low` · deps T-5.5** ✅
 `src/gwtb/array/grating.py` — `max_spacing(wavelength, scan_angle_max)` returning
 `λ/(1+|sin θ_max|)`, and `has_grating_lobes(geometry, wavelength, scan_angle_max)`.
 *Citation:* Balanis ch. 6 `[verify]`.
@@ -647,21 +647,21 @@ mechanisms).
 
 ## Sprint 9 — Prime-frequency synthesis and focusing (22 pts)
 
-**T-9.1 · Prime generator · 2 pts · `sonnet-low` · deps T-1.1**
+**T-9.1 · Prime generator · 2 pts · `sonnet-low` · deps T-1.1** ✅
 `src/gwtb/kinematics/oscillators.py` — `first_n_primes(n) -> list[int]` (sieve).
 *AC:* first 10 are `[2,3,5,7,11,13,17,19,23,29]`; `n=1000` completes in <1 s.
 
-**T-9.2 · Prime frequency set with band scaling · 3 pts · `sonnet-low` · deps T-9.1**
+**T-9.2 · Prime frequency set with band scaling · 3 pts · `sonnet-low` · deps T-9.1** ✅
 `src/gwtb/kinematics/oscillators.py` — `prime_frequencies(n, unit_hz=1.0) -> np.ndarray`. The band scale is a **free parameter**
 (decision 2).
 *AC:* `unit_hz=1e6` yields 2 MHz, 3 MHz, …; recurrence period equals the product of primes to
 rtol 1e-12.
 
-**T-9.3 · Recurrence period · 2 pts · `sonnet-low` · deps T-9.2**
+**T-9.3 · Recurrence period · 2 pts · `sonnet-low` · deps T-9.2** ✅
 `src/gwtb/kinematics/oscillators.py` — `recurrence_period(frequencies) -> float`.
 *AC:* first 10 primes at 1 Hz → 6.469693230e9 s (≈205 years) exactly.
 
-**T-9.4 · Multi-frequency oscillator drive · 3 pts · `sonnet-low` · deps T-9.2, T-3.1**
+**T-9.4 · Multi-frequency oscillator drive · 3 pts · `sonnet-low` · deps T-9.2, T-3.1** ✅
 `src/gwtb/kinematics/oscillators.py` — `class PrimeOscillatorDrive(frequencies, amplitudes, phases)` implementing
 `AccelerationProfile`.
 *AC:* superposition of sinusoids; phase offsets applied correctly; `|a| ≤ a_max`.

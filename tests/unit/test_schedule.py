@@ -253,3 +253,68 @@ def test_backlog_markers_agree_with_done_flag(tasks: dict[str, Task]) -> None:
         t.done = t.id in marked
 
     assert from_markers == from_flag
+
+
+# --------------------------------------------------------------------------
+# Deterministic chunking
+# --------------------------------------------------------------------------
+
+
+def test_chunk_prefix_is_always_dependency_valid(tasks: dict[str, Task]) -> None:
+    """The load-bearing property: any prefix of a batch is runnable as-is.
+
+    ``_topo`` orders each batch so a task appears only after everything it
+    depends on *within that batch*. Truncating therefore cannot orphan a
+    dependency — which is what makes ``--chunk`` safe to derive mechanically
+    instead of split by judgment.
+    """
+    from schedule import take_chunk
+
+    done = {t.id for t in tasks.values() if t.done}
+    batch = plan(tasks)[0]
+    for size in range(1, len(batch.tasks) + 1):
+        seen = set(done)
+        for t in take_chunk(batch, size).tasks:
+            unmet = [d for d in t.deps if d not in seen]
+            assert not unmet, f"chunk size {size}: {t.id} orphaned from {unmet}"
+            seen.add(t.id)
+
+
+def test_chunk_is_deterministic(tasks: dict[str, Task]) -> None:
+    """Same backlog, same chunk — no judgment call to forget or disagree about."""
+    from schedule import take_chunk
+
+    a = [t.id for t in take_chunk(plan(tasks)[0], 5).tasks]
+    b = [t.id for t in take_chunk(plan(tasks)[0], 5).tasks]
+    assert a == b
+    assert len(a) == 5
+
+
+def test_chunk_larger_than_batch_returns_batch_unchanged(tasks: dict[str, Task]) -> None:
+    from schedule import take_chunk
+
+    batch = plan(tasks)[0]
+    for size in (len(batch.tasks), len(batch.tasks) + 10, 0, -1):
+        out = take_chunk(batch, size)
+        assert [t.id for t in out.tasks] == [t.id for t in batch.tasks]
+        assert out.chunk_note == "", "an untruncated batch must not claim to be a chunk"
+
+
+def test_chunk_preserves_tier_purity(tasks: dict[str, Task]) -> None:
+    from schedule import take_chunk
+
+    batch = plan(tasks)[0]
+    chunk = take_chunk(batch, 3)
+    assert chunk.model == batch.model
+    for t in chunk.tasks:
+        assert (chunk.model == "opus") == (t.tier == "opus")
+
+
+def test_chunk_announces_itself(tasks: dict[str, Task]) -> None:
+    """A truncated batch must say so, or the reader assumes it is the whole batch."""
+    from schedule import take_chunk
+
+    batch = plan(tasks)[0]
+    chunk = take_chunk(batch, 2)
+    assert chunk.chunk_note
+    assert f"2/{len(batch.tasks)}" in chunk.chunk_note

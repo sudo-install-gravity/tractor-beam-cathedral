@@ -26,6 +26,7 @@ Usage::
     python tools/schedule.py --next              # just the next session
     python tools/schedule.py --status            # tier and completion summary
     python tools/schedule.py --plan --done T-1.1,T-1.2
+    python tools/schedule.py --next --chunk 5   # first 5 tasks of the next batch
     python tools/schedule.py --plan --json
 
 Completion lives in ``docs/BACKLOG.md``: a spec header ending in a checkmark is
@@ -262,6 +263,7 @@ class Session:
     model: str
     tasks: list[Task]
     deferred_for_batching: bool = False
+    chunk_note: str = ""
 
     @property
     def points(self) -> int:
@@ -318,6 +320,30 @@ def _effort(t: Task) -> str:
     return {"sonnet-low": "low", "sonnet": "standard", "opus": "high"}.get(t.tier, "low")
 
 
+def take_chunk(session: Session, size: int) -> Session:
+    """Return the first ``size`` tasks of a session as a runnable chunk.
+
+    A prefix of a batch is **always** dependency-valid. :func:`_topo` orders each
+    batch so a task appears only after everything it depends on within that
+    batch, so truncating cannot orphan a dependency — asserted in
+    ``tests/unit/test_schedule.py``.
+
+    This exists so that splitting a large batch into session-sized pieces is
+    *derived* rather than decided in conversation and forgotten. A split you
+    remember is lost when the conversation is; a split the tool reproduces is
+    not.
+    """
+    if size <= 0 or size >= len(session.tasks):
+        return session
+    return Session(
+        index=session.index,
+        model=session.model,
+        tasks=session.tasks[:size],
+        deferred_for_batching=session.deferred_for_batching,
+        chunk_note=f"chunk of {size}/{len(session.tasks)} — re-run after these land for the next",
+    )
+
+
 def render(
     sessions: list[Session],
     tasks: dict[str, Task],
@@ -345,6 +371,8 @@ def render(
         )
         if s.deferred_for_batching:
             lines.append("   (light work run first — this grows the next Opus batch)")
+        if s.chunk_note:
+            lines.append(f"   ({s.chunk_note})")
         for t in s.tasks:
             blockers = [d for d in t.deps if d in {x.id for x in s.tasks}]
             after = f"  after {','.join(blockers)}" if blockers else ""
@@ -433,6 +461,14 @@ def main() -> int:
     ap.add_argument("--status", action="store_true", help="tier and completion summary")
     ap.add_argument("--done", default="", help="comma-separated task IDs to mark complete")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument(
+        "--chunk",
+        type=int,
+        default=0,
+        metavar="N",
+        help="emit only the first N tasks of the next batch (deterministic; use for "
+        "batches too large to run in one session)",
+    )
     args = ap.parse_args()
 
     tasks = load_tasks()
@@ -443,6 +479,8 @@ def main() -> int:
         return 0
 
     sessions = plan(tasks, extra)
+    if args.chunk > 0 and sessions:
+        sessions = [take_chunk(sessions[0], args.chunk)] + sessions[1:]
 
     if args.json:
         print(

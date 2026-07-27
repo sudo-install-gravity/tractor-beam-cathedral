@@ -169,6 +169,10 @@ python tools/schedule.py --next
 python tools/schedule.py --plan
 ```
 
+Add `--chunk N` to take only the first N tasks of that batch — a prefix is always
+dependency-valid, so large batches split safely without anyone having to decide
+where the seam goes.
+
 It groups heavy `opus` tasks into as few sessions as the dependency graph allows,
 reports what each session unblocks, and names anything stranded behind an external
 blocker. Mark progress with `--done T-1.1,T-1.2` to recompute.

@@ -23,6 +23,17 @@ That prints the next batch of tasks. Completion is tracked by ✅ markers in
 `BACKLOG.md`, so the scheduler always reflects reality — you do not pass flags to
 tell it what is done.
 
+If the batch is too large for one session, take a deterministic prefix instead
+of splitting by judgment:
+
+```bash
+.venv/bin/python tools/schedule.py --next --chunk 5
+```
+
+A prefix of a batch is always dependency-valid, so this cannot orphan anything.
+Land those, mark them ✅, and re-run for the next chunk — nothing to carry
+between sessions.
+
 Full specs for every task it names are in [`BACKLOG.md`](BACKLOG.md). They are
 written to the Definition of Ready: exact path, signature, formula, citation, and
 test assertions with tolerances. You should not have to derive anything.

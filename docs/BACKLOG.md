@@ -313,7 +313,10 @@ unless `allow_trivial=True`.
 
 **T-2.5 · Mass octupole moment · 3 pts · `sonnet-low` · deps T-1.3** ✅
 `src/gwtb/bodies/multipole.py` — `octupole_moment(masses, positions) -> np.ndarray` (3,3,3).
-*Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2` applied to the
+quadrupole of eq. 3 ✅ — **derived**, category B. Both patterns cross-checked against the
+already-validated `quadrupole_second_derivative` + `apply_tt` path; residuals fall as 1/N^2 in
+orbital-phase sampling, confirming exactness. Maggiore dropped (unverifiable equation number).
 *AC:* fully symmetric; traceless on all index pairs to atol 1e-12.
 
 **T-2.6 · Ledger metric schema · 3 pts · `opus` · deps T-1.8** 🔒 **freeze**
@@ -462,9 +465,11 @@ invariant in the rigid model and variant in the elastic model.
 
 ## Sprint 5 — Spin-2 foundations and array geometry (22 pts)
 
-**T-5.1 · Polarization basis · 3 pts · `opus` · deps T-1.6**
+**T-5.1 · Polarization basis · 3 pts · `opus` · deps T-1.6** ✅
 `src/gwtb/propagate/polarization.py` — `polarization_basis(n_hat) -> (e_plus, e_cross)`.
-*Citation:* MTW §35.6 `[verify]`.
+*Citation:* `Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22` ✅ verified
+(component definition h^TT_xx = -h^TT_yy = h_plus, h^TT_xy = h_cross). The MTW reference was
+dropped: its exact equation number could not be confirmed, per the standing open-access rule.
 *AC:* both traceless and transverse; orthonormal under `e_A:e_B = 2δ_AB`; **rotating the basis
 by ψ about `n_hat` transforms the amplitudes by e^(2iψ) — asserted directly, not assumed.**
 
@@ -477,10 +482,13 @@ by ψ about `n_hat` transforms the amplitudes by e^(2iψ) — asserted directly,
 `src/gwtb/propagate/polarization.py` — `rotate_polarization(h_plus, h_cross, psi)`.
 *AC:* period is π, not 2π (the spin-2 signature); `rotate(·, π/4)` maps `h₊ → h×`.
 
-**T-5.4 · Quadrupole element patterns · 3 pts · `opus` · deps T-5.1**
+**T-5.4 · Quadrupole element patterns · 3 pts · `opus` · deps T-5.1** ✅
 `src/gwtb/propagate/polarization.py` — `element_pattern_rotating(theta)` returning
 `h₊ ∝ (1+cos²θ)/2`, `h× ∝ cos θ`; `element_pattern_linear(theta)` returning `h₊ ∝ sin²θ`.
-*Citation:* Maggiore Vol. 1, ch. 3 `[verify]`.
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2` applied to the
+quadrupole of eq. 3 ✅ — **derived**, category B. Both patterns cross-checked against the
+already-validated `quadrupole_second_derivative` + `apply_tt` path; residuals fall as 1/N^2 in
+orbital-phase sampling, confirming exactness. Maggiore dropped (unverifiable equation number).
 *AC:* linear pattern is zero on-axis (θ=0) and maximal at θ=π/2 — **the opposite of a dipole
 antenna pattern**, asserted explicitly to catch spin-1 substitution.
 

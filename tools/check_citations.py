@@ -74,9 +74,13 @@ def check_source(path: Path) -> list[Violation]:
             continue
 
         doc = ast.get_docstring(node)
+        # Collapse whitespace first: a long citation legitimately wraps across
+        # lines, and matching line-by-line would reject it and push authors
+        # toward worse, unwrapped ones.
+        flat = " ".join(doc.split()) if doc else ""
         if not doc:
             violations.append(Violation(path, node.lineno, node.name, "no docstring"))
-        elif not CITATION_RE.search(doc):
+        elif not CITATION_RE.search(flat):
             violations.append(
                 Violation(
                     path,

@@ -542,14 +542,14 @@ frequency** — the frequency-independence is the assertion.
 *AC:* Chebyshev taper achieves the requested sidelobe level to ±0.5 dB; beamwidth broadens
 monotonically with taper depth.
 
-**T-6.5 · Spin-2 tensor superposition · 3 pts · `opus` · deps T-5.4, T-6.1, SPIKE-4.4** ⚠️ **critical path**
+**T-6.5 · Spin-2 tensor superposition · 3 pts · `opus` · deps T-5.4, T-6.1, SPIKE-4.4** ✅ ⚠️ **critical path**
 `src/gwtb/array/beamform.py` — `superpose_tt(elements, weights, field_point)`. Sum the
 **TT-projected tensor** `h_ij` along the common observation direction. Formulation per [ADR-0003](adr/0003-spin2-superposition.md).
 *AC:* reduces to the scalar array factor for co-oriented elements to rtol 1e-9; **for
 orthogonally-oriented elements, gain is strictly less than N²** — the polarization-mismatch
 signature that distinguishes spin-2 from spin-1.
 
-**T-6.6 · Polarization-mismatch loss · 3 pts · `opus` · deps T-6.5**
+**T-6.6 · Polarization-mismatch loss · 3 pts · `opus` · deps T-6.5** ✅
 `src/gwtb/array/beamform.py` — `mismatch_loss(orientation_a, orientation_b, n_hat)`.
 *AC:* zero loss for identical orientations; maximal at the spin-2 mismatch angle (45°, **not**
 90°); period π.

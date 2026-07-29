@@ -1,22 +1,26 @@
 # Handover — start here
 
-Current as of **2026-07-27**, commit `eceb03b`. Working tree clean, CI green,
-241 tests passing.
+Current as of **2026-07-29**, commit `3517b25`. Working tree clean, **384 tests
+passing**, all five sanity checks green on the Windows host.
 
 This file is the entry point for a session picking the project up cold. Read it,
 then `../CLAUDE.md`, then get to work — everything else is referenced from those
 two.
 
+> **The host changed.** Development moved from Pop!_OS to **Windows 11** on
+> 2026-07-28/29. Paths below are the Windows ones; the Linux equivalents are
+> `.venv/bin/...` throughout and still work.
+
 ---
 
 ## 1. What to run first
 
-```bash
-cd "/home/thanatos/Documents/Software Dev/Tractor_Beam_Cathedral"
+```
+cd "C:\Users\Thanatos\Documents\Software Dev\Tractor_Beam_Cathedral"
 ```
 
-```bash
-.venv/bin/python tools/schedule.py --next
+```
+.venv\Scripts\python.exe tools\schedule.py --next
 ```
 
 That prints the next batch of tasks. Completion is tracked by ✅ markers in
@@ -26,8 +30,8 @@ tell it what is done.
 If the batch is too large for one session, take a deterministic prefix instead
 of splitting by judgment:
 
-```bash
-.venv/bin/python tools/schedule.py --next --chunk 5
+```
+.venv\Scripts\python.exe tools\schedule.py --next --chunk 5
 ```
 
 A prefix of a batch is always dependency-valid, so this cannot orphan anything.
@@ -38,8 +42,9 @@ Full specs for every task it names are in [`BACKLOG.md`](BACKLOG.md). They are
 written to the Definition of Ready: exact path, signature, formula, citation, and
 test assertions with tolerances. You should not have to derive anything.
 
-Use the venv for **everything**: `.venv/bin/python`, `.venv/bin/pytest`,
-`.venv/bin/ruff`, `.venv/bin/mypy`. The system Python has no numpy.
+Use the venv for **everything**: `.venv\Scripts\python.exe`,
+`.venv\Scripts\pytest.exe`, `.venv\Scripts\ruff.exe`, `.venv\Scripts\mypy.exe`.
+The system Python has no numpy.
 
 ---
 
@@ -47,24 +52,25 @@ Use the venv for **everything**: `.venv/bin/python`, `.venv/bin/pytest`,
 
 | | |
 |---|---|
-| Complete | **54 of 116 tasks** — Sprint 0 in full, Sprint 1 core, Sprint 2/3 partial, plus 24 of the 25-task Sonnet batch (T-4.1/4.2/4.6, T-5.5-5.8, T-6.1-6.4/6.7/6.9, T-9.1-9.4, T-3.8, T-11.1, T-8.5, T-7.4/7.5, T-2.10) |
-| Next up | A **13-task Opus batch** (SPIKE-4.4, T-6.5, T-6.6, and other spin-2/heavy-lift tasks) — switch models for it (§4) |
-| Blocked | **T-2.9** (branch protection) needs the repo public, stranding the Sprint 12 release tasks. **T-12.2** (Hulse–Taylor benchmark) is blocked separately: two `researcher` passes could not pin an exact equation number for the Peters (1964) eccentric-orbit decay formula (Caltech PDF connection refused; Blanchet arXiv:1310.1528 PDF unparseable in this environment) — see `BACKLOG.md:772`. Needs a session with normal network/library access, or a from-scratch derivation, before it can be implemented. |
+| Complete | **58 of 116 tasks**; 300 points total |
+| Tests | **384 passing**, 2 warnings, ~104 s |
+| Next up | A **21-task, 55-point SONNET batch** spanning sprints 5–12. Run it at Sonnet — it contains no `opus` work (§4) |
+| Blocked | **T-2.9** (branch protection) needs the repo public. **T-12.2** (Hulse–Taylor) needs an exact Peters (1964) equation number. Both are now machine-readable blocks, so the scheduler excludes them *and says so*. **T-12.8** is transitively stranded behind both. |
 
 Live modules: `core/{constants,units,validation,backend}`, `bodies/{multipole,sphere}`,
-`propagate/{tt_projection,retarded}`, `source/{quadrupole,conservation,multipole_rad}`,
+`propagate/{tt_projection,retarded,polarization}`, `source/{quadrupole,conservation,multipole_rad}`,
 `kinematics/{profiles,oscillators}`, `array/{geometry,grating,beamform}`,
 `target/coupling`, `viz/patterns`.
 
 **`array/beamform.py` is deliberately the scalar (spin-1-style) baseline** — it treats
 elements as isotropic point radiators combining complex scalar weights, exactly like an
 ordinary EM phased array. It is the known-good reference the spin-2 tensor superposition
-(`superpose_tt`, T-6.5, next up) must reduce to for co-oriented elements. Do not read
+(`superpose_tt`, T-6.5 — **now complete**) reduces to for co-oriented elements. Do not read
 gravitational-radiation physics into it.
 
-**Gate G1** closes at the end of Sprint 2 and needs `SPIKE-4.4` plus the
-`opus`-tier Sprint 2 tasks. The dipole-cancellation benchmark — the one that
-validates the project's central physics premise — **passes**, which closed OQ-1.
+**Gate G1** closed with SPIKE-4.4 (ADR-0003) and the Sprint 2 opus tasks. The
+dipole-cancellation benchmark — the one that validates the project's central
+physics premise — **passes**, which closed OQ-1.
 
 ---
 
@@ -87,8 +93,7 @@ nothing** — the whole budget went on re-reading context to learn house style.
 An earlier one delivered work but lost its report, leaving two tasks
 half-written.
 
-**Switch the session model instead** and run the batch in-context. When you reach
-the Opus batch, switch to Opus rather than dispatching to it.
+**Switch the session model instead** and run the batch in-context.
 
 ---
 
@@ -124,15 +129,42 @@ Prefer relative criteria, and when something passes, check *why*.
 missed twice — first array conventions (fixed by ADR-0002), then a shared binary
 fixture (fixed by T-1.0). Per-task review does not catch it.
 
-**Make absence loud.** Three bugs so far were all "something disappeared with no
+**Make absence loud.** Four bugs so far were all "something disappeared with no
 signal": a task that failed to parse and vanished from the schedule, tasks
-stranded behind a blocker and simply absent from the plan, and completed tasks
-misreported as unreachable. If a parser cannot read something, raise. If
-something is unreachable, say why.
+stranded behind a blocker and simply absent from the plan, completed tasks
+misreported as unreachable, and — found 2026-07-29 — **T-12.2 declared blocked in
+prose but scheduled anyway.** `schedule.py` derives blocks from the `deps` field
+and cannot read a 🚫 marker or a `*Blocked:*` paragraph, so a task the backlog
+called blocked went into a Sonnet batch. If a task is blocked, say so **in its
+deps** — `deps T-1.8, exact Peters 1964 equation number` — exactly as T-2.9 does
+with `deps repo made public`. Prose is for humans; the deps field is the contract.
 
 ---
 
-## 6. Reference map
+## 6. Host notes — Windows 11, since 2026-07-29
+
+**`schedule.py` used to die on Windows before printing anything.**
+`UnicodeEncodeError`: its box-drawing and ✅ output cannot be encoded by the
+console's cp1252 default. Fixed at the top of the script by reconfiguring
+stdout/stderr to UTF-8. Nothing about the schedule was ever wrong — the tool
+simply could not say it. If another tool shows that error, same cause, same fix.
+
+**Line endings are pinned by `.gitattributes`** (added 2026-07-29). The first
+Windows clone checked out 83 of 87 tracked files as CRLF, because this repo had
+no line-ending policy. Content was unaffected and `git status` stayed clean,
+which is precisely why it was worth pinning before it bit. If a whole-tree diff
+ever appears, run `git diff --summary` first to separate mode/EOL changes from
+real edits.
+
+**T-12.2's blocker is half-resolved, and the halves differ** — see
+[`BACKLOG.md`](BACKLOG.md). Retested 2026-07-29: the Caltech Peters PDF still
+refuses the connection (same IP, not a host artefact — stop retrying it), but
+arXiv:1310.1528 returns **HTTP 200**. That failure was *parsing*, not access, so
+the Blanchet route is the one worth re-attempting here.
+
+---
+
+## 7. Reference map
 
 | File | What it holds |
 |---|---|
@@ -147,11 +179,15 @@ something is unreachable, say why.
 
 ---
 
-## 7. Sanity check before you commit
+## 8. Sanity check before you commit
 
-```bash
-.venv/bin/ruff check src tests tools && .venv/bin/ruff format --check src tests tools && .venv/bin/mypy src && .venv/bin/python tools/check_citations.py && .venv/bin/pytest -q
+```
+.venv\Scripts\ruff.exe check src tests tools
+.venv\Scripts\ruff.exe format --check src tests tools
+.venv\Scripts\mypy.exe src
+.venv\Scripts\python.exe tools\check_citations.py
+.venv\Scripts\pytest.exe -q
 ```
 
-All five must pass. Then mark finished tasks ✅ in `BACKLOG.md` so the scheduler
-stays truthful.
+All five must pass. All five are green as of 2026-07-29. Then mark finished tasks
+✅ in `BACKLOG.md` so the scheduler stays truthful.

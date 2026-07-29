@@ -1,0 +1,40 @@
+# Line-ending policy.
+#
+# Why this file exists: on 2026-07-28 this repo was cloned onto a Windows host
+# for the first time and 83 of 87 tracked files checked out CRLF, because there
+# was no policy here and Git for Windows defaults to `core.autocrlf=true`. The
+# content was identical -- but that is exactly the failure mode that cost the
+# sibling DJI-ATAK project a debugging session (its ERRATA E-005: 104 files
+# converted LF -> CRLF with ZERO content changes). This project is now edited
+# from both Windows and Linux, so without an explicit policy it recurs.
+#
+# Rule: everything textual is LF in the repo AND in the working tree.
+
+* text=auto eol=lf
+
+# Sources and docs -- explicit so intent survives a future `text=auto` change.
+*.py            text eol=lf
+*.md            text eol=lf
+*.toml          text eol=lf
+*.cfg           text eol=lf
+*.ini           text eol=lf
+*.txt           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+LICENSE         text eol=lf
+
+# If a Windows batch entry point is ever added it must be CRLF, or cmd.exe
+# mis-parses it. Listed pre-emptively so the rule is never rediscovered.
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+
+# Binary assets -- never touch these, never try to diff them as text.
+# .npy/.npz matter here: T-1.0 established a shared binary fixture, and a
+# newline "fix" applied to a numpy array is silent, total corruption.
+*.docx          binary
+*.npy           binary
+*.npz           binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.pdf           binary

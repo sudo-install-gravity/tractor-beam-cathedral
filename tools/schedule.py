@@ -45,6 +45,17 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# This tool's output contains box-drawing characters and ✅ markers. On Windows
+# the console defaults to cp1252, which cannot encode them, so every invocation
+# died with UnicodeEncodeError before printing anything (found 2026-07-29, the
+# first run on the Windows host). Nothing about the schedule was wrong -- the
+# tool simply could not say it. Reconfiguring stdout keeps the tool usable on
+# both hosts without callers having to set PYTHONIOENCODING.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 BACKLOG = Path(__file__).resolve().parent.parent / "docs" / "BACKLOG.md"
 
 HEAVY = "opus"

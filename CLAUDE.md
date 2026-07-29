@@ -169,6 +169,13 @@ src/gwtb/
 
 ## Environment note
 
-This machine's system Python has **no pip and no ensurepip**. Installing dependencies requires
-`sudo apt install python3-pip python3-venv` first. Until then, tests that need numpy cannot
-run locally — CI is the source of truth.
+**Primary host is Windows 11** (since 2026-07-29). A working venv exists at `.venv`;
+use `.venv\Scripts\python.exe` for everything — the system Python has no numpy.
+Tests **do** run locally now (384 passing), so CI is no longer the only source of truth.
+
+Exact paths, the five-command sanity check, and the Windows-specific traps
+(cp1252 breaking `schedule.py`, CRLF on checkout) are in `docs/HANDOVER.md` §1 and §6.
+
+*Superseded:* on the previous Pop!_OS host the system Python had no pip or ensurepip,
+requiring `sudo apt install python3-pip python3-venv` before any venv could be built,
+and numpy tests could not run locally at all. That constraint no longer applies.

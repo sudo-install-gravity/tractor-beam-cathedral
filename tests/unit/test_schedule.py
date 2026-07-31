@@ -284,10 +284,15 @@ def test_chunk_is_deterministic(tasks: dict[str, Task]) -> None:
     """Same backlog, same chunk — no judgment call to forget or disagree about."""
     from schedule import take_chunk
 
-    a = [t.id for t in take_chunk(plan(tasks)[0], 5).tasks]
-    b = [t.id for t in take_chunk(plan(tasks)[0], 5).tasks]
+    batch = plan(tasks)[0]
+    a = [t.id for t in take_chunk(batch, 5).tasks]
+    b = [t.id for t in take_chunk(batch, 5).tasks]
     assert a == b
-    assert len(a) == 5
+    # Sized against the batch, not a literal. This asserted `== 5` until
+    # 2026-07-31, when the leading batch shrank below five tasks as work
+    # completed and the test failed without anything being wrong. The property
+    # under test is determinism; the length is incidental.
+    assert len(a) == min(5, len(batch.tasks))
 
 
 def test_chunk_larger_than_batch_returns_batch_unchanged(tasks: dict[str, Task]) -> None:
@@ -315,6 +320,13 @@ def test_chunk_announces_itself(tasks: dict[str, Task]) -> None:
     from schedule import take_chunk
 
     batch = plan(tasks)[0]
-    chunk = take_chunk(batch, 2)
+    # Size against the batch so this actually truncates. It asked for a fixed 2
+    # until 2026-07-31, when the leading batch itself shrank to two tasks as
+    # work completed: `take_chunk` then correctly returned the whole batch with
+    # no note, and the test failed with nothing wrong. A chunk note is only
+    # required when there is something to truncate.
+    assert len(batch.tasks) >= 2, "need at least two tasks to exercise truncation"
+    size = len(batch.tasks) - 1
+    chunk = take_chunk(batch, size)
     assert chunk.chunk_note
-    assert f"2/{len(batch.tasks)}" in chunk.chunk_note
+    assert f"{size}/{len(batch.tasks)}" in chunk.chunk_note

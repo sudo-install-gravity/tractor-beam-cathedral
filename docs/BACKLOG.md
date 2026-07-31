@@ -293,7 +293,7 @@ fields `net_force`, `is_conserving`, `residual`.
 *AC:* returns `is_conserving=True` for balanced configurations, `False` otherwise; residual
 scales linearly with imposed imbalance.
 
-**T-2.2 · UNPHYSICAL stamping · 3 pts · `opus` · deps T-2.1**
+**T-2.2 · UNPHYSICAL stamping · 3 pts · `opus` · deps T-2.1** ✅
 `src/gwtb/source/conservation.py` — `class StampedResult` wrapping any array with a
 `provenance` field; `repr` and any serialization carry
 `UNPHYSICAL: violates d_mu T^mu-nu = 0` when set.
@@ -319,7 +319,7 @@ already-validated `quadrupole_second_derivative` + `apply_tt` path; residuals fa
 orbital-phase sampling, confirming exactness. Maggiore dropped (unverifiable equation number).
 *AC:* fully symmetric; traceless on all index pairs to atol 1e-12.
 
-**T-2.6 · Ledger metric schema · 3 pts · `opus` · deps T-1.8** 🔒 **freeze**
+**T-2.6 · Ledger metric schema · 3 pts · `opus` · deps T-1.8** ✅ 🔒 **freeze**
 `src/gwtb/ledger/gap_report.py` — `@dataclass GapMetric(name, achieved, required, units,
 source_module)` and `class GapReport` with `add()`, `to_markdown()`, `to_json()`.
 *AC:* schema round-trips through JSON; `to_markdown` renders a stable table.
@@ -391,7 +391,7 @@ maneuver planning.
 *AC:* Parseval holds to rtol 1e-9; first-sidelobe levels match the window-function analogues
 (rect −13 dB, Hann −31 dB) to ±1 dB.
 
-**T-3.7 · Linear memory · 3 pts · `opus` · deps T-1.7**
+**T-3.7 · Linear memory · 3 pts · `opus` · deps T-1.7** ✅
 `src/gwtb/source/memory.py` — `linear_memory(masses, velocities_initial, velocities_final, r,
 n_hat)`. `Δh_ij^TT = (4G/c⁴r) Λ_ij,kl Δ[Σ_A M_A v^k v^l]`.
 *Citation:* Braginsky & Thorne, *Nature* 327:123 (1987) `[verify]`.
@@ -427,7 +427,7 @@ long-wavelength model.
 different (R, ρ) produce **identical** radiation in the rigid model — asserted explicitly, since
 this is the surprising result the API must not hide.
 
-**T-4.3 · Love-number deformation model · 3 pts · `opus` · deps T-4.1**
+**T-4.3 · Love-number deformation model · 3 pts · `opus` · deps T-4.1** ✅
 `src/gwtb/bodies/elastic.py` — `induced_quadrupole(sphere, acceleration, love_k2, rigidity)`.
 *Citation:* `[verify]` — tidal Love number formalism.
 *AC:* scales linearly with acceleration; → 0 as rigidity → ∞; **R and ρ now enter
@@ -438,10 +438,38 @@ independently** (asserted against T-4.2).
 osmium, and a nominal degenerate-matter placeholder, each with a source.
 *AC:* every entry has a citation comment; densities within 1% of published values.
 
-**T-4.5 · Finite-size retardation correction · 3 pts · `opus` · deps T-4.1**
+**T-4.5 · Finite-size retardation correction · 3 pts · `opus` · deps T-4.1, citable equation for the uniform-sphere mass-quadrupole form factor** 🚫 **blocked, not Ready**
 `src/gwtb/bodies/multipole.py` — `finite_size_correction(sphere, wavelength) -> float`,
 the leading correction in `R/λ`.
 *AC:* → 1 as `R/λ → 0`; departs from unity by >1% when `R/λ > 0.1`. **Open question OQ-3.**
+
+*Blocked 2026-07-31:* `researcher` returned **UNVERIFIED**, and in doing so found that
+this task's premise is wrong. Both candidate form factors are the wrong multipole
+order:
+
+- `j_0(kR) = sin(kR)/(kR)`, leading term `1 − (kR)²/6`, is the point-evaluated
+  plane-wave phase average — **`l = 0` and spin-1 in origin**. It is the sinc
+  pattern ubiquitous in antenna and acoustics array theory, i.e. precisely the
+  borrowed-from-antennas trap of `CLAUDE.md` rule 4. It must not be used for a
+  mass quadrupole.
+- `3 j_1(kR)/(kR)`, leading term `1 − (kR)²/10`, is the correct closed-form
+  Fourier transform of a uniform sphere's density — but that is the
+  **total-mass monopole** term, not the quadrupole.
+
+Volume-integrating `j_l(kr)` against `r^{l+2} dr` gives
+`1 − (kR)²(l+3)/[2(2l+3)(l+5)]`, so the `l = 2` result is `1 − 5(kR)²/98`. That
+expression is a **derivation, not a citation** — no numbered equation for it was
+found. Thorne, *Rev. Mod. Phys.* 52:299 (1980) is the likely primary source but is
+paywalled and its equation number is unconfirmed, so it does not meet this
+project's audit bar.
+
+*To unblock,* run **SPIKE-4.5** at `opus`: either locate a citable numbered equation
+for the uniform-sphere `l = 2` form factor, or derive `1 − 5(kR)²/98` from Blanchet's
+multipole expansion and record it in an ADR as our own derivation with a numerical
+check. **The spike produces an ADR, not production code.** Note the AC above (">1%
+departure when `R/λ > 0.1`") was written against the wrong form factor and must be
+recomputed once the correct one is settled: at `kR` corresponding to `R/λ = 0.1`,
+`5(kR)²/98` is ~2%, so the threshold moves.
 
 **T-4.6 · Rotational oblateness · 2 pts · `sonnet-low` · deps T-4.1** ✅
 `src/gwtb/bodies/sphere.py` — `oblateness_quadrupole(sphere, spin_rate)`.
@@ -679,7 +707,7 @@ rtol 1e-12.
 `AccelerationProfile`.
 *AC:* superposition of sinusoids; phase offsets applied correctly; `|a| ≤ a_max`.
 
-**T-9.5 · Focal phase solution · 3 pts · `opus` · deps T-9.4**
+**T-9.5 · Focal phase solution · 3 pts · `opus` · deps T-9.4** ✅
 `src/gwtb/array/focus.py` — `focal_phases(geometry, frequencies, focal_point, focal_time)`.
 Phases such that all components coincide at one space-time point.
 *AC:* residual phase error at the focus < 1e-9 rad for all elements and frequencies.
@@ -748,7 +776,7 @@ API.
 `src/gwtb/core/backend.py` — JIT-compiled retarded-field evaluation.
 *AC:* matches the numpy path to rtol 1e-12; ≥10× faster on a 128³ grid.
 
-**T-11.3 · Split-phase decomposition · 3 pts · `opus` · deps T-11.2** ⚠️
+**T-11.3 · Split-phase decomposition · 3 pts · `opus` · deps T-11.2** ✅ ⚠️
 `src/gwtb/core/backend.py` — `split_phase(reference_geometry, element_offsets)` returning FP64
 reference phase plus FP32-safe differential.
 *AC:* recombined phase matches full FP64 to <1e-5 rad for D=10 km at 40 AU; a test asserts naive

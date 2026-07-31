@@ -1,7 +1,7 @@
 # Handover — start here
 
-Current as of **2026-07-29**, commit `3517b25`. Working tree clean, **384 tests
-passing**, all five sanity checks green on the Windows host.
+Current as of **2026-07-31**. **545 tests passing**, all five sanity checks green
+on the Windows host. **Work is uncommitted** — see §0.
 
 This file is the entry point for a session picking the project up cold. Read it,
 then `../CLAUDE.md`, then get to work — everything else is referenced from those
@@ -10,6 +10,23 @@ two.
 > **The host changed.** Development moved from Pop!_OS to **Windows 11** on
 > 2026-07-28/29. Paths below are the Windows ones; the Linux equivalents are
 > `.venv/bin/...` throughout and still work.
+
+---
+
+## 0. Where the last session stopped — 2026-07-31
+
+Work is **committed and pushed**; the tree is clean and all five checks in §8
+are green at **553 tests**. The session ended on a weekly usage limit, not on a
+problem. Eight tasks landed: T-2.2, T-2.6, T-3.7, T-4.3, T-9.5, T-11.3 at Opus,
+and T-6.8, T-11.2 at Sonnet in a concurrent session.
+
+**Pick up at SPIKE-9.6 — and read §9 first.** T-9.6 is tiered `opus` and marked
+critical path, but it is **not Definition-of-Ready**: it needs a design decision
+recorded in an ADR before any code. That is the single most important thing on
+this page.
+
+Nothing is half-finished. No task was left partially implemented, no test is
+skipped or xfailed, and every module added is fully covered.
 
 ---
 
@@ -52,10 +69,31 @@ The system Python has no numpy.
 
 | | |
 |---|---|
-| Complete | **58 of 116 tasks**; 300 points total |
-| Tests | **384 passing**, 2 warnings, ~104 s |
-| Next up | A **21-task, 55-point SONNET batch** spanning sprints 5–12. Run it at Sonnet — it contains no `opus` work (§4) |
-| Blocked | **T-2.9** (branch protection) needs the repo public. **T-12.2** (Hulse–Taylor) needs an exact Peters (1964) equation number. Both are now machine-readable blocks, so the scheduler excludes them *and says so*. **T-12.8** is transitively stranded behind both. |
+| Complete | **66 of 116 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
+| Tests | **545 passing**, 2 warnings, ~26 s |
+| Next up | **2 remaining `opus` tasks** (T-9.6, T-10.1 — 6 pts), then a large **SONNET batch** (~40 tasks). Run `--next` for the current split. **T-9.6 has an unresolved design tension — read §9 before starting it.** |
+| Blocked | **T-2.9** needs the repo public. **T-12.2** needs an exact Peters (1964) equation number. **T-4.5** (new, 2026-07-31) needs a citable equation for the uniform-sphere `l=2` form factor — see §9. All three are machine-readable blocks in the `deps` field, so the scheduler excludes them *and says so*; **9 tasks** are transitively stranded behind them (T-4.7/4.8/4.9 and most of sprint 12). |
+
+**Landed 2026-07-31.** T-2.2 (`UNPHYSICAL` stamp propagation, ADR-0005), T-2.6
+(frozen ledger schema), T-3.7 (linear memory), T-4.3 (Love-number deformation),
+T-9.5 (focal phase solution), T-11.3 (split-phase) at Opus; T-6.8 (propagation)
+and T-11.2 (Numba field kernel) at Sonnet, in parallel.
+
+`code-reviewer` raised one **Critical** finding against this batch and it is
+**resolved**: the frozen ledger schema had no field able to carry an
+`UNPHYSICAL` stamp, so a caller feeding it a `StampedResult` was forced to
+unwrap to `.value` and discard the provenance — turning a ~10^10× mass-dipole
+artifact into a row that clears its requirement by ten orders of magnitude.
+Closed by a sixth field, `provenance`, plus `GapMetric.from_stamped()`, while
+the freeze still had no dependents. **When writing ledger rows (T-2.7, T-4.9,
+T-5.9, T-8.9, T-10.8), use `from_stamped()` for anything that came from a
+`StampedResult`** — the plain constructor will accept an unwrapped float
+without complaint.
+
+**Gate G1 remains closed.** The dipole-cancellation benchmark still passes, and
+T-3.7 added a second independent cross-check: linear memory reproduces the
+settled quadrupole waveform bit-for-bit on-axis, exactly as ADR-0004 predicted
+before the code existed.
 
 Live modules: `core/{constants,units,validation,backend}`, `bodies/{multipole,sphere}`,
 `propagate/{tt_projection,retarded,polarization}`, `source/{quadrupole,conservation,multipole_rad}`,
@@ -125,6 +163,36 @@ comment in `tests/unit/test_profiles.py::test_position_matches_integral_of_veloc
 passed only because the canonical case was equal-mass and cancelled exactly.
 Prefer relative criteria, and when something passes, check *why*.
 
+**Large-number cancellation destroys signals silently — and float64 is not a
+fix.** Found 2026-07-31, twice, in different modules. Differencing two ~1e12 m
+ranges at 40 AU returns **exactly zero** in float64: every element's range
+rounds to the same value, so 100% of the focusing information is lost with no
+error, no warning, and a perfectly plausible-looking array of zeros. The same
+happens to propagation phase — at 1.25e8 rad, float64's spacing is ~340× larger
+than the entire per-element differential. Both are fixed by never forming the
+large quantity: use the identity in `array/focus.py:_differential_range`, and
+`SplitPhase.phasor()` rather than `.recombine()`. If you are subtracting two
+astronomical-scale numbers to get a small one, assume it is broken until a
+`decimal`-arithmetic reference says otherwise. Both modules test against
+60-digit `decimal` references for exactly this reason.
+
+**An acceptance criterion can be satisfied by returning zeros.** T-9.5's "residual
+phase error < 1e-9 rad" is trivially met at 40 AU, where the true differential
+phase is ~1e-11 rad. T-11.3's "matches full FP64" is met because *both* sides are
+degenerate. In each case the test was moved to a regime where the criterion can
+actually fail. When a criterion passes on the first run, check what would have to
+break for it to fail.
+
+**`np.allclose` has a default `atol=1e-8`.** It called a factor-of-two difference
+between ~1e-9 quantities "close", nearly hiding T-4.3's headline result. Pass
+`atol=0` whenever comparing small numbers. This is the same scale-dependence trap
+recorded above, in a different disguise.
+
+**Tests that hard-code batch sizes expire.** Two `test_schedule.py` tests asserted
+literal chunk lengths and began failing as tasks completed and the leading batch
+shrank — with nothing actually wrong. Both now size against the batch. A test
+whose fixture is the real backlog must not assume how much work is left.
+
 **Ask what every task assumes that no task provides.** This cross-cutting gap was
 missed twice — first array conventions (fixed by ADR-0002), then a shared binary
 fixture (fixed by T-1.0). Per-task review does not catch it.
@@ -161,6 +229,59 @@ real edits.
 refuses the connection (same IP, not a host artefact — stop retrying it), but
 arXiv:1310.1528 returns **HTTP 200**. That failure was *parsing*, not access, so
 the Blanchet route is the one worth re-attempting here.
+
+---
+
+## 9. Open work needing `opus` judgment — read before starting T-9.6
+
+### T-9.6 `focused_field` — an unresolved design tension, not a Ready task
+
+T-9.6 is tiered `opus` and marked critical path. It is **not** Definition-of-Ready
+as written, and the reason was found while building T-9.5:
+
+`superpose_tt` (T-6.5) sums TT tensors along **one common observation direction**
+and *raises* inside the Fraunhofer distance, because tensors projected along
+different directions live in different polarization spaces and cannot be added
+(ADR-0003's reversal condition). That is a far-field construction. Focusing is
+ordinarily a near-field operation. So `focused_field` cannot simply call
+`superpose_tt` at a focal point — and the near-field alternative, projecting each
+element along its own direction to the focus, is exactly what ADR-0003 forbids.
+
+**The measured numbers say the tension resolves in favour of the far field, but
+that must be decided deliberately, not by default.** At 40 AU with a 12.4 km
+aperture, `R/R_Fraunhofer ≈ 5.9e9` at 1 kHz and the entire focusing phase
+correction is ~6.7e-11 rad: focusing is numerically indistinguishable from
+steering (`tests/unit/test_focus.py::test_focusing_is_degenerate_with_steering_at_40_au`).
+If the engagement geometry is always this deep in the far field, `focused_field`
+is a steered far-field superposition and `superpose_tt` applies unchanged. The
+open decision is whether the API should *also* support genuine near-field focusing
+(it is reachable: ~1e5 m at 1 MHz), and if so under what projection rule.
+
+**Do not resolve this inside T-9.6's implementation.** It is a spike producing an
+ADR, per the Definition of Ready. T-10.1 (`spot_size`) sits behind it.
+
+Two things are already settled and waiting, so the spike need not re-derive them:
+
+- **T-10.1's citation is verified.** The −3 dB (FWHM) transverse extent of a
+  uniformly-illuminated circular aperture is `w = 1.029 λr/D`, from the root
+  `x = 1.61633` of `2J₁(x)/x = 1/√2` — reproducible with `scipy.special.j1`, so
+  no textbook page is needed. **Do not use 1.22**: that is the Rayleigh first
+  null, not the −3 dB width. The result is polarization-independent (it is the
+  Fourier transform of the aperture function) and is therefore safe here — but
+  only for aperture geometry, never for how `h₊`/`h×` combine.
+- **The far-field degeneracy is a wall, not a bug** (CLAUDE.md rule 5). It is the
+  same wall T-10.2 states as `D/λ ≳ 6e9`. If a change makes it vanish, the change
+  is defective.
+
+### T-4.5 is blocked — escalate to SPIKE-4.5
+
+`researcher` returned **UNVERIFIED** and, in doing so, found the task's premise
+was wrong. Both form factors named in the backlog are the wrong multipole order:
+`sin(kR)/(kR)` is `l=0` **spin-1 antenna machinery** (rule 4's trap), and
+`3j₁(kR)/(kR)` is the total-mass monopole. The `l=2` result appears to be
+`1 − 5(kR)²/98`, but no numbered equation for it was found — it is a derivation.
+Full detail is in `BACKLOG.md` under T-4.5 and `INDEX.md` OQ-7. The AC's ">1% at
+R/λ > 0.1" threshold was computed from the wrong form factor and must be redone.
 
 ---
 

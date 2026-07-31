@@ -50,6 +50,16 @@ Maximum relative difference: **0.0**.
 This is not a coincidence of implementation — it is the quadrupole formula and the linear-memory
 formula agreeing, as they must, because `Q̈ → 2 Σ m v_i v_j` once acceleration ceases.
 
+> **Refinement, 2026-07-31 (T-3.7 landed).** The `0.0` above holds for observation *along the
+> symmetry axis*, which is the geometry measured here, and `tests/benchmarks/test_memory.py`
+> asserts it bit-for-bit. It does **not** generalize to oblique observation directions, where the
+> two routes agree to **1 ULP** (~2e-16 relative) instead. The cause is arithmetic, not physics:
+> the quadrupole route forms `2 Σ m v v − (2/3) δ (v·v)` and then TT-projects, while the memory
+> route projects `Σ m v v` directly. The projection analytically removes the trace term, but the
+> rounding incurred in forming and subtracting it does not vanish. Asserting bit-equality off-axis
+> would be asserting a property of float64 operation ordering, so the benchmark asserts 4 ULP
+> there and exactness on-axis.
+
 ## Consequences
 
 **Positive.** T-3.8 radiates a physically realizable field with no `UNPHYSICAL` stamp needed.

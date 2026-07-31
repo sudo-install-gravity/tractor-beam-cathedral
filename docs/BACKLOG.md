@@ -560,7 +560,7 @@ signature that distinguishes spin-2 from spin-1.
 *AC:* a single source reproduces `strain_tt` exactly; retarded time uses per-element distance —
 asserted by a test where array-center retardation would give a detectably different answer.
 
-**T-6.8 · Propagation to 40 AU · 3 pts · `sonnet-low` · deps T-6.5, T-6.7**
+**T-6.8 · Propagation to 40 AU · 3 pts · `sonnet-low` · deps T-6.5, T-6.7** ✅
 `src/gwtb/propagate/retarded.py` — `propagate(array, field_points, times)`.
 *AC:* amplitude scales as 1/r to rtol 1e-9 over `r ∈ [1e9, 6e12]` m; phase accumulation is FP64
 throughout (asserted by dtype check).
@@ -744,7 +744,7 @@ power**, the dominant design lever.
 API.
 *AC:* identical results across backends to rtol 1e-12; unknown backend raises.
 
-**T-11.2 · Numba field kernel · 3 pts · `sonnet-low` · deps T-11.1, T-6.8**
+**T-11.2 · Numba field kernel · 3 pts · `sonnet-low` · deps T-11.1, T-6.8** ✅
 `src/gwtb/core/backend.py` — JIT-compiled retarded-field evaluation.
 *AC:* matches the numpy path to rtol 1e-12; ≥10× faster on a 128³ grid.
 

@@ -7,6 +7,10 @@ audit the foundations from here without reverse-engineering the code.
 **Last updated:** 2026-07-27 (Sonnet batch, 24/25 tasks — T-4.1/4.2/4.6, T-5.5–5.8, T-6.1–6.4/6.7,
 T-8.5, T-9.1–9.4, T-11.1, T-3.8, T-7.4/7.5, T-2.10)
 
+**Updated 2026-07-31:** added T-6.8 (`propagate()`, EQ-024) and T-11.2 (`field_grid`,
+EQ-025), including the `field_grid` light-crossing-time scope restriction in the Assumption
+Ledger.
+
 ---
 
 ## 1. Equation Registry
@@ -40,6 +44,8 @@ extension of a cited result), `CONJECTURE` (not yet grounded).
 | EQ-021 | Prime-frequency comb / recurrence period `LCM(k_i)/g` | This project's own construction, eq. n/a — kinematic/DSP design choice, exempt from citation-CI (BACKLOG T-9.2) | `kinematics/oscillators.py:first_n_primes`, `prime_frequencies`, `recurrence_period`, `PrimeOscillatorDrive` | `tests/unit/test_oscillators.py` | CONJECTURE (design choice, not a physics claim) |
 | EQ-022 | Symmetric two-body momentum-conserving maneuver waveform | [B] eq. 3 (quadrupole 2nd derivative), applied to this project's own symmetric-two-body modeling choice (see Assumption Ledger) | `source/quadrupole.py:waveform_from_profile` | `tests/unit/test_waveform_from_profile.py` | DERIVED |
 | EQ-023 | Gravity-tractor Newtonian point-mass thrust `F = GMm/d²` | Schweickart, Chapman, Durda & Hut, B612 Foundation White Paper 042, arXiv:physics/0608157 (2006), p.2 §II (unnumbered display eq., restates Lu & Love, *Nature* 438, 177 (2005)); worked example checked against Fig. 2 (p.9) | `target/coupling.py:channel_gravity_tractor` | `tests/unit/test_coupling.py` | VERIFIED (content); eq. is unnumbered in the source — see Assumption Ledger note on point-mass approximation |
+| EQ-024 | Batched per-source retarded-time superposition over a grid of field points and times | [B] eq. 2 (same formulation as EQ-020, batched) | `propagate/retarded.py:propagate` | `tests/unit/test_retarded.py` | DERIVED |
+| EQ-025 | TT-strain superposition kernel, single evaluated `q_ddot` per source shared across a field-point grid | [B] eq. 2, applied under the light-crossing-time restriction noted in the function docstring and the Assumption Ledger | `core/backend.py:field_grid`, `_field_grid_loop` | `tests/unit/test_backend.py` | DERIVED |
 
 **Citations verified 2026-07-26** for all Sprint 1 equations (EQ-001–007); **2026-07-27** for
 the Sprint 4/5/9/6/11/3/8/2 additions above (EQ-008–023). Sources are open access with
@@ -87,7 +93,7 @@ network access is available.
 |---|---|---|---|
 | `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4/5`, `TARGET_RANGE` | — |
 | `core/units.py` | Scaled strain representation | **live** — `StrainScale` | `constants` |
-| `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only). Downstream kernels that actually use a non-numpy backend are T-11.2+, not yet built | — |
+| `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only); `field_grid`, `_field_grid_loop` (T-11.2; Numba-JIT-compilable TT-strain superposition over a field-point grid, one already-evaluated `q_ddot` per source shared across the whole grid — see Assumption Ledger for the light-crossing-time restriction this imposes) | `source/quadrupole` (via caller-supplied `q_ddots`) |
 | `bodies/sphere.py` | Rigid uniform sphere; mass/inertia; rotational-oblateness quadrupole | **live** — `Sphere` (dataclass: `radius`, `density`, `.mass`, `.moment_of_inertia`, `.self_quadrupole()`), `oblateness_quadrupole` (T-4.1/4.2/4.6) | `constants` |
 | `bodies/elastic.py` | Love-number deformation; breaks R/ρ degeneracy | *(Sprint 4, not yet implemented)* | `sphere` |
 | `bodies/multipole.py` | Mass multipole moments and derivatives | **live** — `quadrupole_moment`, `_second_derivative`, `_third_derivative` | `constants` |
@@ -99,7 +105,7 @@ network access is available.
 | `source/conservation.py` | ∂_μT^μν audit; `UNPHYSICAL` stamping | *(Sprint 2, not yet implemented)* | — |
 | `propagate/tt_projection.py` | Transverse-traceless projector | **live** — `tt_projector`, `apply_tt`, `transverse_projector` | — |
 | `propagate/polarization.py` | Spin-2 basis; e^(2iψ) rotation | *(Sprint 5, not yet implemented)* | `tt_projection` |
-| `propagate/retarded.py` | Per-source retarded-time field evaluation | **live** — `PointSource` (dataclass), `field_at` (T-6.7; retards each source individually — see module docstring on why a shared array-centroid retardation would be wrong) | `source/quadrupole`, `core/constants` |
+| `propagate/retarded.py` | Per-source retarded-time field evaluation | **live** — `PointSource` (dataclass), `field_at` (T-6.7; retards each source individually — see module docstring on why a shared array-centroid retardation would be wrong), `propagate` (T-6.8; batches `field_at` over field points × times, shape `(M, T, 3, 3)`) | `source/quadrupole`, `core/constants` |
 | `array/geometry.py` | Element placement | **live** — `linear_array`, `planar_array`, `sparse_array` (T-5.5–5.7) | — |
 | `array/beamform.py` | Scalar array factor, steering, beamwidth/sidelobes, tapering | **live** — `array_factor`, `steering_phases`, `beamwidth_3db`, `peak_sidelobe_level`, `taper` (T-6.1–6.4). **Explicitly the spin-1/scalar baseline** — see module docstring warning; the spin-2 tensor superposition `superpose_tt` (T-6.5) is not yet implemented | `geometry`; tensor superposition (not yet built) will depend on `polarization` |
 | `array/grating.py` | Grating-lobe and spacing constraints | **live** — `max_spacing`, `has_grating_lobes` (T-5.8) | `geometry` |
@@ -146,6 +152,7 @@ near those edges.
 | Scalar (spin-1-style) beamforming baseline | `array/beamform.py` (entire module) | As a classical-array-theory reference to validate the not-yet-built spin-2 tensor superposition against, for co-oriented elements | **Must never be read as gravitational-radiation physics directly** — the module's own docstring insists on this. Using its output as a final science result rather than a baseline check would reintroduce the spin-1/spin-2 bug class (CLAUDE.md rule 4) |
 | Gravity-tractor treats both tractor and asteroid as point masses | `target/coupling.py:channel_gravity_tractor` | Separation large relative to both bodies' physical extent | Source paper's own worked example uses `separation ~ 1.5 × asteroid_radius` — the point-mass approximation is **not validated by the source at the separations of practical interest**. Ledger note requested explicitly in the module docstring (BACKLOG T-8.5, OQ-5); no quantitative bound has been derived here yet |
 | `viz/patterns.py` reimplements the array-factor math vectorized rather than importing `array/beamform.array_factor` | `viz/patterns.py:_array_factor_magnitude` | Kept consistent only by shared test coverage across both modules | If `beamform.array_factor`'s definition (e.g. its wavevector sign convention) ever changes, `patterns.py` will silently diverge unless its own tests are re-run — there is no import-level coupling to catch it |
+| `field_grid` shares one already-evaluated `q_ddot` per source across an entire field-point grid, rather than recomputing retarded time per point (unlike `propagate`/`field_at`) | `core/backend.py:field_grid`, `_field_grid_loop` | Grid's light-crossing time (extent / `c`) is negligible compared to the timescale on which each source's `q_ddot` varies (e.g. ≪ `c/ω` for an oscillating drive) | **Diverges from the per-point-retarded `propagate()` result once the grid spans a non-negligible light-crossing time** — demonstrated by the regression test `tests/unit/test_backend.py::test_field_grid_single_slice_diverges_when_grid_light_crossing_time_is_not_negligible`. Use `propagate()`/`field_at()` instead of `field_grid` whenever the grid extent is comparable to or larger than a wavelength of the drive |
 
 ---
 
@@ -173,6 +180,8 @@ passing.
 | Prime-oscillator drive (T-9.1–9.4) | EQ-021 | **PASSING** — `tests/unit/test_oscillators.py` |
 | Maneuver waveform, symmetric two-body (T-3.8) | EQ-022 | **PASSING** — `tests/unit/test_waveform_from_profile.py` |
 | Backend shim (T-11.1) | — (infrastructure, no equation) | **PASSING** — `tests/unit/test_backend.py` |
+| Batched propagation over field points × times (T-6.8) | EQ-024 | **PASSING** — `tests/unit/test_retarded.py` |
+| Numba field-grid kernel, incl. light-crossing-time breakdown regression (T-11.2) | EQ-025 | **PASSING** — `tests/unit/test_backend.py`, including `test_field_grid_single_slice_diverges_when_grid_light_crossing_time_is_not_negligible` |
 | Gravity-tractor channel (T-8.5) | EQ-023 | **PASSING** — `tests/unit/test_coupling.py`, worked example checked against source paper Fig. 2 |
 | Beam-pattern plots (T-7.4/7.5) | — (visualization, no numbered equation) | **PASSING** — `tests/unit/test_patterns.py` |
 | ADR-0002 convention enforcement (T-2.10) | Shape/dtype/unit-vector guards project-wide | **PASSING** — `tests/unit/test_conventions.py`, extended to cover all modules added this batch (`sphere`, `retarded`, `quadrupole.waveform_from_profile`) |

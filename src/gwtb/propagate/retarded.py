@@ -104,4 +104,46 @@ def field_at(
     return total
 
 
-__all__ = ["PointSource", "field_at"]
+def propagate(
+    array: list[PointSource], field_points: ArrayLike, times: ArrayLike
+) -> NDArray[np.float64]:
+    """Batch :func:`field_at` over many field points and observation times.
+
+    .. code-block:: text
+
+        h[m, t] = field_at(array, field_points[m], times[t])
+
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2 (same per-source,
+    per-element-retarded-time sum as :func:`field_at`; this is a batched
+    evaluation, not a different formulation)
+
+    Parameters
+    ----------
+    array
+        Point sources contributing to the field (see :func:`field_at`).
+    field_points
+        Shape ``(M, 3)``, m. Observation locations.
+    times
+        Shape ``(T,)``, s. Observation times.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(M, T, 3, 3)``, float64, dimensionless. ``result[m, t]`` is
+        the superposed TT strain at ``field_points[m]`` and ``times[t]``.
+    """
+    x = as_float64(field_points, "field_points")
+    if x.ndim != 2 or x.shape[1] != 3:
+        raise ValueError(f"field_points must have shape (M, 3), got {x.shape}")
+    t = as_float64(times, "times")
+    if t.ndim != 1:
+        raise ValueError(f"times must have shape (T,), got {t.shape}")
+
+    result = np.zeros((x.shape[0], t.shape[0], 3, 3), dtype=np.float64)
+    for m, field_point in enumerate(x):
+        for n, time in enumerate(t):
+            result[m, n] = field_at(array, field_point, float(time))
+    return result
+
+
+__all__ = ["PointSource", "field_at", "propagate"]

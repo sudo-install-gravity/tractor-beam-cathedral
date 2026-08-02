@@ -50,7 +50,40 @@ two.
 
 ---
 
-## 0. Where the last session stopped — 2026-07-31
+## 0. Where the last session stopped — 2026-08-02
+
+> **Update 2026-08-02 — SPIKE-4.5 and T-4.5 have landed. The backlog now has no
+> `opus` work left, and nothing is blocked except T-2.9.**
+>
+> SPIKE-4.5 resolved the last open physics decision → **[ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md)**:
+> the uniform-sphere `l=2` finite-size form factor is **`1 − 5(kR)²/98`**.
+> `finite_size_correction` is implemented in `bodies/multipole.py` (EQ-034).
+> **849 tests passing**, 3 skipped, all five §8 checks green.
+>
+> **The citation was never found, and that is the decision, not a gap.** OQ-7 is
+> closed as a *negative* answer: no numbered equation for this result exists in
+> any accessible source, so it is adopted as **Category B** (our derivation) on
+> the strength of three independent numerical verifications instead — the
+> strongest agreeing to `1.7e-12`. Thorne 1980 is still paywalled and its
+> equation number is **still unconfirmed**; do not cite it with one.
+>
+> **Two things in ADR-0007 will bite whoever touches this next:**
+> 1. `sin(kR)/(kR)` (coefficient `1/6`) is spin-1 `l=0` antenna machinery and
+>    `3j₁(kR)/(kR)` (`1/10`) is the total-mass monopole. Both → 1 as `R/λ → 0`,
+>    both satisfy the *original* acceptance criterion, and only the coefficient
+>    tells them apart. Guarded by name in `tests/unit/test_multipole.py`.
+> 2. **The radial profile is load-bearing.** A *surface* deformation gives
+>    `1 − (kR)²/14`, **40% larger**. That is the incompressible tidal (T-4.3) and
+>    rotational (T-4.6) case, so `finite_size_correction` must **not** be applied
+>    to `induced_quadrupole` or `oblateness_quadrupole` without re-deriving.
+>
+> **The next batch is Sonnet: T-4.7, T-4.8, T-4.9** (8 pts, sprint 4), freed by
+> T-4.5. Ask `schedule.py --next` rather than trusting this line. Recommendation
+> is to **switch this session's model to Sonnet in place** — the context is
+> already loaded and a cold start is the expensive path (§4). Nothing in that
+> batch needs Opus.
+
+### The 2026-07-31 entry
 
 > **Update, later the same day.** SPIKE-9.6, **T-9.6 and T-10.1 have since
 > landed**, and with them **every `opus` task in the backlog is complete** except
@@ -124,10 +157,10 @@ The system Python has no numpy.
 
 | | |
 |---|---|
-| Complete | **106 of 117 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
-| Tests | **835 passing**, 3 skipped (CuPy/PyVista absent), ~67 s |
-| Next up | **Nothing schedulable, period.** `schedule.py --next` reports so directly. T-2.9 and T-4.5, and everything behind them, need external input — see the 2026-08-02 note at the top of §0. |
-| Blocked | **T-2.9** needs the repo public. **T-4.5** needs a citable equation for the uniform-sphere `l=2` form factor, or SPIKE-4.5's own from-scratch derivation, recorded in an ADR — see §9. Both are machine-readable blocks in the `deps` field, so the scheduler excludes them *and says so*; the tasks transitively stranded behind them are listed by `schedule.py --plan`. **T-12.2 is resolved** (see above) — no longer blocked. |
+| Complete | **108 of 118 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
+| Tests | **849 passing**, 3 skipped (CuPy/PyVista absent), ~59 s |
+| Next up | **T-4.7, T-4.8, T-4.9** — 3 tasks, 8 pts, sprint 4, freed by T-4.5 landing 2026-08-02. All `sonnet`-tier; **switch this session's model to Sonnet in place** rather than starting a new session (§4). Confirm with `schedule.py --next`. |
+| Blocked | **T-2.9 only** — needs the repo made public. It is a machine-readable block in the `deps` field, so the scheduler excludes it *and says so*; anything stranded behind it is listed by `schedule.py --plan`. **T-12.2 resolved** 2026-08-02 (Kowalska et al. citation) and **T-4.5 resolved** 2026-08-02 (SPIKE-4.5 → ADR-0007, closed as a Category B derivation *without* a citation — see §0). |
 
 **Landed 2026-07-31.** T-2.2 (`UNPHYSICAL` stamp propagation, ADR-0005), T-2.6
 (frozen ledger schema), T-3.7 (linear memory), T-4.3 (Love-number deformation),
@@ -287,7 +320,13 @@ the Blanchet route is the one worth re-attempting here.
 
 ---
 
-## 9. Open work needing `opus` judgment — read before starting T-9.6
+## 9. Open work needing `opus` judgment — **none left as of 2026-08-02**
+
+> Both items in this section are now closed (T-9.6 by ADR-0006, T-4.5 by
+> ADR-0007). **There is no `opus`-tier work outstanding in the backlog.** The
+> section is kept because the traps each spike found are still live for anyone
+> editing that code — read them before touching `array/focus.py` or
+> `bodies/multipole.py`, not after.
 
 ### ✅ T-9.6 is now Ready — SPIKE-9.6 closed the tension (ADR-0006)
 
@@ -349,15 +388,38 @@ Two further things are already settled and waiting:
   same wall T-10.2 states as `D/λ ≳ 6e9`. If a change makes it vanish, the change
   is defective.
 
-### T-4.5 is blocked — escalate to SPIKE-4.5
+### ✅ T-4.5 is done — SPIKE-4.5 closed it (ADR-0007)
+
+**Resolved 2026-08-02.** `finite_size_correction` is implemented in
+`bodies/multipole.py` as `F₂(kR) = 1 − 5(kR)²/98` (EQ-034), and T-4.7/4.8/4.9 are
+unblocked. See §0 for the summary and
+[ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md) for the derivation,
+the numerical verification, and the reversal condition.
+
+**The citation search failed and that outcome is the decision.** No numbered
+equation exists in any accessible source; the result is **Category B** (our
+derivation), justified by three independent numerical routes rather than by a
+reference. Thorne, *Rev. Mod. Phys.* 52:299 (1980) is still paywalled with an
+**unconfirmed** equation number — per rule 1 a guessed number is worse than
+none, so it is cited *without* one, deliberately.
+
+**Do not "improve" this by finding a source that says `1 − (kR)²/14`.** That is
+the *surface*-deformation profile (ADR-0007 eq. 5), a different physical case,
+and it confirms something else. See §0 for both traps.
+
+The original tension is recorded below for context.
+
+---
+
+#### T-4.5 — the block as it stood
 
 `researcher` returned **UNVERIFIED** and, in doing so, found the task's premise
 was wrong. Both form factors named in the backlog are the wrong multipole order:
 `sin(kR)/(kR)` is `l=0` **spin-1 antenna machinery** (rule 4's trap), and
 `3j₁(kR)/(kR)` is the total-mass monopole. The `l=2` result appears to be
 `1 − 5(kR)²/98`, but no numbered equation for it was found — it is a derivation.
-Full detail is in `BACKLOG.md` under T-4.5 and `INDEX.md` OQ-7. The AC's ">1% at
-R/λ > 0.1" threshold was computed from the wrong form factor and must be redone.
+The AC's ">1% at R/λ > 0.1" threshold was computed from the wrong form factor and
+must be redone. **Resolved as above; the recomputed departure is 2.0142%.**
 
 ---
 

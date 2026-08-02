@@ -438,38 +438,42 @@ independently** (asserted against T-4.2).
 osmium, and a nominal degenerate-matter placeholder, each with a source.
 *AC:* every entry has a citation comment; densities within 1% of published values.
 
-**T-4.5 · Finite-size retardation correction · 3 pts · `opus` · deps T-4.1, citable equation for the uniform-sphere mass-quadrupole form factor** 🚫 **blocked, not Ready**
+**SPIKE-4.5 · Uniform-sphere `l = 2` form factor · 2 pts · `opus` · deps T-4.1** ✅ ⚠️
+Scratch prototype only, no production code. Resolved which form factor is correct for the
+mass quadrupole of a uniform-density body, after `researcher` returned **UNVERIFIED** and
+found T-4.5's premise wrong.
+*Output:* [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md). **Answer:
+`F₂(kR) = 1 − 5(kR)²/98`**, Category B (our derivation) — no citable numbered equation
+exists, so it is instead verified by three independent numerical routes, the strongest
+agreeing to **1.7e-12**. Prototype: `scratchpad/spike_4_5.py`.
+⚠️ **Two traps, both recorded in ADR-0007.** (1) `sin(kR)/(kR)` (`1 − (kR)²/6`) is `l = 0`
+**spin-1 antenna machinery** — rule 4's trap; `3j₁(kR)/(kR)` (`1 − (kR)²/10`) is the
+*total-mass monopole*. Both → 1 as `R/λ → 0` and both satisfy the *original* AC, so only
+the coefficient distinguishes them. (2) **The radial profile is load-bearing**: a
+*surface* deformation gives `1 − (kR)²/14`, **40% larger**, so this correction must not
+be applied to `elastic.py:induced_quadrupole` (T-4.3) or `sphere.py:oblateness_quadrupole`
+(T-4.6) without re-deriving.
+
+**T-4.5 · Finite-size retardation correction · 3 pts · `opus` · deps T-4.1, SPIKE-4.5** ✅ ⚠️
 `src/gwtb/bodies/multipole.py` — `finite_size_correction(sphere, wavelength) -> float`,
 the leading correction in `R/λ`.
-*AC:* → 1 as `R/λ → 0`; departs from unity by >1% when `R/λ > 0.1`. **Open question OQ-3.**
+*Citation:* `Source: docs/adr/0007-uniform-sphere-quadrupole-form-factor.md, eq. 3` —
+this project's own derivation; **do not substitute an external equation number**, none
+was found (ADR-0007 "Citation status").
+*AC (recomputed 2026-08-02):* → 1 as `R/λ → 0`; departure from unity at `R/λ = 0.1` is
+**0.020142049798** (i.e. 2.0142%) to rtol 1e-12; the 1% departure point is
+`R/λ = 0.070460897`. Regression guards assert the result is *inconsistent* with
+`1 − (kR)²/6`, `1 − (kR)²/10` and `1 − (kR)²/14`. **Open question OQ-3.**
 
-*Blocked 2026-07-31:* `researcher` returned **UNVERIFIED**, and in doing so found that
-this task's premise is wrong. Both candidate form factors are the wrong multipole
-order:
+> **The original AC said "departs from unity by >1% when `R/λ > 0.1`" and was written
+> against the wrong form factor.** It is *satisfied* by the correct one but badly
+> understated — the true departure there is 2.0142%, and ">1%" would also pass for a
+> formula wrong by a factor of two. Superseded by the recomputed AC above; see ADR-0007
+> "Recomputed acceptance criterion" for the full table.
 
-- `j_0(kR) = sin(kR)/(kR)`, leading term `1 − (kR)²/6`, is the point-evaluated
-  plane-wave phase average — **`l = 0` and spin-1 in origin**. It is the sinc
-  pattern ubiquitous in antenna and acoustics array theory, i.e. precisely the
-  borrowed-from-antennas trap of `CLAUDE.md` rule 4. It must not be used for a
-  mass quadrupole.
-- `3 j_1(kR)/(kR)`, leading term `1 − (kR)²/10`, is the correct closed-form
-  Fourier transform of a uniform sphere's density — but that is the
-  **total-mass monopole** term, not the quadrupole.
-
-Volume-integrating `j_l(kr)` against `r^{l+2} dr` gives
-`1 − (kR)²(l+3)/[2(2l+3)(l+5)]`, so the `l = 2` result is `1 − 5(kR)²/98`. That
-expression is a **derivation, not a citation** — no numbered equation for it was
-found. Thorne, *Rev. Mod. Phys.* 52:299 (1980) is the likely primary source but is
-paywalled and its equation number is unconfirmed, so it does not meet this
-project's audit bar.
-
-*To unblock,* run **SPIKE-4.5** at `opus`: either locate a citable numbered equation
-for the uniform-sphere `l = 2` form factor, or derive `1 − 5(kR)²/98` from Blanchet's
-multipole expansion and record it in an ADR as our own derivation with a numerical
-check. **The spike produces an ADR, not production code.** Note the AC above (">1%
-departure when `R/λ > 0.1`") was written against the wrong form factor and must be
-recomputed once the correct one is settled: at `kR` corresponding to `R/λ = 0.1`,
-`5(kR)²/98` is ~2%, so the threshold moves.
+*Validity floor:* `1 − 5(kR)²/98` is a leading-order truncation and goes **negative** at
+`kR = √(98/5)`, i.e. `R/λ = 0.7046`. That is a wall, not a bug (rule 5). T-4.7 adds the
+structured out-of-regime warning at `R/λ > 0.1`.
 
 **T-4.6 · Rotational oblateness · 2 pts · `sonnet-low` · deps T-4.1** ✅
 `src/gwtb/bodies/sphere.py` — `oblateness_quadrupole(sphere, spin_rate)`.

@@ -17,12 +17,19 @@ error curve.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from gwtb.bodies.sphere import Sphere
 from gwtb.core.validation import as_body_array, as_masses
 
 _IDENTITY = np.eye(3, dtype=np.float64)
+
+#: Coefficient of ``-(kR)^2`` in the l=2 uniform-ball form factor, ADR-0007 eq. 3.
+#: ``(l+3) / [2(2l+3)(l+5)]`` at ``l=2`` is ``5 / (2*7*7) = 5/98``.
+_QUADRUPOLE_FORM_FACTOR_COEFF = 5.0 / 98.0
 
 
 def quadrupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float64]:
@@ -233,7 +240,89 @@ def octupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float
     return result
 
 
+def finite_size_correction(sphere: Sphere, wavelength: float) -> float:
+    """Leading finite-size (retardation) correction to the mass-quadrupole radiation.
+
+    A body whose radius is not negligible against the wavelength radiates less
+    than the point-mass idealization: the far side of the body is retarded
+    relative to the near side, and the contributions partially dephase. The
+    exact radiative source multipole replaces the long-wavelength radial weight
+    ``r^l`` with the ``j_l(kr)`` factor of the outgoing Green's-function
+    partial-wave expansion, and for an ``l``-pole whose radial profile is
+    **uniform on [0, R]** the ratio to the point-mass result is
+
+    .. code-block:: text
+
+        F_l(kR) = 1 - (kR)^2 (l+3) / [2 (2l+3) (l+5)] + O((kR)^4)
+
+    At ``l = 2`` (the mass quadrupole), ``2(2l+3)(l+5) = 2*7*7 = 98``, so
+
+    .. code-block:: text
+
+        F_2(kR) = 1 - 5 (kR)^2 / 98,    k = 2 pi / wavelength
+
+    Source: docs/adr/0007-uniform-sphere-quadrupole-form-factor.md, eq. 3
+
+    Claim category **B** (this project's own derivation) in ``docs/CLAIMS.md``.
+    **No external numbered equation for this result was found** — see the ADR's
+    "Citation status". It is instead verified numerically by three independent
+    routes (exact rational series; a far-field retarded phase integral to
+    1.7e-12; the exact retarded Green's function to 1.4e-8), none of which
+    evaluates a spherical Bessel function.
+
+    .. warning::
+
+       **Two plausible-looking form factors are the wrong multipole order** and
+       must never be substituted here (ADR-0007 "Context"):
+
+       - ``sin(kR)/(kR)``, leading term ``1 - (kR)^2/6``, is ``l = 0`` and is
+         **spin-1 antenna machinery** — the trap ``CLAUDE.md`` rule 4 exists to
+         catch.
+       - ``3 j_1(kR)/(kR)``, leading term ``1 - (kR)^2/10``, is the *total-mass
+         monopole*, not the quadrupole.
+
+       Both → 1 as ``R/lambda`` → 0 and both look reasonable. Only the
+       coefficient distinguishes them. ``tests/unit/test_multipole.py`` guards
+       against each by name.
+
+    .. warning::
+
+       This is the **volume-filling** profile. A body that gets its quadrupole
+       by deforming its *surface* — an incompressible tidal or rotational
+       deformation, i.e. :func:`gwtb.bodies.elastic.induced_quadrupole` and
+       :func:`gwtb.bodies.sphere.oblateness_quadrupole` — has
+       ``1 - (kR)^2/14`` instead, 40% larger (ADR-0007 eq. 5). Do not apply
+       this function to those without re-deriving.
+
+    Parameters
+    ----------
+    sphere
+        The radiating body; only :attr:`Sphere.radius` enters.
+    wavelength
+        Gravitational-wave wavelength, m. Must be strictly positive and finite.
+
+    Returns
+    -------
+    float
+        Multiplicative correction ``F_2``, dimensionless. Exactly 1 in the
+        point-mass limit and decreasing with ``R/wavelength``.
+
+    Notes
+    -----
+    This is a **leading-order** correction. It reaches 0.98 at
+    ``R/wavelength = 0.1`` (a 2.0142% departure) and passes through zero at
+    ``R/wavelength = 0.7046``; it is meaningless well before that. T-4.7 adds
+    the structured out-of-regime warning at ``R/wavelength > 0.1``.
+    """
+    if not math.isfinite(wavelength) or wavelength <= 0.0:
+        raise ValueError(f"wavelength must be positive and finite, got {wavelength!r}")
+
+    k_r = 2.0 * math.pi * sphere.radius / wavelength
+    return 1.0 - _QUADRUPOLE_FORM_FACTOR_COEFF * k_r * k_r
+
+
 __all__ = [
+    "finite_size_correction",
     "octupole_moment",
     "quadrupole_moment",
     "quadrupole_second_derivative",

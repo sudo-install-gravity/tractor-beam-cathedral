@@ -1,4 +1,4 @@
-"""Unit tests for gwtb.bodies.multipole (T-1.3, T-1.4, T-1.5)."""
+"""Unit tests for gwtb.bodies.multipole (T-1.3, T-1.4, T-1.5, T-4.5)."""
 
 from __future__ import annotations
 
@@ -7,13 +7,16 @@ import math
 
 import numpy as np
 import pytest
+from scipy.special import sici
 
 from gwtb.bodies.multipole import (
+    finite_size_correction,
     octupole_moment,
     quadrupole_moment,
     quadrupole_second_derivative,
     quadrupole_third_derivative,
 )
+from gwtb.bodies.sphere import Sphere
 from tests.benchmarks.helpers import binary_si, circular_binary
 
 
@@ -269,3 +272,210 @@ def test_octupole_moment_is_float64_and_correct_shape() -> None:
     Q = octupole_moment(masses, positions)
     assert Q.dtype == np.float64
     assert Q.shape == (3, 3, 3)
+
+
+# =============================================================================
+# T-4.5 / ADR-0007 — finite-size retardation correction
+# =============================================================================
+
+
+def _sphere_at(r_over_lambda: float, wavelength: float = 1.0) -> tuple[Sphere, float]:
+    return Sphere(radius=r_over_lambda * wavelength, density=1.0), wavelength
+
+
+def _f2_closed_form(x: float) -> float:
+    """ADR-0007 eq. 4: the exact l=2 uniform-ball form factor, 75(3Si+xcos-4sin)/x^5.
+
+    Independent of the implementation's truncated series. Cancellation-limited
+    below x ~ 0.05 (see ADR-0007), so callers must stay above that.
+    """
+    si, _ = sici(x)
+    return float(75.0 * (3.0 * si + x * math.cos(x) - 4.0 * math.sin(x)) / x**5)
+
+
+def test_finite_size_correction_coefficient_is_exactly_5_over_98() -> None:
+    """The exact-coefficient pin — the single strongest assertion in this file.
+
+    Everything else about the function is qualitative (tends to 1, decreases,
+    depends only on R/lambda) and is satisfied by all three *wrong* form
+    factors too. This line is what actually distinguishes them, so it gets its
+    own name rather than living inside a guard test where a reader would not
+    look for it.
+
+    **The loop stops at R/lambda = 0.03 deliberately.** ``1.0 - implemented``
+    is a difference against 1.0, so its absolute error is float64's spacing
+    there (~2.2e-16) regardless of how small the departure is. Supporting
+    ``rel=1e-12`` needs a departure above ~2.2e-4, i.e. R/lambda >~ 0.011.
+    Extending this loop downwards measures float64, not the formula — the
+    point-mass limit is covered by the monotone test below instead.
+    """
+    for r_over_lambda in (0.5, 0.3, 0.2, 0.1, 0.05, 0.03):
+        k_r = 2.0 * math.pi * r_over_lambda
+        implemented = finite_size_correction(*_sphere_at(r_over_lambda))
+        assert (1.0 - implemented) / k_r**2 == pytest.approx(5.0 / 98.0, rel=1e-12)
+
+
+def test_finite_size_correction_tends_to_unity_in_the_point_mass_limit() -> None:
+    """The headline AC: F -> 1 as R/lambda -> 0.
+
+    **This test does not constrain the coefficient.** It passes unchanged for
+    1/6, 1/10, 1/14 and a 0.1% nudge — only the sign flip fails it. That is
+    intentional (it checks the qualitative acceptance criterion), but do not
+    read a pass here as evidence the formula is right; see
+    :func:`test_finite_size_correction_coefficient_is_exactly_5_over_98`.
+    """
+    previous = 0.0
+    for r_over_lambda in (1e-2, 1e-3, 1e-4, 1e-5, 1e-6):
+        f = finite_size_correction(*_sphere_at(r_over_lambda))
+        assert f < 1.0, "a finite body must radiate less than the point-mass limit"
+        assert f > previous, "F must increase monotonically towards 1 as R/lambda falls"
+        previous = f
+    assert finite_size_correction(*_sphere_at(1e-8)) == pytest.approx(1.0, abs=1e-13)
+
+
+def test_finite_size_correction_departure_at_the_regime_boundary() -> None:
+    """The *corrected* AC (ADR-0007 "Recomputed acceptance criterion").
+
+    T-4.5's original criterion said "departs from unity by >1% when R/lambda >
+    0.1". That was written against the wrong form factor. The true departure
+    there is 2.0142%, so assert the actual value — ">1%" is satisfied by a
+    formula that is wrong by a factor of two.
+    """
+    f = finite_size_correction(*_sphere_at(0.1))
+    departure = 1.0 - f
+    assert departure == pytest.approx(0.020142049798141547, rel=1e-12)
+    assert departure > 0.01  # the original AC, now a weak corollary
+
+    # The 1% point is at R/lambda = 0.070460897, not 0.1.
+    one_percent = finite_size_correction(*_sphere_at(0.070460897))
+    assert 1.0 - one_percent == pytest.approx(0.01, rel=1e-7)
+
+
+def test_finite_size_correction_matches_the_exact_closed_form() -> None:
+    """Eq. 3 (implemented) against eq. 4 (exact), inside eq. 4's valid window.
+
+    The difference must be exactly the discarded tail of the series,
+    ``-5(kR)^4/4536 + 5(kR)^6/365904``. Asserting *that* rather than a flat
+    tolerance is what makes the test sensitive to the (kR)^2 coefficient: a
+    formula with 1/6 or 1/10 in place of 5/98 misses by ~1e-2, four orders
+    above this tolerance.
+
+    **The window is bounded below on purpose.** Eq. 4 is a difference of O(x)
+    terms yielding O(x^5) and is cancellation-limited below kR ~ 0.05
+    (ADR-0007): at R/lambda = 0.005 the measured difference is 28x the true
+    truncation, which is the closed form's floating-point noise, not physics.
+    Do not extend this loop downwards.
+    """
+    for r_over_lambda in (0.03, 0.05, 0.08, 0.1, 0.15):
+        k_r = 2.0 * math.pi * r_over_lambda
+        implemented = finite_size_correction(*_sphere_at(r_over_lambda))
+        exact = _f2_closed_form(k_r)
+        discarded_tail = -5.0 * k_r**4 / 4536.0 + 5.0 * k_r**6 / 365904.0
+        assert implemented - exact == pytest.approx(discarded_tail, rel=1e-3)
+
+
+def test_closed_form_reference_would_reject_the_wrong_coefficients() -> None:
+    """The previous test is not vacuous: pin how badly a wrong 5/98 would miss.
+
+    Without this, a reader cannot tell whether ``rel=1e-3`` above is a tight
+    constraint or a rubber stamp.
+    """
+    k_r = 2.0 * math.pi * 0.1
+    exact = _f2_closed_form(k_r)
+    for wrong_coeff in (1.0 / 6.0, 1.0 / 10.0, 1.0 / 14.0):
+        wrong = 1.0 - wrong_coeff * k_r**2
+        assert abs(wrong - exact) > 1e-3, "a wrong coefficient must miss by >1e-3"
+    correct = 1.0 - (5.0 / 98.0) * k_r**2
+    assert abs(correct - exact) < 2e-4
+
+
+def test_finite_size_correction_is_independent_of_density() -> None:
+    """Only the radius enters — the form factor is geometric, not inertial."""
+    values = {
+        finite_size_correction(Sphere(radius=0.05, density=rho), 1.0)
+        for rho in (1.0, 1e3, 7.8e3, 2.2e4)
+    }
+    assert len(values) == 1
+
+
+def test_finite_size_correction_scales_with_radius_over_wavelength_only() -> None:
+    """F depends on (R, lambda) solely through their ratio."""
+    reference = finite_size_correction(Sphere(radius=0.03, density=1.0), 1.0)
+    for scale in (1e-6, 1e3, 1e9):
+        scaled = finite_size_correction(Sphere(radius=0.03 * scale, density=1.0), scale)
+        assert scaled == pytest.approx(reference, rel=1e-14)
+
+
+@pytest.mark.parametrize("wavelength", [0.0, -1.0, math.inf, math.nan])
+def test_finite_size_correction_rejects_bad_wavelength(wavelength: float) -> None:
+    with pytest.raises(ValueError):
+        finite_size_correction(Sphere(radius=1.0, density=1.0), wavelength)
+
+
+# --- ADR-0007 regression guards: the two wrong-multipole-order form factors ---
+#
+# Both are smooth, both tend to 1 as R/lambda -> 0, and both would satisfy the
+# original ">1% departure" acceptance criterion. Only the (kR)^2 coefficient
+# tells them apart, so each is pinned here BY NAME. CLAUDE.md rule 4 makes this
+# the project's highest-risk bug class.
+
+
+def test_finite_size_correction_is_not_the_spin1_sinc_form_factor() -> None:
+    """Guard: sin(kR)/(kR), leading term 1 - (kR)^2/6, is l=0 ANTENNA machinery.
+
+    This is precisely the borrowed-from-antennas trap of CLAUDE.md rule 4. If a
+    future change makes this test fail, the change is wrong — not the test.
+    """
+    r_over_lambda = 0.1
+    k_r = 2.0 * math.pi * r_over_lambda
+    implemented = finite_size_correction(*_sphere_at(r_over_lambda))
+
+    sinc_l0 = math.sin(k_r) / k_r
+    assert implemented != pytest.approx(sinc_l0, rel=1e-3)
+    # and specifically: our coefficient is 5/98, not 1/6. The positive form of
+    # this assertion lives in test_..._coefficient_is_exactly_5_over_98.
+    assert (1.0 - implemented) / k_r**2 != pytest.approx(1.0 / 6.0, rel=1e-2)
+
+
+def test_finite_size_correction_is_not_the_monopole_form_factor() -> None:
+    """Guard: 3 j_1(kR)/(kR), leading term 1 - (kR)^2/10, is the TOTAL-MASS monopole.
+
+    It is the correct Fourier transform of a uniform sphere's density — just of
+    the wrong multipole. Being "the right answer to a different question" is
+    what makes it dangerous.
+    """
+    r_over_lambda = 0.1
+    k_r = 2.0 * math.pi * r_over_lambda
+    implemented = finite_size_correction(*_sphere_at(r_over_lambda))
+
+    j1 = math.sin(k_r) / k_r**2 - math.cos(k_r) / k_r
+    monopole_l0 = 3.0 * j1 / k_r
+    assert implemented != pytest.approx(monopole_l0, rel=1e-3)
+    assert (1.0 - implemented) / k_r**2 != pytest.approx(1.0 / 10.0, rel=1e-2)
+
+
+def test_finite_size_correction_is_not_the_surface_profile_form_factor() -> None:
+    """Guard: 1 - (kR)^2/14 is the SURFACE-deformation profile (ADR-0007 eq. 5).
+
+    A tidally or rotationally deformed incompressible body has its l=2 mass
+    concentrated at r = R, giving a coefficient 40% larger. This function is the
+    volume-filling case. The two are not interchangeable, and a source quoting
+    1/14 is not a confirmation of this one.
+    """
+    r_over_lambda = 0.1
+    k_r = 2.0 * math.pi * r_over_lambda
+    implemented = finite_size_correction(*_sphere_at(r_over_lambda))
+    assert (1.0 - implemented) / k_r**2 != pytest.approx(1.0 / 14.0, rel=1e-2)
+    assert (1.0 / 14.0) / (5.0 / 98.0) == pytest.approx(1.4, rel=1e-12)
+
+
+def test_finite_size_correction_validity_floor_is_recorded() -> None:
+    """The truncated series goes negative at kR = sqrt(98/5) — a wall, not a bug.
+
+    T-4.7 adds the structured out-of-regime warning; this pins where the leading
+    -order form actually breaks so that nobody "fixes" the sign later.
+    """
+    zero_crossing = math.sqrt(98.0 / 5.0) / (2.0 * math.pi)
+    assert zero_crossing == pytest.approx(0.70460896946282, rel=1e-12)
+    assert finite_size_correction(*_sphere_at(zero_crossing)) == pytest.approx(0.0, abs=1e-12)
+    assert finite_size_correction(*_sphere_at(0.9)) < 0.0

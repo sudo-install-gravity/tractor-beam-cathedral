@@ -24,7 +24,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from gwtb.core.validation import as_unit_vector
+from gwtb.core.validation import as_tensor_3x3, as_unit_vector
 
 _POLE_TOL = 1e-12
 
@@ -180,8 +180,123 @@ def element_pattern_linear(theta: ArrayLike) -> tuple[NDArray[np.float64], NDArr
     return np.sin(th) ** 2, np.zeros_like(th)
 
 
+def decompose(h_ij: ArrayLike, n_hat: ArrayLike) -> tuple[float, float]:
+    """Resolve a TT tensor into its two polarization scalars.
+
+    .. code-block:: text
+
+        h_plus  = (1/2) e_plus  : h_ij
+        h_cross = (1/2) e_cross : h_ij
+
+    The ``1/2`` inverts :func:`polarization_basis`'s normalization
+    ``e_A : e_B = 2 delta_AB``: contracting ``h_ij = h_plus e_plus + h_cross
+    e_cross`` with ``e_plus`` gives ``h_plus * 2 + h_cross * 0``, so dividing
+    by 2 recovers ``h_plus`` exactly.
+
+    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22 (inverting
+    the decomposition ``h_ij = h_plus e_plus + h_cross e_cross`` that
+    :func:`polarization_basis` states)
+
+    Parameters
+    ----------
+    h_ij
+        Shape ``(3, 3)``. Need not already be TT — only the part transverse
+        and traceless with respect to ``n_hat`` contributes; components along
+        ``n_hat`` or in the trace are silently projected out by the
+        contraction, exactly as they would be by :func:`gwtb.propagate.
+        tt_projection.apply_tt`.
+    n_hat
+        Shape ``(3,)`` unit vector, the propagation direction.
+
+    Returns
+    -------
+    tuple of float
+        ``(h_plus, h_cross)``, same units as ``h_ij``.
+    """
+    t = as_tensor_3x3(h_ij, "h_ij")
+    e_plus, e_cross = polarization_basis(n_hat)
+    h_plus = 0.5 * float(np.einsum("ij,ij->", t, e_plus))
+    h_cross = 0.5 * float(np.einsum("ij,ij->", t, e_cross))
+    return h_plus, h_cross
+
+
+def recompose(h_plus: float, h_cross: float, n_hat: ArrayLike) -> NDArray[np.float64]:
+    """Assemble a TT tensor from its two polarization scalars.
+
+    .. code-block:: text
+
+        h_ij = h_plus * e_plus_ij + h_cross * e_cross_ij
+
+    The exact inverse of :func:`decompose`: for any ``h_ij`` built this way,
+    ``decompose(h_ij, n_hat) == (h_plus, h_cross)`` to machine precision,
+    because the two contraction weights the round trip introduces multiply to
+    exactly 1 (:func:`polarization_basis`'s ``2`` cancelling ``decompose``'s
+    ``1/2``).
+
+    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22
+
+    Parameters
+    ----------
+    h_plus, h_cross
+        The two polarization scalars, same units.
+    n_hat
+        Shape ``(3,)`` unit vector, the propagation direction.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(3, 3)``, same units as ``h_plus``/``h_cross``. Symmetric,
+        traceless, and transverse to ``n_hat``.
+    """
+    e_plus, e_cross = polarization_basis(n_hat)
+    result: NDArray[np.float64] = h_plus * e_plus + h_cross * e_cross
+    return result
+
+
+def rotate_polarization(h_plus: float, h_cross: float, psi: float) -> tuple[float, float]:
+    """Rotate the polarization frame about the line of sight by ``psi``.
+
+    .. code-block:: text
+
+        h_plus'  =  h_plus cos(2 psi) + h_cross sin(2 psi)
+        h_cross' = -h_plus sin(2 psi) + h_cross cos(2 psi)
+
+    Derived from the spin-2 transformation law ``h = h_plus - i h_cross ->
+    h * exp(2i psi)`` (module docstring; A-5 in ``docs/CLAIMS.md``): writing
+    out the real and imaginary parts of ``(h_plus - i h_cross)(cos2psi +
+    i sin2psi)`` gives exactly the two lines above.
+
+    **Period pi, not 2 pi** — the defining spin-2 signature. A spin-1 (vector)
+    field would transform with a single power of ``e^(i psi)`` and repeat
+    every ``2 pi``; the factor of 2 in the exponent here halves the period.
+    ``rotate_polarization(h_plus, 0, pi/4)`` maps pure ``h_plus`` onto pure
+    ``h_cross`` (up to sign) rather than leaving it unchanged, which is
+    exactly the 45-degree-not-90-degree fact CLAUDE.md rule 4 names.
+
+    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.22 (the
+    ``e^(2i psi)`` transformation law underlying the TT projector's structure)
+
+    Parameters
+    ----------
+    h_plus, h_cross
+        The two polarization scalars before rotation.
+    psi
+        Rotation angle, radians.
+
+    Returns
+    -------
+    tuple of float
+        ``(h_plus', h_cross')`` after rotation, same units as the input.
+    """
+    c2, s2 = np.cos(2.0 * psi), np.sin(2.0 * psi)
+    return h_plus * c2 + h_cross * s2, -h_plus * s2 + h_cross * c2
+
+
 __all__ = [
+    "decompose",
     "element_pattern_linear",
     "element_pattern_rotating",
     "polarization_basis",
+    "recompose",
+    "rotate_polarization",
 ]

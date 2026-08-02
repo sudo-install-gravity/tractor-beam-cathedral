@@ -1,4 +1,4 @@
-"""Unit tests for gwtb.propagate.polarization (T-5.1, T-5.4).
+"""Unit tests for gwtb.propagate.polarization (T-5.1, T-5.2, T-5.3, T-5.4).
 
 The two assertions that carry weight here are the ones that separate spin-2 from
 spin-1, and both are checked directly rather than assumed:
@@ -9,14 +9,19 @@ spin-1, and both are checked directly rather than assumed:
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pytest
 
 from gwtb.bodies.multipole import quadrupole_second_derivative
 from gwtb.propagate.polarization import (
+    decompose,
     element_pattern_linear,
     element_pattern_rotating,
     polarization_basis,
+    recompose,
+    rotate_polarization,
 )
 from gwtb.propagate.tt_projection import apply_tt
 
@@ -172,3 +177,109 @@ def test_patterns_accept_arrays() -> None:
         hp, hx = fn(th)
         assert hp.shape == th.shape and hx.shape == th.shape
         assert hp.dtype == np.float64
+
+
+# --- T-5.2: decompose / recompose -------------------------------------------
+
+
+@pytest.mark.parametrize("n_hat", _directions(20))
+def test_decompose_recompose_round_trips(n_hat: np.ndarray) -> None:
+    """AC: round-trip identity to rtol 1e-12 over 20 random TT tensors."""
+    e_plus, e_cross = polarization_basis(n_hat)
+    hp0, hx0 = RNG.uniform(-5.0, 5.0), RNG.uniform(-5.0, 5.0)
+    h_ij = hp0 * e_plus + hx0 * e_cross
+
+    hp, hx = decompose(h_ij, n_hat)
+    np.testing.assert_allclose(hp, hp0, rtol=1e-12)
+    np.testing.assert_allclose(hx, hx0, rtol=1e-12)
+
+    np.testing.assert_allclose(recompose(hp, hx, n_hat), h_ij, rtol=1e-12, atol=1e-15)
+
+
+def test_recompose_output_is_traceless_and_transverse() -> None:
+    n_hat = np.array([0.3, -0.4, np.sqrt(1 - 0.09 - 0.16)])
+    h_ij = recompose(1.5, -0.7, n_hat)
+    assert abs(np.trace(h_ij)) < 1e-13
+    np.testing.assert_allclose(n_hat @ h_ij, np.zeros(3), atol=1e-13)
+    np.testing.assert_allclose(h_ij, h_ij.T, atol=1e-15)
+
+
+def test_decompose_projects_out_non_tt_components() -> None:
+    """A tensor with extra trace/longitudinal parts decomposes the same as
+    its TT part alone — decompose is a contraction against a TT basis, so
+    non-TT components are silently annihilated, mirroring apply_tt."""
+    n_hat = np.array([0.0, 0.0, 1.0])
+    e_plus, e_cross = polarization_basis(n_hat)
+    tt_part = 2.0 * e_plus - 1.0 * e_cross
+    extra = np.eye(3) * 3.0 + np.outer(n_hat, n_hat) * 7.0  # pure trace + longitudinal
+    hp, hx = decompose(tt_part + extra, n_hat)
+    np.testing.assert_allclose([hp, hx], [2.0, -1.0], rtol=1e-12)
+
+
+def test_decompose_zero_tensor_gives_zero_scalars() -> None:
+    assert decompose(np.zeros((3, 3)), np.array([0.0, 0.0, 1.0])) == (0.0, 0.0)
+
+
+# --- T-5.3: rotate_polarization ---------------------------------------------
+
+
+def test_rotation_has_period_pi_not_two_pi() -> None:
+    """AC: period is pi, not 2 pi — the spin-2 signature."""
+    hp, hx = 1.3, -0.7
+    rotated_pi = rotate_polarization(hp, hx, np.pi)
+    np.testing.assert_allclose(rotated_pi, (hp, hx), atol=1e-12)
+
+    rotated_half = rotate_polarization(hp, hx, np.pi / 2)
+    assert not np.allclose(rotated_half, (hp, hx), atol=1e-6)
+
+
+def test_45_degrees_maps_plus_onto_cross() -> None:
+    """AC: rotate(., pi/4) maps h_plus -> h_cross."""
+    hp, hx = rotate_polarization(1.0, 0.0, np.pi / 4.0)
+    np.testing.assert_allclose(hp, 0.0, atol=1e-12)
+    assert abs(hx) == pytest.approx(1.0, rel=1e-12)
+
+
+def test_zero_rotation_is_the_identity() -> None:
+    hp, hx = rotate_polarization(1.3, -0.7, 0.0)
+    np.testing.assert_allclose([hp, hx], [1.3, -0.7], rtol=1e-14)
+
+
+def test_rotation_preserves_magnitude() -> None:
+    """A rotation must not change |h_plus - i h_cross|."""
+    hp0, hx0 = 2.1, -3.4
+    magnitude0 = math.hypot(hp0, hx0)
+    for psi in (0.1, 0.7, 1.9, 2.8, np.pi):
+        hp, hx = rotate_polarization(hp0, hx0, psi)
+        assert math.hypot(hp, hx) == pytest.approx(magnitude0, rel=1e-12)
+
+
+def test_rotation_composes() -> None:
+    """rotate(rotate(h, psi1), psi2) == rotate(h, psi1 + psi2)."""
+    hp0, hx0 = 1.0, 2.0
+    psi1, psi2 = 0.4, 0.9
+    once = rotate_polarization(*rotate_polarization(hp0, hx0, psi1), psi2)
+    combined = rotate_polarization(hp0, hx0, psi1 + psi2)
+    np.testing.assert_allclose(once, combined, rtol=1e-12)
+
+
+@pytest.mark.parametrize("n_hat", _directions(10))
+@pytest.mark.parametrize("psi", [0.2, 0.9, np.pi / 4])
+def test_rotate_polarization_matches_frame_rotation_via_basis(
+    n_hat: np.ndarray, psi: float
+) -> None:
+    """rotate_polarization must agree with rotating the underlying basis
+    itself (polarization_basis(n_hat, psi)) — same physical operation, two
+    different code paths."""
+    hp0, hx0 = 1.7, -0.9
+    h_ij = recompose(hp0, hx0, n_hat)
+
+    # Route A: rotate the scalars directly.
+    hp_a, hx_a = rotate_polarization(hp0, hx0, psi)
+
+    # Route B: decompose the SAME tensor against a psi-rotated basis.
+    e_plus_rot, e_cross_rot = polarization_basis(n_hat, psi)
+    hp_b = 0.5 * float(np.einsum("ij,ij->", h_ij, e_plus_rot))
+    hx_b = 0.5 * float(np.einsum("ij,ij->", h_ij, e_cross_rot))
+
+    np.testing.assert_allclose([hp_a, hx_a], [hp_b, hx_b], rtol=1e-10, atol=1e-12)

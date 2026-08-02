@@ -501,12 +501,12 @@ dropped: its exact equation number could not be confirmed, per the standing open
 *AC:* both traceless and transverse; orthonormal under `e_A:e_B = 2δ_AB`; **rotating the basis
 by ψ about `n_hat` transforms the amplitudes by e^(2iψ) — asserted directly, not assumed.**
 
-**T-5.2 · Strain decomposition · 2 pts · `sonnet-low` · deps T-5.1**
+**T-5.2 · Strain decomposition · 2 pts · `sonnet-low` · deps T-5.1** ✅
 `src/gwtb/propagate/polarization.py` — `decompose(h_ij, n_hat) -> (h_plus, h_cross)` and
 `recompose(h_plus, h_cross, n_hat)`.
 *AC:* round-trip identity to rtol 1e-12 over 20 random TT tensors.
 
-**T-5.3 · Spin-2 rotation operator · 3 pts · `sonnet-low` · deps T-5.1**
+**T-5.3 · Spin-2 rotation operator · 3 pts · `sonnet-low` · deps T-5.1** ✅
 `src/gwtb/propagate/polarization.py` — `rotate_polarization(h_plus, h_cross, psi)`.
 *AC:* period is π, not 2π (the spin-2 signature); `rotate(·, π/4)` maps `h₊ → h×`.
 
@@ -539,7 +539,7 @@ antenna pattern**, asserted explicitly to catch spin-1 substitution.
 *AC:* at 1 Hz (λ=3e8 m) full-hemisphere scan requires spacing ≤ 1.5e8 m — asserted, because the
 scale of that number is itself a finding.
 
-**T-5.9 · Ledger v1: aperture row · 3 pts · `sonnet-low` · deps T-2.6, T-5.5**
+**T-5.9 · Ledger v1: aperture row · 3 pts · `sonnet-low` · deps T-2.6, T-5.5** ✅
 `src/gwtb/ledger/gap_report.py` — `aperture_gap(geometry, wavelength, range_m, spot_size)`
 reporting achieved vs. required `D/λ ≳ r/w`.
 *AC:* for a 1 km spot at 40 AU reports required `D/λ` within 0.5 decades of 6e9, **at any

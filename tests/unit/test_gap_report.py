@@ -15,8 +15,9 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from gwtb.core.constants import c
-from gwtb.ledger.gap_report import GapMetric, GapReport, emission_gap
+from gwtb.array.geometry import linear_array, planar_array
+from gwtb.core.constants import AU, c
+from gwtb.ledger.gap_report import GapMetric, GapReport, aperture_gap, emission_gap
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 
@@ -387,6 +388,66 @@ def test_emission_gap_fits_in_a_report() -> None:
     report = GapReport()
     report.add(emission_gap(_rod_luminosity(), target_impulse=1.4e10, duration=3.15e8))
     assert "emission magnitude" in report.to_markdown()
+
+
+# --- aperture_gap (T-5.9) ---------------------------------------------------
+
+
+def test_aperture_gap_required_matches_6e9_for_a_1km_spot_at_40au() -> None:
+    """AC: within 0.5 decades of 6e9, at any frequency."""
+    geometry = linear_array(2, 1.0e4)
+    for wavelength in (3.0e6, 3.0e5, 3.0e2, 3.0e-2):  # 100 Hz .. 1e10 Hz
+        metric = aperture_gap(geometry, wavelength, range_m=40.0 * AU, spot_size=1.0e3)
+        assert abs(math.log10(metric.required / 6.0e9)) < 0.5, wavelength
+
+
+def test_aperture_gap_required_is_independent_of_wavelength() -> None:
+    """The frequency-independence is the assertion (BACKLOG.md T-5.9)."""
+    geometry = linear_array(2, 1.0e4)
+    required_values = {
+        aperture_gap(geometry, wl, range_m=40.0 * AU, spot_size=1.0e3).required
+        for wl in (1.0, 100.0, 1.0e6)
+    }
+    assert len(required_values) == 1
+
+
+def test_aperture_gap_achieved_is_diameter_over_wavelength() -> None:
+    geometry = planar_array(4, 4, 100.0, 100.0)
+    diameter = float(np.max(np.linalg.norm(geometry[:, None, :] - geometry[None, :, :], axis=-1)))
+    metric = aperture_gap(geometry, wavelength=10.0, range_m=1.0e9, spot_size=1.0)
+    assert metric.achieved == pytest.approx(diameter / 10.0, rel=1e-12)
+
+
+def test_aperture_gap_row_identity() -> None:
+    metric = aperture_gap(linear_array(2, 10.0), 1.0, 1.0e9, 1.0)
+    assert metric.name == "aperture"
+    assert metric.units == "D/lambda"
+    assert metric.source_module == "gwtb.array.focus"
+
+
+def test_aperture_gap_rejects_zero_extent_array() -> None:
+    with pytest.raises(ValueError, match="zero extent"):
+        aperture_gap(np.zeros((4, 3)), 1.0, 1.0e9, 1.0)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"wavelength": 0.0}, "wavelength"),
+        ({"wavelength": -1.0}, "wavelength"),
+        ({"range_m": 0.0}, "range_m"),
+        ({"spot_size": 0.0}, "spot_size"),
+    ],
+)
+def test_aperture_gap_rejects_invalid_scalars(kwargs: dict, match: str) -> None:
+    base = {
+        "geometry": linear_array(2, 10.0),
+        "wavelength": 1.0,
+        "range_m": 1.0e9,
+        "spot_size": 1.0,
+    }
+    with pytest.raises(ValueError, match=match):
+        aperture_gap(**{**base, **kwargs})
 
 
 def test_len_and_iteration() -> None:

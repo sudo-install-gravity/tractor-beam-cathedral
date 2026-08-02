@@ -40,7 +40,11 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
+from numpy.typing import ArrayLike
+
 from gwtb.core.constants import c
+from gwtb.core.validation import as_body_array
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 #: Rendered in place of a numeric gap when ``achieved`` is exactly zero.
@@ -416,4 +420,61 @@ def emission_gap(luminosity: float, target_impulse: float, duration: float) -> G
     )
 
 
-__all__ = ["GapMetric", "GapReport", "emission_gap"]
+def aperture_gap(
+    geometry: ArrayLike, wavelength: float, range_m: float, spot_size: float
+) -> GapMetric:
+    """Ledger row: achieved aperture-to-wavelength ratio versus the ratio
+    required to hit a target focal spot size.
+
+    ``required = range_m / spot_size``, inverting the diffraction-limit
+    scaling ``w ~ lambda r / D`` (:func:`gwtb.array.focus.spot_size`,
+    ``docs/PHYSICS.md``) to ``D/lambda ~ r/w``. This is
+    **frequency-independent by construction**: ``required`` involves only
+    ``range_m`` and the target ``spot_size``, never ``wavelength`` — the same
+    finding :func:`gwtb.array.focus.spot_size` states from the other side (a
+    1 km spot at 40 AU needs ``D/lambda >~ 6e9`` regardless of drive
+    frequency).
+
+    ``achieved`` uses the same aperture definition as
+    :func:`gwtb.array.focus.spot_size` (maximum pairwise element separation),
+    so the two are directly comparable.
+
+    Parameters
+    ----------
+    geometry
+        Shape ``(N, 3)``, m. Element positions, per ADR-0002 §1.
+    wavelength
+        Radiation wavelength, m. Must be positive and finite.
+    range_m
+        Target range, m. Must be positive and finite.
+    spot_size
+        Target focal spot size, m. Must be positive and finite.
+
+    Returns
+    -------
+    GapMetric
+        ``name="aperture"``, ``units="D/lambda"``,
+        ``source_module="gwtb.array.focus"``.
+    """
+    positions = as_body_array(geometry, "geometry")
+    if not np.isfinite(wavelength) or wavelength <= 0.0:
+        raise ValueError(f"wavelength must be positive and finite, got {wavelength!r}")
+    if not np.isfinite(range_m) or range_m <= 0.0:
+        raise ValueError(f"range_m must be positive and finite, got {range_m!r}")
+    if not np.isfinite(spot_size) or spot_size <= 0.0:
+        raise ValueError(f"spot_size must be positive and finite, got {spot_size!r}")
+
+    diameter = float(np.max(np.linalg.norm(positions[:, None, :] - positions[None, :, :], axis=-1)))
+    if diameter == 0.0:
+        raise ValueError("geometry has zero extent (all elements coincide)")
+
+    return GapMetric(
+        name="aperture",
+        achieved=diameter / wavelength,
+        required=range_m / spot_size,
+        units="D/lambda",
+        source_module="gwtb.array.focus",
+    )
+
+
+__all__ = ["GapMetric", "GapReport", "aperture_gap", "emission_gap"]

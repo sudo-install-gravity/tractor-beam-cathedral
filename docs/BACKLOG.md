@@ -838,7 +838,7 @@ FP32 **fails** the same check — documenting why the decomposition exists.
 `examples/deflection_scenario.py` — 1 km asteroid at 40 AU, N-element array, prime-band drive.
 *AC:* runs to completion; emits field visualization, beam pattern, Δv, miss distance, gap report.
 
-**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8**
+**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8** ✅
 `tests/benchmarks/test_hulse_taylor.py` — PSR B1913+16 orbital decay.
 *AC:* reproduces −2.4e-12 s/s to rtol 1e-2.
 

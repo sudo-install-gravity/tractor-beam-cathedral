@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 
 # `tools` is on pythonpath via [tool.pytest.ini_options] in pyproject.toml.
-from schedule import Task, load_tasks, plan
+from schedule import Session, Task, load_tasks, plan
 
 # --------------------------------------------------------------------------
 # Parsing the real backlog
@@ -302,7 +302,7 @@ def test_chunk_prefix_is_always_dependency_valid(tasks: dict[str, Task]) -> None
     from schedule import take_chunk
 
     done = {t.id for t in tasks.values() if t.done}
-    batch = plan(tasks)[0]
+    batch = _synthetic_batch()
     for size in range(1, len(batch.tasks) + 1):
         seen = set(done)
         for t in take_chunk(batch, size).tasks:
@@ -311,53 +311,78 @@ def test_chunk_prefix_is_always_dependency_valid(tasks: dict[str, Task]) -> None
             seen.add(t.id)
 
 
-def test_chunk_is_deterministic(tasks: dict[str, Task]) -> None:
-    """Same backlog, same chunk — no judgment call to forget or disagree about."""
+def _synthetic_batch() -> Session:
+    """An 8-task synthetic sonnet batch, independent of the live backlog's
+    current contents.
+
+    Five tests below exercise ``take_chunk`` — a pure function of a
+    ``Session`` — but originally read that session from ``plan(tasks)[0]``
+    against the *real*, ever-changing backlog. That worked only as long as
+    some batch was always non-empty; once the real backlog reached "nothing
+    to schedule" (2026-08-02, the last task landed), ``plan(tasks)`` returned
+    ``[]`` and ``[0]`` raised ``IndexError`` in all five — not a bug in
+    ``take_chunk``, but a test-fixture coupling to live data the tests never
+    actually needed. A synthetic batch removes that coupling permanently
+    rather than resizing against whatever the backlog happens to contain
+    today, which is the same class of fix as the ``min(5, len(batch.tasks))``
+    and "size against the batch" repairs elsewhere in this file — but those
+    still assumed *some* live batch existed. This one doesn't.
+    """
+    graph = {t.id: t for t in [_mk(f"T-x.{i}", "sonnet-low", []) for i in range(8)]}
+    return plan(graph)[0]
+
+
+def test_chunk_is_deterministic() -> None:
+    """Same batch, same chunk — no judgment call to forget or disagree about."""
     from schedule import take_chunk
 
-    batch = plan(tasks)[0]
+    batch = _synthetic_batch()
     a = [t.id for t in take_chunk(batch, 5).tasks]
     b = [t.id for t in take_chunk(batch, 5).tasks]
     assert a == b
-    # Sized against the batch, not a literal. This asserted `== 5` until
-    # 2026-07-31, when the leading batch shrank below five tasks as work
-    # completed and the test failed without anything being wrong. The property
-    # under test is determinism; the length is incidental.
-    assert len(a) == min(5, len(batch.tasks))
+    assert len(a) == 5
 
 
-def test_chunk_larger_than_batch_returns_batch_unchanged(tasks: dict[str, Task]) -> None:
+def test_chunk_larger_than_batch_returns_batch_unchanged() -> None:
     from schedule import take_chunk
 
-    batch = plan(tasks)[0]
+    batch = _synthetic_batch()
     for size in (len(batch.tasks), len(batch.tasks) + 10, 0, -1):
         out = take_chunk(batch, size)
         assert [t.id for t in out.tasks] == [t.id for t in batch.tasks]
         assert out.chunk_note == "", "an untruncated batch must not claim to be a chunk"
 
 
-def test_chunk_preserves_tier_purity(tasks: dict[str, Task]) -> None:
+def test_chunk_preserves_tier_purity() -> None:
     from schedule import take_chunk
 
-    batch = plan(tasks)[0]
+    batch = _synthetic_batch()
     chunk = take_chunk(batch, 3)
     assert chunk.model == batch.model
     for t in chunk.tasks:
         assert (chunk.model == "opus") == (t.tier == "opus")
 
 
-def test_chunk_announces_itself(tasks: dict[str, Task]) -> None:
+def test_chunk_announces_itself() -> None:
     """A truncated batch must say so, or the reader assumes it is the whole batch."""
     from schedule import take_chunk
 
-    batch = plan(tasks)[0]
-    # Size against the batch so this actually truncates. It asked for a fixed 2
-    # until 2026-07-31, when the leading batch itself shrank to two tasks as
-    # work completed: `take_chunk` then correctly returned the whole batch with
-    # no note, and the test failed with nothing wrong. A chunk note is only
-    # required when there is something to truncate.
-    assert len(batch.tasks) >= 2, "need at least two tasks to exercise truncation"
+    batch = _synthetic_batch()
     size = len(batch.tasks) - 1
     chunk = take_chunk(batch, size)
     assert chunk.chunk_note
     assert f"{size}/{len(batch.tasks)}" in chunk.chunk_note
+
+
+def test_real_backlog_may_have_nothing_left_to_schedule(tasks: dict[str, Task]) -> None:
+    """Guards the state ``_synthetic_batch`` was introduced to stop depending
+    on: an empty plan is a legitimate, expected outcome once every reachable
+    task is done, not a crash condition. ``plan(tasks)`` returning ``[]`` and
+    ``schedule.py --next`` printing "nothing to schedule" are the correct
+    behavior here, not a bug — this test exists so a future change that makes
+    ``plan`` misbehave on an empty backlog (e.g. raising instead of returning
+    ``[]``) fails loudly (CLAUDE.md rule 8) rather than only surfacing as
+    confusing downstream failures in unrelated tests, the way it did here.
+    """
+    result = plan(tasks)
+    assert isinstance(result, list)

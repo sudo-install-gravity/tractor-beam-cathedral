@@ -173,10 +173,41 @@ def test_opus_chain_runs_in_one_session() -> None:
 
 
 def test_batching_beats_naive_switching(tasks: dict[str, Task]) -> None:
-    """On the real backlog, heavy tasks must be batched, not run one-by-one."""
+    """On the real backlog, heavy tasks must be batched, not run one-by-one.
+
+    Sized against what is actually left. This asserted unconditionally until
+    2026-07-31, when the last `opus` task completed: there were then zero Opus
+    sessions and the test failed with `0 > 0` while nothing was wrong. It is the
+    third test in this file to expire that way, so the guard below is written to
+    keep its teeth either way — if no Opus session is planned, that must be
+    because no heavy work remains, not because the planner dropped it
+    (CLAUDE.md rule 8, make absence loud).
+    """
     sessions = plan(tasks)
     opus_sessions = [s for s in sessions if s.model == "opus"]
     heavy_scheduled = sum(len(s.tasks) for s in opus_sessions)
+
+    # "Reachable" means every dependency is already complete. Checking only for
+    # a task's *own* external block is not enough: T-12.5 is `opus` with
+    # `deps all`, so it is transitively stranded behind T-2.9 and T-4.5 while
+    # carrying no blocker of its own.
+    done_ids = {t.id for t in tasks.values() if t.done}
+    reachable_heavy = [
+        t
+        for t in tasks.values()
+        if t.tier == "opus"
+        and not t.done
+        and not t.external_block
+        and all(d in done_ids for d in t.deps)
+    ]
+
+    if not opus_sessions:
+        assert not reachable_heavy, (
+            f"planner scheduled no Opus session while {len(reachable_heavy)} heavy "
+            f"task(s) remain reachable: {[t.id for t in reachable_heavy]}"
+        )
+        return
+
     assert heavy_scheduled > len(opus_sessions), "no batching happened at all"
     assert len(opus_sessions) <= 4, "too many Opus boundaries"
 

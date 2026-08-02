@@ -719,7 +719,7 @@ Scratch prototype only, no production code. Resolved whether `focused_field` can
 spread at 40 AU is 1.03e-9 rad against ADR-0003's 5.0e-2 rad budget, a 2.4e7× margin, so the
 reversal condition is not triggered. Near-field focusing stays out of scope.
 
-**T-9.6 · Spatiotemporal focusing · 3 pts · `opus` · deps SPIKE-9.6, T-9.5, T-6.5** ⚠️ **critical path**
+**T-9.6 · Spatiotemporal focusing · 3 pts · `opus` · deps SPIKE-9.6, T-9.5, T-6.5** ✅ ⚠️ **critical path**
 `src/gwtb/array/focus.py` — `focused_field(array, drive, field_points, times)`.
 Weights are `exp(+i · focal_phases(...))`, superposed by `superpose_tt`; **no new projection
 logic**. Propagate `superpose_tt`'s Fraunhofer `ValueError` rather than catching it — a
@@ -752,9 +752,15 @@ that requirement 6's framing must confront, asserted rather than glossed.
 
 ## Sprint 10 — Focus metrics and band sweep (21 pts) → **GATE G3**
 
-**T-10.1 · Focal spot size · 3 pts · `opus` · deps T-9.6**
+**T-10.1 · Focal spot size · 3 pts · `opus` · deps T-9.6** ✅
 `src/gwtb/array/focus.py` — `spot_size(array, wavelength, range_m)` (−3 dB transverse extent).
 *AC:* recovers `w ≈ λr/D` to rtol 1e-2 across 5 aperture/frequency combinations.
+*Coefficient:* `w = 1.0290 λr/D`, from the root `x = 1.6163399` of `2J₁(x)/x = 1/√2`
+(`FWHM_COEFFICIENT`). **Not 1.22** — that is the Rayleigh first null, a 19% overstatement.
+Cited by its reproducible root rather than a textbook page; `test_spot_size.py` re-solves it
+with `scipy` *and* measures it from a simulated filled circular aperture.
+⚠️ The coefficient assumes a **uniformly-illuminated circular** aperture; a square aperture's
+FWHM is `0.886 λ/D`, 14% narrower — outside the AC's own rtol.
 
 **T-10.2 · Benchmark: diffraction limit · 3 pts · `sonnet-low` · deps T-10.1**
 `tests/benchmarks/test_diffraction.py`.

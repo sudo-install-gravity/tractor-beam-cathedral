@@ -15,6 +15,23 @@ two.
 
 ## 0. Where the last session stopped — 2026-07-31
 
+> **Update, later the same day.** SPIKE-9.6, **T-9.6 and T-10.1 have since
+> landed**, and with them **every `opus` task in the backlog is complete** except
+> the blocked T-4.5. **588 tests passing**, all five checks green, committed and
+> pushed.
+>
+> **The next batch is Sonnet: 36 tasks, 92 points, sprints 2–12.** Recommendation
+> is to **switch this session's model to Sonnet** rather than start a new session
+> — the context is already loaded and a cold start is the expensive path (§4).
+> Run `schedule.py --next --chunk N` if it is too large for one sitting; a prefix
+> of a topologically-ordered batch is always dependency-valid.
+>
+> Nothing in that batch needs Opus. Switch **back** to Opus only for SPIKE-4.5
+> (see §9), which is the sole remaining heavy item and is externally blocked
+> until a citable form-factor equation is found.
+
+### The original 2026-07-31 entry
+
 Work is **committed and pushed**; the tree is clean and all five checks in §8
 are green at **553 tests**. The session ended on a weekly usage limit, not on a
 problem. Eight tasks landed: T-2.2, T-2.6, T-3.7, T-4.3, T-9.5, T-11.3 at Opus,
@@ -70,9 +87,9 @@ The system Python has no numpy.
 
 | | |
 |---|---|
-| Complete | **66 of 116 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
-| Tests | **545 passing**, 2 warnings, ~26 s |
-| Next up | **2 remaining `opus` tasks** (T-9.6, T-10.1 — 6 pts), then a large **SONNET batch** (~40 tasks). Run `--next` for the current split. **T-9.6 has an unresolved design tension — read §9 before starting it.** |
+| Complete | **69 of 117 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file — SPIKE-9.6 added one, and this line was wrong within minutes of being written) |
+| Tests | **588 passing**, 2 warnings, ~27 s |
+| Next up | **A 36-task, 92-point SONNET batch** spanning sprints 2–12. No `opus` work remains except the blocked T-4.5. **Switch this session's model to Sonnet**; see §0. |
 | Blocked | **T-2.9** needs the repo public. **T-12.2** needs an exact Peters (1964) equation number. **T-4.5** (new, 2026-07-31) needs a citable equation for the uniform-sphere `l=2` form factor — see §9. All three are machine-readable blocks in the `deps` field, so the scheduler excludes them *and says so*; **9 tasks** are transitively stranded behind them (T-4.7/4.8/4.9 and most of sprint 12). |
 
 **Landed 2026-07-31.** T-2.2 (`UNPHYSICAL` stamp propagation, ADR-0005), T-2.6

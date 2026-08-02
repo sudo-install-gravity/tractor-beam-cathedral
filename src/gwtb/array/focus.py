@@ -22,12 +22,15 @@ directly; see :func:`_differential_range`.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from gwtb.array.beamform import QuadrupoleElement, superpose_tt
 from gwtb.core.constants import c
 from gwtb.core.validation import as_body_array, as_float64
+from gwtb.kinematics.oscillators import PrimeOscillatorDrive
 
 
 def _as_point(a: ArrayLike, name: str) -> NDArray[np.float64]:
@@ -184,4 +187,237 @@ def focal_phases(
     return wrapped
 
 
-__all__ = ["focal_phases"]
+def focused_phasor(
+    array: Sequence[QuadrupoleElement],
+    drive: PrimeOscillatorDrive,
+    field_points: ArrayLike,
+    focal_point: ArrayLike,
+    focal_time: float = 0.0,
+) -> NDArray[np.complex128]:
+    """Complex TT strain phasor per field point and drive tone.
+
+    The frequency-domain half of :func:`focused_field`, exposed because the
+    envelope is what the mode-locking acceptance criteria are stated in: a peak
+    amplitude read off a sampled time series carries the sampling error of the
+    peak search, which at rtol 1e-6 would dominate the quantity being measured.
+
+    Each tone's weights are ``A_f * exp(+i (phi_a,f + drive_phase_f))``, with
+    ``phi_a,f`` from :func:`focal_phases`, and the superposition is delegated
+    **unchanged** to :func:`gwtb.array.beamform.superpose_tt` per ADR-0006. No
+    projection logic is reimplemented here.
+
+    Source: docs/adr/0006-focused-field-far-field-regime.md, eq. n/a (a
+    composition of :func:`focal_phases` (EQ-029) with
+    :func:`gwtb.array.beamform.superpose_tt`; introduces no new equation)
+
+    Parameters
+    ----------
+    array
+        The radiating elements. Their ``quadrupole`` tensors carry orientation
+        and magnitude; the drive supplies the per-tone excitation.
+    drive
+        Supplies ``frequencies``, ``amplitudes`` and ``phases``.
+    field_points
+        Shape ``(M, 3)``, m.
+    focal_point
+        Shape ``(3,)``, m. Where the tones are made to coincide.
+    focal_time
+        Coordinate time at the focal point, s, at which they coincide.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(M, F, 3, 3)`` complex, in the units of the elements'
+        ``quadrupole``. ``F`` is the number of drive tones.
+
+    Raises
+    ------
+    ValueError
+        If any field point lies inside the array's Fraunhofer distance. Raised
+        by :func:`~gwtb.array.beamform.superpose_tt` and **propagated
+        deliberately**: near-field focusing is out of scope (ADR-0006), and a
+        near-field request must fail loudly rather than degrade to a
+        formulation ADR-0003 forbids.
+    """
+    elements = list(array)
+    if not elements:
+        raise ValueError("array must be non-empty")
+
+    positions = np.array([_as_point(e.position, "position") for e in elements])
+    points = as_body_array(field_points, "field_points")
+
+    frequencies = drive.frequencies
+    amplitudes = drive.amplitudes
+    tone_phases = drive.phases
+
+    phi = focal_phases(positions, frequencies, focal_point, focal_time)
+
+    out = np.zeros((points.shape[0], frequencies.size, 3, 3), dtype=np.complex128)
+    for j, frequency in enumerate(frequencies):
+        wavelength = c / float(frequency)
+        weights = amplitudes[j] * np.exp(1j * (phi[:, j] + tone_phases[j]))
+        for m in range(points.shape[0]):
+            out[m, j] = superpose_tt(elements, weights, wavelength, points[m])
+    return out
+
+
+def focused_field(
+    array: Sequence[QuadrupoleElement],
+    drive: PrimeOscillatorDrive,
+    field_points: ArrayLike,
+    times: ArrayLike,
+    focal_point: ArrayLike,
+    focal_time: float = 0.0,
+) -> NDArray[np.float64]:
+    """TT strain time series at each field point, with the drive focused.
+
+    .. code-block:: text
+
+        h_ij(x, t) = sum_f Im[ H_ij^(f)(x) * exp(i 2 pi f t) ]
+
+    where ``H^(f)`` is :func:`focused_phasor`. The imaginary part is taken
+    because :class:`~gwtb.kinematics.oscillators.PrimeOscillatorDrive` defines
+    its tones as ``sin(2 pi f t + phase)``.
+
+    **What "focused" means at engagement range.** At 40 AU the array sits some
+    ``5.9e6`` Fraunhofer distances from the target, so the focal point is a
+    *steering direction*, not a point of concentration: the wavefront sag across
+    a 12.4 km aperture is ~3.2e-6 m. This function is a far-field construction
+    and says nothing about concentrating energy at range — see ADR-0006 and the
+    assumption ledger in ``docs/INDEX.md``.
+
+    **Signature note.** BACKLOG.md T-9.6 specifies ``focused_field(array, drive,
+    field_points, times)``. ``focal_point`` and ``focal_time`` are added because
+    a focus cannot be formed without them; the four specified parameters keep
+    their meaning. Recorded here rather than made silently, as for
+    :func:`gwtb.core.backend.split_phase`.
+
+    Source: docs/adr/0006-focused-field-far-field-regime.md, eq. n/a (see
+    :func:`focused_phasor`; this adds only the time dependence)
+
+    Parameters
+    ----------
+    array, drive, focal_point, focal_time
+        As for :func:`focused_phasor`.
+    field_points
+        Shape ``(M, 3)``, m.
+    times
+        Shape ``(T,)``, s. Coordinate time at the field point.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(M, T, 3, 3)``, dimensionless-scaled in the units of the
+        elements' ``quadrupole``. Leading axes follow
+        :func:`gwtb.propagate.retarded.propagate` (ADR-0002 §2).
+
+    Raises
+    ------
+    ValueError
+        Propagated from :func:`focused_phasor` for a near-field request.
+    """
+    t = as_float64(times, "times")
+    if t.ndim != 1 or t.size == 0:
+        raise ValueError(f"times must have shape (T,), got {t.shape}")
+
+    phasors = focused_phasor(array, drive, field_points, focal_point, focal_time)
+    frequencies = drive.frequencies
+
+    # (M, F, 3, 3) x (F, T) -> (M, T, 3, 3)
+    oscillation = np.exp(1j * 2.0 * np.pi * np.outer(frequencies, t))
+    result: NDArray[np.float64] = np.einsum(
+        "mfij,ft->mtij", phasors, oscillation, optimize=True
+    ).imag
+    return result
+
+
+#: Half-width, in the Airy variable ``v = (pi D / lambda) sin(theta)``, at which
+#: ``[2 J_1(v)/v]^2`` falls to one half. Equivalently the root of
+#: ``2 J_1(x)/x = 1/sqrt(2)``.
+#:
+#: This number is the citation. It is reproducible in two lines with
+#: ``scipy.special.j1`` and ``scipy.optimize.brentq``, so a reader in 2075 can
+#: check it without access to any book — which is more than can be said for the
+#: textbook page it would otherwise be sourced to.
+_AIRY_HALF_MAX_ROOT = 1.616339948310703
+
+#: Full width at half maximum of the Airy main lobe, in units of ``lambda/D``:
+#: ``2 * root / pi``. **Not 1.22** — that is the Rayleigh criterion, the first
+#: Airy *null*, which is a resolution limit rather than a beam width.
+FWHM_COEFFICIENT = 2.0 * _AIRY_HALF_MAX_ROOT / np.pi
+
+
+def spot_size(array: ArrayLike, wavelength: float, range_m: float) -> float:
+    """Diffraction-limited -3 dB transverse extent of the focal spot.
+
+    .. code-block:: text
+
+        w = (2 x_h / pi) * lambda * r / D  =  1.0290 * lambda * r / D
+
+    where ``x_h = 1.6163399`` solves ``2 J_1(x)/x = 1/sqrt(2)``, i.e. the
+    half-maximum point of the Airy pattern ``[2 J_1(v)/v]^2``. Since
+    ``10 log10(1/2) = -3.01 dB``, the -3 dB width *is* the full width at half
+    maximum; no separate convention is involved.
+
+    Source: Airy pattern for a uniformly-illuminated circular aperture,
+    ``I/I_0 = [2 J_1(v)/v]^2`` with ``v = (pi D/lambda) sin(theta)``, eq. n/a —
+    the standard result (Born & Wolf, *Principles of Optics* §8.5.2), cited here
+    by its **reproducible root** rather than an equation number this project
+    could not confirm. Corroborated by Thorne & Blandford, *Modern Classical
+    Physics* ch. 8 (open-access Caltech ph136 notes), which gives
+    ``rho_FWHM = 1.61633 z/(kR)``.
+
+    **Not the Rayleigh criterion.** ``1.22 lambda/D`` locates the first null and
+    is a two-source resolution limit; using it here would overstate the spot by
+    19%. :data:`FWHM_COEFFICIENT` is the -3 dB width.
+
+    **This is scalar diffraction, and that is legitimate here.** The result is
+    the Fourier transform of the aperture function: it fixes the transverse
+    *envelope* and is blind to what is being radiated. It is therefore safe for
+    aperture geometry — but it says nothing whatever about how ``h_plus`` and
+    ``h_cross`` combine, and must never be reused for polarization synthesis,
+    where the spin-2 structure of ``CLAUDE.md`` rule 4 governs.
+
+    **Assumes a uniformly-illuminated circular aperture.** The coefficient is
+    geometry-specific: a uniformly-weighted *square* aperture has FWHM
+    ``0.886 lambda/D`` along its axes, 14% narrower. Applying this function to a
+    strongly non-circular layout silently returns the circular answer. ``D`` is
+    taken as the maximum pairwise element separation.
+
+    Parameters
+    ----------
+    array
+        Shape ``(N, 3)``, m. Element positions, per ADR-0002 §1.
+    wavelength
+        Radiation wavelength, m. Must be positive and finite.
+    range_m
+        Distance from the aperture to the focal plane, m. Positive and finite.
+
+    Returns
+    -------
+    float
+        The -3 dB transverse extent, m.
+    """
+    positions = as_body_array(array, "array")
+    if not math.isfinite(wavelength) or wavelength <= 0.0:
+        raise ValueError(f"wavelength must be positive and finite, got {wavelength!r}")
+    if not math.isfinite(range_m) or range_m <= 0.0:
+        raise ValueError(f"range_m must be positive and finite, got {range_m!r}")
+
+    diameter = float(np.max(np.linalg.norm(positions[:, None, :] - positions[None, :, :], axis=-1)))
+    if diameter == 0.0:
+        raise ValueError(
+            "array has zero extent (all elements coincide); a single point has no "
+            "aperture and therefore no diffraction-limited spot size"
+        )
+
+    return FWHM_COEFFICIENT * wavelength * range_m / diameter
+
+
+__all__ = [
+    "FWHM_COEFFICIENT",
+    "focal_phases",
+    "focused_field",
+    "focused_phasor",
+    "spot_size",
+]

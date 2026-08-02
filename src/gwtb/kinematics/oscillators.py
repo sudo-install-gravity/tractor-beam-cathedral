@@ -189,6 +189,27 @@ class PrimeOscillatorDrive(AccelerationProfile):
     def duration(self) -> float:
         return self._duration
 
+    # Read-only views of the tone set. Added for T-9.6, which needs the drive's
+    # spectrum to build per-frequency focal phases; returning copies keeps the
+    # profile's own arrays immutable from outside.
+
+    @property
+    def frequencies(self) -> NDArray[np.float64]:
+        """Shape ``(N,)``, Hz. The drive's tone frequencies."""
+        return np.asarray(self._omega / (2.0 * np.pi), dtype=np.float64)
+
+    @property
+    def amplitudes(self) -> NDArray[np.float64]:
+        """Shape ``(N,)``, m/s^2. Per-tone acceleration amplitude."""
+        result: NDArray[np.float64] = self._amplitudes.copy()
+        return result
+
+    @property
+    def phases(self) -> NDArray[np.float64]:
+        """Shape ``(N,)``, rad. Per-tone phase offset."""
+        result: NDArray[np.float64] = self._phases.copy()
+        return result
+
     def acceleration(self, t: ArrayLike) -> float | NDArray[np.float64]:
         arr, scalar = _prepare_time(t)
         self._validate_domain(arr)

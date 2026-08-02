@@ -487,10 +487,18 @@ structured out-of-regime warning at `R/λ > 0.1`.
 million below it, so a `>` vs `≥` off-by-one would be caught); message contains "Long
 wavelength", "R << lambda", "INDEX.md" and "§3".
 
-**T-4.8 · Sensitivity study · 3 pts · `sonnet` · deps T-4.3, T-4.5**
-`tests/benchmarks/test_body_sensitivity.py` — sweep R and ρ at fixed M; assert radiation is
-invariant in the rigid model and variant in the elastic model.
-*AC:* rigid variation < 1e-12 relative; elastic variation > 1e-3 relative for realistic rigidity.
+**T-4.8 · Sensitivity study · 3 pts · `sonnet` · deps T-4.3, T-4.5** ✅
+`tests/benchmarks/test_body_sensitivity.py` — sweeps 5 radii spanning two orders of
+magnitude at fixed `M = 1e15 kg` (density set at each point to hold `M` fixed). Rigid
+model: `Sphere.self_quadrupole()`, identically zero for every `(R, ρ)` (T-4.2), plus the
+point-mass trajectory quadrupole, which never reads `R` or `ρ` at all. Elastic model:
+`induced_quadrupole` (T-4.3) at fixed material rigidity (steel/tungsten/osmium from
+`MATERIALS`, T-4.4) and a fixed external tidal field.
+*AC:* rigid variation < 1e-12 relative (measured: exactly 0, both by the absolute-zero
+floor and by the trajectory-quadrupole ratio) — elastic variation > 1e-3 relative for
+realistic rigidity (measured: ~7.6e4–1.0e5 across the three materials, i.e. eight orders
+of magnitude above the threshold; pinned at >1e4 so a weakened `R⁵` dependence still
+fails even though it would pass the AC's own looser bound).
 
 **T-4.9 · Ledger: body-parameter row · 3 pts · `sonnet-low` · deps T-2.6, T-4.8**
 `src/gwtb/ledger/gap_report.py` — record achievable quadrupole vs. required.

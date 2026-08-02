@@ -8,6 +8,8 @@ This is a **cathedral project**. It is expected to span more than one human life
 the theoretical framework; we deliberately leave the "transducer" engineering — whatever
 converts stored energy into useful gravitational radiation — to future contributors.
 
+Note from the originator: I am not a trained physicist.  I am, at best, a technologist playing with physics.  On that note, I welcome collaboration, both with real physicists and with amateurs who, like me, are eager to build exciting things and ideas to help humanity reach its full potential.  If you have deep experience in this area and want to contribute, if you spot errors that I do not have deep enough expertise to see, or even if you're a curious amateur and you just want to play with the code: please dive in, and reach out to me if you want.  I'm excited to see what we can build in this sandbox!
+
 ---
 
 ## What this tool actually computes

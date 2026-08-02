@@ -125,7 +125,7 @@ skipped or xfailed, and every module added is fully covered.
 ## 1. What to run first
 
 ```
-cd "C:\Users\Thanatos\Documents\Software Dev\Tractor_Beam_Cathedral"
+cd <path to your local clone of tractor-beam-cathedral>
 ```
 
 ```

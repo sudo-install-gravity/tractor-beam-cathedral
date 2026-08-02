@@ -39,8 +39,8 @@ dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4", "mypy>=1.8"]
 viz = ["pyvista>=0.43"]
 
 [project.urls]
-Homepage = "https://github.com/Thanatos7777/tractor_beam_cathedral"
-Repository = "https://github.com/Thanatos7777/tractor_beam_cathedral"
+Homepage = "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
+Repository = "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
 
 [tool.setuptools.packages.find]
 where = ["src"]

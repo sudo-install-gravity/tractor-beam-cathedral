@@ -347,7 +347,7 @@ no Sprint 1 task created it — an ADR promising an artifact nothing delivered.
 
 **T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps repo made public**
 `repo-level`. Require green CI on `main`; block force-push and deletion.
-*AC:* `gh api repos/Thanatos7777/tractor_beam_cathedral/branches/main/protection` returns a
+*AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/branches/main/protection` returns a
 `required_status_checks` block listing `test (3.10)`, `test (3.11)`, `test (3.12)`.
 *Blocked by:* GitHub plan limits — private repos on the free tier cannot set branch
 protection. Unblocks the moment the repo is made public.

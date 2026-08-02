@@ -601,16 +601,16 @@ throughout (asserted by dtype check).
 
 ## Sprint 7 — Visualization (21 pts)
 
-**T-7.1 · Field slice extraction · 2 pts · `sonnet-low` · deps T-6.8**
+**T-7.1 · Field slice extraction · 2 pts · `sonnet-low` · deps T-6.8** ✅
 `src/gwtb/viz/slices.py` — `extract_slice(field, plane, extent, resolution)`.
 *AC:* correct shape; coordinates match the requested extent to rtol 1e-12.
 
-**T-7.2 · 2D strain heatmap · 3 pts · `sonnet` · deps T-7.1**
+**T-7.2 · 2D strain heatmap · 3 pts · `sonnet` · deps T-7.1** ✅
 `src/gwtb/viz/slices.py` — `plot_strain_slice(...) -> matplotlib.figure.Figure`. Diverging
 colormap centered at zero; annotate the scaled-strain reference.
 *AC:* figure renders headless (Agg); colorbar symmetric about zero.
 
-**T-7.3 · Wavefront animation · 3 pts · `sonnet` · deps T-7.2**
+**T-7.3 · Wavefront animation · 3 pts · `sonnet` · deps T-7.2** ✅
 `src/gwtb/viz/slices.py` — `animate_propagation(...)`.
 *AC:* frame count matches the time array; writes an mp4/gif headless.
 
@@ -622,18 +622,18 @@ colormap centered at zero; annotate the scaled-strain reference.
 `src/gwtb/viz/patterns.py` — `plot_pattern_3d(...)`.
 *AC:* renders headless; peak direction matches `steering_phases` to 1e-3 rad.
 
-**T-7.6 · Polarization visualization · 3 pts · `sonnet` · deps T-5.2**
+**T-7.6 · Polarization visualization · 3 pts · `sonnet` · deps T-5.2** ✅
 `src/gwtb/viz/patterns.py` — `plot_polarization_ellipse(h_plus, h_cross)` showing the
 characteristic spin-2 quadrupolar deformation of a test-particle ring.
 *AC:* pure `h₊` produces a ring deforming along the axes; pure `h×` at 45° — the visual signature
 that the field is spin-2.
 
-**T-7.7 · 3D volumetric rendering · 3 pts · `sonnet` · deps T-7.1**
+**T-7.7 · 3D volumetric rendering · 3 pts · `sonnet` · deps T-7.1** ✅
 `src/gwtb/viz/volume.py` — `render_volume(field, ...)` using PyVista. Optional dependency;
 degrade gracefully if absent.
 *AC:* skips with a clear message when PyVista is not installed; renders offscreen otherwise.
 
-**T-7.8 · ParaView/VTK export · 2 pts · `sonnet-low` · deps T-7.1**
+**T-7.8 · ParaView/VTK export · 2 pts · `sonnet-low` · deps T-7.1** ✅
 `src/gwtb/viz/export_vtk.py` — `export_field(field, path)` writing `.vti`.
 *AC:* output reloads via `pyvista.read` with matching shape and values to rtol 1e-12.
 
@@ -784,7 +784,7 @@ power**, the dominant design lever.
 `src/gwtb/array/focus.py` — `trade_surface(...)` producing the required-aperture-vs-frequency curve.
 *AC:* reproduces 1.8e18 m at 1 Hz and 1.8e12 m at 1 MHz to rtol 1e-2.
 
-**T-10.7 · Trade-surface visualization · 2 pts · `sonnet-low` · deps T-10.6, T-7.4**
+**T-10.7 · Trade-surface visualization · 2 pts · `sonnet-low` · deps T-10.6, T-7.4** ✅
 `src/gwtb/viz/patterns.py` — `plot_trade_surface(...)`.
 *AC:* log-log axes; renders headless; annotates the 6e9 wavelength invariant.
 

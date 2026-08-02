@@ -1,7 +1,43 @@
 # Handover — start here
 
-Current as of **2026-07-31**. **545 tests passing**, all five sanity checks green
-on the Windows host. **Work is uncommitted** — see §0.
+Current as of **2026-08-02**. **827 tests passing** (3 skipped — CuPy and
+PyVista are optional dependencies, absent on this host), all five sanity
+checks green. Committed and pushed.
+
+> **2026-08-02: the entire 36-task Sonnet batch landed.** `schedule.py --next`
+> now reports **"nothing to schedule — all tasks complete or externally
+> blocked."** 105 of 117 tasks are done; everything remaining is T-2.9, T-4.5,
+> T-12.2, and the tasks transitively stranded behind them (`schedule.py --plan`
+> lists them by name). **There is no more schedulable work without external
+> input** — either the repo goes public (T-2.9), a citable finite-size form
+> factor is found (T-4.5, SPIKE-4.5), or a Peters 1964 equation number is
+> pinned (T-12.2). Read `docs/BACKLOG.md`'s entries for those three for exactly
+> what's missing before spending a session on any of them.
+>
+> Landed this session: T-2.4 through T-12.3 — dipole diagnostic, ledger rows
+> (emission/aperture/coupling/deflection/focusing), strain decomposition and
+> spin-2 rotation, geodesic deviation and all three coupling channels,
+> deflection formulas, the full focus chain (trajectory/dwell/sidelobe/band
+> sweep/trade surface), the optional GPU backend and precision guard, chunked
+> field evaluation, run manifests, the energy-conservation benchmark, and all
+> eight visualization tasks (slices, heatmap, animation, polarization
+> ellipse, volumetric rendering, VTK export, trade-surface plot).
+>
+> **Two things worth knowing before touching this code:**
+> 1. **T-12.3's energy-flux prefactor was a live citation bug, caught by
+>    checking rather than trusting.** Candidate sources disagreed on
+>    `16*pi*G` vs `32*pi*G`; resolved by numerically integrating the flux
+>    formula against the already-verified `luminosity()` as ground truth —
+>    `16*pi*G` was off by exactly 2x. See `tests/benchmarks/
+>    test_energy_conservation.py`'s module docstring and
+>    `test_16pi_prefactor_is_off_by_exactly_a_factor_of_two`.
+> 2. **The T-9.6/ADR-0006 "background is sqrt(N)" finding recurred twice
+>    more** (T-9.8, T-10.4): the random-phase *mean* is the Rayleigh value
+>    `~0.886*sqrt(N)`, not `sqrt(N)` — the *RMS* is `sqrt(N)` exactly. Every
+>    place this project claims a `sqrt(N)` background, check which statistic
+>    is meant before writing a test against it.
+>
+> **Old §0 entry, retained for its own content below.**
 
 This file is the entry point for a session picking the project up cold. Read it,
 then `../CLAUDE.md`, then get to work — everything else is referenced from those
@@ -87,9 +123,9 @@ The system Python has no numpy.
 
 | | |
 |---|---|
-| Complete | **69 of 117 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file — SPIKE-9.6 added one, and this line was wrong within minutes of being written) |
-| Tests | **588 passing**, 2 warnings, ~27 s |
-| Next up | **A 36-task, 92-point SONNET batch** spanning sprints 2–12. No `opus` work remains except the blocked T-4.5. **Switch this session's model to Sonnet**; see §0. |
+| Complete | **105 of 117 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
+| Tests | **827 passing**, 3 skipped (CuPy/PyVista absent), ~65 s |
+| Next up | **Nothing schedulable.** `schedule.py --next` reports so directly. T-2.9/T-4.5/T-12.2 and everything behind them need external input — see the 2026-08-02 note at the top of §0. |
 | Blocked | **T-2.9** needs the repo public. **T-12.2** needs an exact Peters (1964) equation number. **T-4.5** (new, 2026-07-31) needs a citable equation for the uniform-sphere `l=2` form factor — see §9. All three are machine-readable blocks in the `deps` field, so the scheduler excludes them *and says so*; **9 tasks** are transitively stranded behind them (T-4.7/4.8/4.9 and most of sprint 12). |
 
 **Landed 2026-07-31.** T-2.2 (`UNPHYSICAL` stamp propagation, ADR-0005), T-2.6

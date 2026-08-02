@@ -160,4 +160,103 @@ def plot_pattern_3d(
     return fig
 
 
-__all__ = ["plot_pattern_3d", "plot_pattern_polar"]
+def plot_polarization_ellipse(h_plus: float, h_cross: float, n_points: int = 200) -> Figure:
+    """Deformation of a ring of free-falling test particles under a passing
+    GW — the visual spin-2 signature.
+
+    .. code-block:: text
+
+        x'(theta) = (1 + h_plus/2) R cos(theta) + (h_cross/2) R sin(theta)
+        y'(theta) = (h_cross/2) R cos(theta) + (1 - h_plus/2) R sin(theta)
+
+    the standard geodesic-deviation displacement of a ring of test masses
+    (see :func:`gwtb.target.geodesic.deviation_acceleration`), with
+    ``h_ij = [[h_plus, h_cross], [h_cross, -h_plus]]`` in the
+    ``h_xx = -h_yy = h_plus``, ``h_xy = h_yx = h_cross`` convention.
+
+    **AC, visually**: pure ``h_plus`` stretches the ring along one axis and
+    squeezes the perpendicular one (an ellipse aligned with x/y); pure
+    ``h_cross`` produces the identical ellipse shape but rotated 45 degrees —
+    not 90, the spin-2 signature CLAUDE.md rule 4 names.
+
+    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22 (the
+    ``h_plus``/``h_cross`` component convention this displacement uses)
+
+    Parameters
+    ----------
+    h_plus, h_cross
+        Dimensionless strain amplitudes.
+    n_points
+        Number of points to trace the ring with. Must be at least 8.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    if n_points < 8:
+        raise ValueError(f"n_points must be at least 8, got {n_points!r}")
+
+    theta = np.linspace(0.0, 2.0 * np.pi, n_points)
+    radius = 1.0
+    x_undeformed = radius * np.cos(theta)
+    y_undeformed = radius * np.sin(theta)
+    x_deformed = (1.0 + h_plus / 2.0) * x_undeformed + (h_cross / 2.0) * y_undeformed
+    y_deformed = (h_cross / 2.0) * x_undeformed + (1.0 - h_plus / 2.0) * y_undeformed
+
+    fig, ax = plt.subplots()
+    ax.plot(x_undeformed, y_undeformed, "k--", alpha=0.3, label="undeformed")
+    ax.plot(x_deformed, y_deformed, "b-", label="deformed")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_aspect("equal")
+    ax.legend()
+    return fig
+
+
+def plot_trade_surface(
+    frequencies: ArrayLike, apertures: ArrayLike, invariant_wavelengths: float = 6.16e9
+) -> Figure:
+    """Required-aperture-vs-frequency trade-surface plot.
+
+    Log-log axes, since the trade surface (:func:`gwtb.array.focus.
+    trade_surface`) spans many decades in both frequency and aperture; the
+    invariant ``D/lambda`` product is annotated as a horizontal reference
+    line, since :func:`gwtb.array.focus.trade_surface`'s whole point is that
+    this ratio does not depend on frequency.
+
+    Parameters
+    ----------
+    frequencies
+        Shape ``(F,)``, Hz.
+    apertures
+        Shape ``(F,)``, m. From :func:`gwtb.array.focus.trade_surface`.
+    invariant_wavelengths
+        The frequency-independent ``D/lambda`` requirement to annotate, e.g.
+        ~6.16e9 for a 1 km spot at 40 AU.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    freqs = np.asarray(frequencies, dtype=np.float64)
+    aps = np.asarray(apertures, dtype=np.float64)
+    if freqs.shape != aps.shape:
+        raise ValueError(
+            f"frequencies and apertures must have the same shape, got {freqs.shape} and {aps.shape}"
+        )
+
+    fig, ax = plt.subplots()
+    ax.loglog(freqs, aps, "b-o")
+    ax.set_xlabel("Drive frequency (Hz)")
+    ax.set_ylabel("Required aperture D (m)")
+    ax.set_title(f"D/λ invariant ≈ {invariant_wavelengths:.2e}")
+    ax.grid(True, which="both", alpha=0.3)
+    return fig
+
+
+__all__ = [
+    "plot_pattern_3d",
+    "plot_pattern_polar",
+    "plot_polarization_ellipse",
+    "plot_trade_surface",
+]

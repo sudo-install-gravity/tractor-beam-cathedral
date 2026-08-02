@@ -1,4 +1,4 @@
-"""Unit tests for gwtb.viz.patterns (T-7.4, T-7.5)."""
+"""Unit tests for gwtb.viz.patterns (T-7.4, T-7.5, T-10.7)."""
 
 from __future__ import annotations
 
@@ -7,11 +7,19 @@ import matplotlib
 matplotlib.use("Agg")
 
 import numpy as np
+import pytest
 from matplotlib.figure import Figure
 
 from gwtb.array.beamform import steering_phases
+from gwtb.array.focus import trade_surface
 from gwtb.array.geometry import linear_array
-from gwtb.viz.patterns import _array_factor_magnitude, plot_pattern_3d, plot_pattern_polar
+from gwtb.core.constants import AU
+from gwtb.viz.patterns import (
+    _array_factor_magnitude,
+    plot_pattern_3d,
+    plot_pattern_polar,
+    plot_trade_surface,
+)
 
 
 def test_plot_pattern_polar_renders_headless_figure() -> None:
@@ -77,3 +85,38 @@ def test_plot_pattern_3d_peak_matches_steering_to_1e_3_rad() -> None:
     mags = _array_factor_magnitude(geom, weights, wavelength, directions)
     peak_theta = theta[np.argmax(mags)]
     assert abs(peak_theta - theta_target) < 1e-3
+
+
+# --- T-10.7: plot_trade_surface ----------------------------------------------
+
+
+def test_plot_trade_surface_renders_headless() -> None:
+    """AC: renders headless."""
+    frequencies = np.array([1.0, 10.0, 100.0, 1000.0])
+    apertures = trade_surface(frequencies, range_m=40.0 * AU, target_spot_size=1.0e3)
+    fig = plot_trade_surface(frequencies, apertures)
+    assert isinstance(fig, Figure)
+
+
+def test_plot_trade_surface_uses_log_log_axes() -> None:
+    """AC: log-log axes."""
+    frequencies = np.array([1.0, 10.0, 100.0, 1000.0])
+    apertures = trade_surface(frequencies, range_m=40.0 * AU, target_spot_size=1.0e3)
+    fig = plot_trade_surface(frequencies, apertures)
+    ax = fig.axes[0]
+    assert ax.get_xscale() == "log"
+    assert ax.get_yscale() == "log"
+
+
+def test_plot_trade_surface_annotates_the_invariant() -> None:
+    """AC: annotates the 6e9 wavelength invariant."""
+    frequencies = np.array([1.0, 1.0e6])
+    apertures = trade_surface(frequencies, range_m=40.0 * AU, target_spot_size=1.0e3)
+    fig = plot_trade_surface(frequencies, apertures, invariant_wavelengths=6.16e9)
+    title = fig.axes[0].get_title()
+    assert "6.16e" in title or "6.16E" in title.replace("+", "")
+
+
+def test_plot_trade_surface_rejects_mismatched_shapes() -> None:
+    with pytest.raises(ValueError, match="shape"):
+        plot_trade_surface(np.array([1.0, 2.0]), np.array([1.0, 2.0, 3.0]))

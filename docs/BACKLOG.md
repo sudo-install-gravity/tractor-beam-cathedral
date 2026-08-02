@@ -838,36 +838,27 @@ FP32 **fails** the same check — documenting why the decomposition exists.
 `examples/deflection_scenario.py` — 1 km asteroid at 40 AU, N-element array, prime-band drive.
 *AC:* runs to completion; emits field visualization, beam pattern, Δv, miss distance, gap report.
 
-**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8, exact Peters 1964 equation number** 🚫 **blocked, not Ready**
+**T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8**
 `tests/benchmarks/test_hulse_taylor.py` — PSR B1913+16 orbital decay.
 *AC:* reproduces −2.4e-12 s/s to rtol 1e-2.
-*Blocked 2026-07-27:* needs the Peters (1964) eccentric-orbit decay formula
-(⟨da/dt⟩, ⟨de/dt⟩ with the 73/24, 37/96, 121/304 coefficients — content
-verified via multiple secondary sources) with an exact, checkable equation
-number. Two `researcher` passes could not reach a fetchable primary source:
-the Caltech-hosted PDF refuses the connection from this environment
-(`ECONNREFUSED`), and Blanchet arXiv:1310.1528's PDF text could not be
-parsed for the specific equation.
 
-*Retested 2026-07-29 on the Windows host — the two halves are not equally
-blocked, and the difference decides where to spend effort:*
-
-* **Caltech `thesis.library.caltech.edu/4296/1/Peters_pc_1964.pdf` — still
-  `ECONNREFUSED`, same IP (131.215.225.45).** Not an artefact of the old host
-  or its network; that server refuses this connection too. Treat as
-  permanently unavailable from here and stop retrying it.
-* **arXiv:1310.1528 (Blanchet) — reachable, HTTP 200.** The 2026-07-27 failure
-  was a *parsing* failure on the old host, not an access failure. This is the
-  half worth re-attempting: a fresh pass with a working local Python and
-  different PDF tooling may extract the equation number that the previous
-  environment could not.
-
-PSR B1913+16 system parameters (masses,
-period, eccentricity, observed Ṗ_b) are separately verified via arXiv:1606.04581
-(Weisberg & Huang 2016) but implementing without a pinned decay-rate equation
-number would violate citation discipline. Escalate to a spike to pin the
-equation number (e.g. via a session with normal internet/library access, or
-by deriving it from already-cited multipole formulas) before implementing.
+*Citation resolved 2026-08-02.* Three prior `researcher` passes could not reach a
+fetchable primary source for Peters (1964) itself: the Caltech-hosted PDF
+permanently refuses the connection from this environment (`ECONNREFUSED`,
+confirmed twice, stop retrying it), and Blanchet arXiv:1310.1528 — though
+reachable — turns out **not to contain the eccentric-orbit decay formula at all**;
+it focuses on quasi-circular inspiral. A fourth pass found a citable substitute
+instead of the original: **Kowalska, Bulik, Belczyński, Dominik & Gondek-Rósińska,
+"The eccentricity distribution of compact binaries," A&A 527:A70 (2011),
+arXiv:1010.0511**, an open-access, peer-reviewed source whose eq. (1) gives
+⟨da/dt⟩ and eq. (3) gives ⟨de/dt⟩, confirmed algebraically to match the
+73/24, 37/96, 121/304-coefficient form term-for-term (their `-(19/12)β` prefactor
+reduces to exactly `-304/15`, the stated `de/dt` coefficient). They attribute the
+result to Peters & Mathews (1963) and Peters (1964), Phys. Rev. 136, B1224 — that
+original paper's own equation numbers remain unverified (paywalled, no open
+mirror), so **cite Kowalska et al., not "Peters 1964 eq. 5.6/5.7."**
+PSR B1913+16 system parameters (masses, period, eccentricity, observed Ṗ_b) are
+separately verified via arXiv:1606.04581 (Weisberg & Huang 2016).
 
 **T-12.3 · Benchmark: energy conservation · 3 pts · `sonnet-low` · deps T-6.8** ✅
 `tests/benchmarks/test_energy_conservation.py` — Radiated energy integrated over a distant sphere vs. the quadrupole luminosity integral.

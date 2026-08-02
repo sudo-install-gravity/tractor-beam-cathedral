@@ -36,11 +36,12 @@ unreproducible and the Category B admission is unauditable. Run it with
 `.venv\Scripts\python.exe scratchpad\spike_4_5.py` (~20 s); it prints `CONFIRMED` or
 `MISMATCH` and re-derives every figure quoted below.
 
-> **Finding, noticed while writing this ADR.** [ADR-0006](0006-focused-field-far-field-regime.md)
-> cites `scratchpad/spike_9_6.py` and `spike_9_6b.py`, but neither was ever committed —
-> `scratchpad/` was untracked until now. Those are **dangling references**: ADR-0006's
-> measured trap values cannot be reproduced from this repo. Not fixed here (the files are
-> gone), and recorded rather than quietly ignored, per `CLAUDE.md` rule 8.
+> **Finding, noticed while writing this ADR — since fixed.** [ADR-0006](0006-focused-field-far-field-regime.md)
+> cited `scratchpad/spike_9_6.py` and `spike_9_6b.py`, but neither was ever committed —
+> `scratchpad/` was untracked until this ADR. Those were **dangling references**, recorded
+> here rather than quietly ignored per `CLAUDE.md` rule 8. Resolved 2026-08-02: a fresh
+> `scratchpad/spike_9_6.py` now reproduces every figure ADR-0006 states from current
+> production code, and is annotated there directly.
 
 ## Decision
 

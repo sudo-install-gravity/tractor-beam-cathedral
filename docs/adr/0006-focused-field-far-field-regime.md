@@ -21,6 +21,18 @@ restating. Per the Definition of Ready this is a spike, not an implementation de
 
 Prototype: `scratchpad/spike_9_6.py`, `spike_9_6b.py` (scratch, not production code).
 
+> **Reproducibility note, added 2026-08-02.** `scratchpad/` was untracked at the time
+> this ADR was written, so the two files named above were never committed and are
+> dangling references — this ADR's numbers could not be reproduced from the repository.
+> This was caught while writing [ADR-0007](0007-uniform-sphere-quadrupole-form-factor.md)
+> and fixed by committing `scratchpad/spike_9_6.py`, which regenerates every figure in
+> this document's "Context" and "Four traps" sections from the current production code
+> (`gwtb.array.focus`, `gwtb.array.beamform`) and the exact geometry already pinned in
+> `tests/unit/test_focused_field.py`. **All figures below reproduce**, including the
+> peak-to-background ratio of 8.75 (not the naive √N = 8.00). Run it with
+> `.venv\Scripts\python.exe scratchpad\spike_9_6.py`; it prints a self-checking
+> CONFIRMED/MISMATCH verdict, following `spike_4_5.py`'s pattern.
+
 ## Decision
 
 **`focused_field` is a far-field construction and builds on `superpose_tt` unchanged.**

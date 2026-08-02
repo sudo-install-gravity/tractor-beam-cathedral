@@ -40,6 +40,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from gwtb.core.constants import c
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 #: Rendered in place of a numeric gap when ``achieved`` is exactly zero.
@@ -369,4 +370,50 @@ class GapReport:
         )
 
 
-__all__ = ["GapMetric", "GapReport"]
+def emission_gap(luminosity: float, target_impulse: float, duration: float) -> GapMetric:
+    """Ledger row: achieved GW luminosity versus the luminosity a radiation-
+    pressure-only mechanism would need to deliver ``target_impulse`` over
+    ``duration``.
+
+    ``required = (target_impulse / duration) * c``, inverting the standard
+    radiation-pressure relation ``F = P / c`` (momentum flux of any field
+    radiating at speed ``c`` — the same assumption underlying
+    ``docs/PHYSICS.md`` §"assuming radiated power converts to thrust", and the
+    one :func:`gwtb.target.coupling.channel_absorption` (T-8.4) uses
+    explicitly). This is the naive best case: it assumes every watt radiated
+    converts to thrust with no loss, so the reported gap is optimistic, not
+    conservative.
+
+    Parameters
+    ----------
+    luminosity
+        Achieved GW power, W. From :func:`gwtb.source.quadrupole.luminosity`
+        or a comparable source. Must be finite and non-negative.
+    target_impulse
+        Required momentum transfer, N s. Must be finite and positive.
+    duration
+        Time over which the impulse is delivered, s. Must be finite and
+        positive.
+
+    Returns
+    -------
+    GapMetric
+        ``name="emission magnitude"``, ``units="W"``,
+        ``source_module="gwtb.source.quadrupole"``.
+    """
+    if not math.isfinite(duration) or duration <= 0.0:
+        raise ValueError(f"duration must be positive and finite, got {duration!r}")
+    if not math.isfinite(target_impulse) or target_impulse <= 0.0:
+        raise ValueError(f"target_impulse must be positive and finite, got {target_impulse!r}")
+
+    required = (target_impulse / duration) * c
+    return GapMetric(
+        name="emission magnitude",
+        achieved=luminosity,
+        required=required,
+        units="W",
+        source_module="gwtb.source.quadrupole",
+    )
+
+
+__all__ = ["GapMetric", "GapReport", "emission_gap"]

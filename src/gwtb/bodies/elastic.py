@@ -18,6 +18,7 @@ records it.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -147,4 +148,82 @@ def induced_quadrupole(
     return result
 
 
-__all__ = ["induced_quadrupole", "love_number_k2"]
+@dataclass(frozen=True)
+class Material:
+    """A material's shear rigidity and density, with its source.
+
+    Structured as data rather than a bare comment so the citation is
+    machine-checkable alongside the numbers it justifies, matching the
+    ``source_module`` pattern in :mod:`gwtb.ledger.gap_report`.
+
+    Source: per-entry, in :data:`MATERIALS`, eq. n/a (this class has no
+    equation of its own — it carries the citation for each entry's rigidity
+    and density)
+
+    Attributes
+    ----------
+    rigidity
+        Shear modulus ``mu``, Pa.
+    density
+        kg m^-3.
+    source
+        Where the numbers come from.
+    """
+
+    rigidity: float
+    density: float
+    source: str
+
+
+#: Reference materials for :func:`love_number_k2`, spanning ordinary
+#: engineering solids to an illustrative degenerate-matter extreme.
+#:
+#: Densities are within 1% of the CRC Handbook values for steel, tungsten and
+#: osmium. The degenerate-matter entry is explicitly a **nominal placeholder**,
+#: not a measurement: real compact-object interiors vary by orders of
+#: magnitude with composition, depth and cooling history, so no single
+#: "published value" exists to match to 1%. It is included to show the
+#: qualitative effect of a rigidity many orders of magnitude beyond ordinary
+#: solids, per BACKLOG.md T-4.4.
+MATERIALS: dict[str, Material] = {
+    "steel": Material(
+        rigidity=79.3e9,
+        density=7850.0,
+        source=(
+            "CRC Handbook of Chemistry and Physics, 104th ed. (density, mild/"
+            "structural steel); ASM Metals Handbook Vol. 1 (1990) (shear modulus)"
+        ),
+    ),
+    "tungsten": Material(
+        rigidity=161.0e9,
+        density=19300.0,
+        source="CRC Handbook of Chemistry and Physics, 104th ed. (density, shear modulus)",
+    ),
+    "osmium": Material(
+        rigidity=222.0e9,
+        density=22590.0,
+        source=(
+            "CRC Handbook of Chemistry and Physics, 104th ed. (density — osmium "
+            "is the densest naturally occurring element); shear modulus per "
+            "elastic-constant compilations for hcp osmium (e.g. Materials "
+            "Project database, mp-124)"
+        ),
+    ),
+    "degenerate_matter": Material(
+        rigidity=1.0e22,
+        density=1.0e9,
+        source=(
+            "Nominal placeholder, not a measurement (see MATERIALS docstring). "
+            "Density is the canonical white-dwarf-core order of magnitude "
+            "(Shapiro & Teukolsky, Black Holes, White Dwarfs, and Neutron "
+            "Stars, 1983, ch. 3). Rigidity is a schematic order-of-magnitude "
+            "crystallized-matter shear modulus (Chamel & Haensel, 'Physics of "
+            "Neutron Star Crusts', Living Rev. Relativ. 11:10 (2008), "
+            "arXiv:0812.3955, §general discussion of crustal rigidity), not "
+            "tied to a specific depth or composition."
+        ),
+    ),
+}
+
+
+__all__ = ["MATERIALS", "Material", "induced_quadrupole", "love_number_k2"]

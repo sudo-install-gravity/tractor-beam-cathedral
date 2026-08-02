@@ -1,4 +1,4 @@
-"""Unit tests for gwtb.bodies.elastic (T-4.3).
+"""Unit tests for gwtb.bodies.elastic (T-4.3, T-4.4).
 
 The acceptance criterion that matters most is the last one: **R and rho now
 enter independently**. T-4.2 asserted the opposite for the rigid model — two
@@ -15,8 +15,17 @@ from itertools import pairwise
 import numpy as np
 import pytest
 
-from gwtb.bodies.elastic import induced_quadrupole, love_number_k2
+from gwtb.bodies.elastic import MATERIALS, induced_quadrupole, love_number_k2
 from gwtb.bodies.sphere import Sphere
+
+# Reference densities, kg/m^3, CRC Handbook of Chemistry and Physics, 104th
+# ed. — independent of MATERIALS itself, per the project's benchmark
+# convention (a drift in the package's own data must not drift its own test).
+_PUBLISHED_DENSITY = {
+    "steel": 7850.0,
+    "tungsten": 19300.0,
+    "osmium": 22590.0,
+}
 
 #: A representative tidal tensor, s^-2. Trace-free already.
 _TIDAL = np.array(
@@ -202,3 +211,44 @@ def test_rejects_float32_field() -> None:
     """ADR-0002 §5: float32 is rejected, not upcast."""
     with pytest.raises(TypeError, match="float32"):
         induced_quadrupole(_steel(), _TIDAL.astype(np.float32), rigidity=_STEEL_RIGIDITY)
+
+
+# --- MATERIALS (T-4.4) ------------------------------------------------------
+
+
+def test_materials_has_the_four_required_entries() -> None:
+    assert {"steel", "tungsten", "osmium", "degenerate_matter"} <= set(MATERIALS)
+
+
+@pytest.mark.parametrize("name", ["steel", "tungsten", "osmium"])
+def test_material_density_within_one_percent_of_published(name: str) -> None:
+    assert MATERIALS[name].density == pytest.approx(_PUBLISHED_DENSITY[name], rel=1e-2)
+
+
+def test_every_material_has_a_nonempty_source() -> None:
+    for name, material in MATERIALS.items():
+        assert material.source, f"{name} has no citation"
+
+
+def test_every_material_has_positive_finite_rigidity_and_density() -> None:
+    for name, material in MATERIALS.items():
+        assert math.isfinite(material.rigidity) and material.rigidity > 0.0, name
+        assert math.isfinite(material.density) and material.density > 0.0, name
+
+
+def test_osmium_is_the_densest_ordinary_material_here() -> None:
+    """Osmium is the densest naturally occurring element — a cheap sanity
+    check that the numbers were not transposed between entries."""
+    assert MATERIALS["osmium"].density > MATERIALS["tungsten"].density
+    assert MATERIALS["tungsten"].density > MATERIALS["steel"].density
+
+
+def test_degenerate_matter_rigidity_dwarfs_ordinary_solids() -> None:
+    """The illustrative point of including it at all (BACKLOG.md T-4.4)."""
+    assert MATERIALS["degenerate_matter"].rigidity > 1.0e6 * MATERIALS["osmium"].rigidity
+
+
+def test_each_material_computes_a_sane_love_number() -> None:
+    for name, material in MATERIALS.items():
+        k2 = love_number_k2(Sphere(radius=10.0, density=material.density), material.rigidity)
+        assert 0.0 < k2 <= 1.5, f"{name}: k2={k2!r} out of the physical range"

@@ -15,7 +15,8 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from gwtb.ledger.gap_report import GapMetric, GapReport
+from gwtb.core.constants import c
+from gwtb.ledger.gap_report import GapMetric, GapReport, emission_gap
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 
@@ -338,6 +339,54 @@ def test_provenance_survives_the_json_round_trip() -> None:
     restored = GapReport.from_json(report.to_json())
     assert restored.metrics[0].is_unphysical is True
     assert restored.metrics == report.metrics
+
+
+# --- emission_gap (T-2.7) --------------------------------------------------
+
+
+def _rod_luminosity() -> float:
+    """The T-2.8 closed form, 10 t / 10 m / 1 kHz: P = (2/45)(G/c^5) M^2 L^4 w^6."""
+    from gwtb.core.constants import G_OVER_C5
+
+    m, length, omega = 1.0e4, 10.0, 2.0 * math.pi * 1.0e3
+    return (2.0 / 45.0) * G_OVER_C5 * m**2 * length**4 * omega**6
+
+
+def test_emission_gap_achieved_matches_rod_luminosity_within_half_a_decade() -> None:
+    """AC: for the 10 t / 10 m / 1 kHz rod, reports a gap within 0.5 decades
+    of 1e-19 W."""
+    luminosity = _rod_luminosity()
+    metric = emission_gap(luminosity, target_impulse=1.4e10, duration=3.15e8)
+    assert metric.achieved == pytest.approx(luminosity)
+    assert abs(math.log10(metric.achieved / 1e-19)) < 0.5
+
+
+def test_emission_gap_required_inverts_f_equals_p_over_c() -> None:
+    metric = emission_gap(1.0, target_impulse=10.0, duration=2.0)
+    assert metric.required == pytest.approx((10.0 / 2.0) * c)
+
+
+def test_emission_gap_has_the_frozen_row_identity() -> None:
+    metric = emission_gap(1e-19, target_impulse=1.0, duration=1.0)
+    assert metric.name == "emission magnitude"
+    assert metric.units == "W"
+    assert metric.source_module == "gwtb.source.quadrupole"
+
+
+def test_emission_gap_rejects_non_positive_duration() -> None:
+    with pytest.raises(ValueError, match="duration"):
+        emission_gap(1.0, target_impulse=1.0, duration=0.0)
+
+
+def test_emission_gap_rejects_non_positive_target_impulse() -> None:
+    with pytest.raises(ValueError, match="target_impulse"):
+        emission_gap(1.0, target_impulse=-1.0, duration=1.0)
+
+
+def test_emission_gap_fits_in_a_report() -> None:
+    report = GapReport()
+    report.add(emission_gap(_rod_luminosity(), target_impulse=1.4e10, duration=3.15e8))
+    assert "emission magnitude" in report.to_markdown()
 
 
 def test_len_and_iteration() -> None:

@@ -306,7 +306,7 @@ dropped by `np.asarray`.
 *Citation:* MTW §36.1 `[verify]`.
 *AC:* equals total momentum derivative; zero for momentum-conserving input to atol 1e-12.
 
-**T-2.4 · Dipole radiation term (flagged) · 3 pts · `sonnet-low` · deps T-2.2, T-2.3**
+**T-2.4 · Dipole radiation term (flagged) · 3 pts · `sonnet-low` · deps T-2.2, T-2.3** ✅
 `src/gwtb/source/multipole_rad.py` — `dipole_strain(d_ddot, r, n_hat) -> StampedResult`.
 *AC:* always returns a stamped result; raises if called with a momentum-conserving source
 unless `allow_trivial=True`.
@@ -326,7 +326,7 @@ source_module)` and `class GapReport` with `add()`, `to_markdown()`, `to_json()`
 *Why freeze:* the ledger reads outputs from every epic. Later epics write to this contract;
 without a freeze the ledger chases interface changes all project long.
 
-**T-2.7 · Ledger: emission-magnitude row · 2 pts · `sonnet-low` · deps T-2.6**
+**T-2.7 · Ledger: emission-magnitude row · 2 pts · `sonnet-low` · deps T-2.6** ✅
 `src/gwtb/ledger/gap_report.py` — `emission_gap(luminosity, target_impulse, duration)`.
 *AC:* for a 10 t / 10 m / 1 kHz rod reports a gap within 0.5 decades of 1e-19 W.
 
@@ -406,7 +406,7 @@ precision; it is a far stronger check than any standalone tolerance.
 `src/gwtb/source/quadrupole.py` — `waveform_from_profile(body, profile, r, n_hat, times)`.
 *AC:* strain returns to the memory offset (not zero) after the maneuver ends, to rtol 1e-6.
 
-**T-3.9 · Benchmark: memory effect · 2 pts · `sonnet-low` · deps T-3.7**
+**T-3.9 · Benchmark: memory effect · 2 pts · `sonnet-low` · deps T-3.7** ✅
 `tests/benchmarks/test_memory.py` — hyperbolic two-body scattering.
 *AC:* offset matches the analytic result to rtol 1e-4.
 
@@ -433,7 +433,7 @@ this is the surprising result the API must not hide.
 *AC:* scales linearly with acceleration; → 0 as rigidity → ∞; **R and ρ now enter
 independently** (asserted against T-4.2).
 
-**T-4.4 · Material property library · 2 pts · `sonnet-low` · deps T-4.3**
+**T-4.4 · Material property library · 2 pts · `sonnet-low` · deps T-4.3** ✅
 `src/gwtb/bodies/elastic.py` — `MATERIALS` dict with rigidity and density for steel, tungsten,
 osmium, and a nominal degenerate-matter placeholder, each with a source.
 *AC:* every entry has a citation comment; densities within 1% of published values.

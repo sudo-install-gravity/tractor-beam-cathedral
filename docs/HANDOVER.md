@@ -52,36 +52,40 @@ two.
 
 ## 0. Where the last session stopped — 2026-08-02
 
-> **Update 2026-08-02 — SPIKE-4.5 and T-4.5 have landed. The backlog now has no
-> `opus` work left, and nothing is blocked except T-2.9.**
+> **Update, later the same day (Sonnet session) — T-4.7, T-4.8, T-4.9 have
+> landed, and a reproducibility gap in ADR-0006 was found and closed. Sprint 4
+> is now fully complete. 867 tests passing**, 3 skipped, all five §8 checks
+> green, committed and pushed.
 >
-> SPIKE-4.5 resolved the last open physics decision → **[ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md)**:
-> the uniform-sphere `l=2` finite-size form factor is **`1 − 5(kR)²/98`**.
-> `finite_size_correction` is implemented in `bodies/multipole.py` (EQ-034).
-> **849 tests passing**, 3 skipped, all five §8 checks green.
+> **`scratchpad/spike_9_6.py` now exists and is committed.** ADR-0006 had cited
+> `spike_9_6.py`/`spike_9_6b.py` as its prototypes, but `scratchpad/` was
+> untracked until SPIKE-4.5, so neither file was ever committed — every figure
+> in ADR-0006 was unreproducible from this repo. A fresh `spike_9_6.py`
+> regenerates all of them from current production code (12374.4 m aperture,
+> 1.034e-9 rad spread, 2.4e7× margin, the `D/λ` table, the sign-convention
+> table, the 8.75 peak-to-background ratio) and all reproduce. Recorded in
+> `docs/INDEX.md`'s assumption ledger per rule 8, not silently patched.
 >
-> **The citation was never found, and that is the decision, not a gap.** OQ-7 is
-> closed as a *negative* answer: no numbered equation for this result exists in
-> any accessible source, so it is adopted as **Category B** (our derivation) on
-> the strength of three independent numerical verifications instead — the
-> strongest agreeing to `1.7e-12`. Thorne 1980 is still paywalled and its
-> equation number is **still unconfirmed**; do not cite it with one.
+> **T-4.7**: `LongWavelengthAssumptionWarning`, raised by
+> `finite_size_correction` at `R/λ ≥ 0.1` (inclusive), naming the "Long
+> wavelength" row of `docs/INDEX.md` §3 in its message text.
 >
-> **Two things in ADR-0007 will bite whoever touches this next:**
-> 1. `sin(kR)/(kR)` (coefficient `1/6`) is spin-1 `l=0` antenna machinery and
->    `3j₁(kR)/(kR)` (`1/10`) is the total-mass monopole. Both → 1 as `R/λ → 0`,
->    both satisfy the *original* acceptance criterion, and only the coefficient
->    tells them apart. Guarded by name in `tests/unit/test_multipole.py`.
-> 2. **The radial profile is load-bearing.** A *surface* deformation gives
->    `1 − (kR)²/14`, **40% larger**. That is the incompressible tidal (T-4.3) and
->    rotational (T-4.6) case, so `finite_size_correction` must **not** be applied
->    to `induced_quadrupole` or `oblateness_quadrupole` without re-deriving.
+> **T-4.8**: `tests/benchmarks/test_body_sensitivity.py` sweeps 5 radii across
+> two orders of magnitude at fixed `M`. Rigid-model radiation stays at the
+> machine-zero floor; elastic-model radiation (steel/tungsten/osmium) varies by
+> ~7.6e4–1.0e5×, eight orders above the AC's threshold.
 >
-> **The next batch is Sonnet: T-4.7, T-4.8, T-4.9** (8 pts, sprint 4), freed by
-> T-4.5. Ask `schedule.py --next` rather than trusting this line. Recommendation
-> is to **switch this session's model to Sonnet in place** — the context is
-> already loaded and a cold start is the expensive path (§4). Nothing in that
-> batch needs Opus.
+> **T-4.9**: `body_quadrupole_gap` in `ledger/gap_report.py`, a thin wrapper
+> (`focusing_gap`'s style) — fixed `name`/`units`, caller supplies both values,
+> since neither "which body model" nor "required for what scenario" was
+> specified by the backlog entry and none should be invented here.
+>
+> **Every task in the backlog is now complete except externally-blocked ones.**
+> `schedule.py --next` reports "nothing to schedule — all tasks complete or
+> externally blocked." Remaining: `T-2.9` (needs the repo public) and the six
+> Sprint 12 closeout tasks that depend on "all" and are therefore blocked
+> transitively behind it. **No session-startable work remains** until T-2.9's
+> external dependency clears.
 
 ### The 2026-07-31 entry
 
@@ -157,10 +161,10 @@ The system Python has no numpy.
 
 | | |
 |---|---|
-| Complete | **108 of 118 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
-| Tests | **849 passing**, 3 skipped (CuPy/PyVista absent), ~59 s |
-| Next up | **T-4.7, T-4.8, T-4.9** — 3 tasks, 8 pts, sprint 4, freed by T-4.5 landing 2026-08-02. All `sonnet`-tier; **switch this session's model to Sonnet in place** rather than starting a new session (§4). Confirm with `schedule.py --next`. |
-| Blocked | **T-2.9 only** — needs the repo made public. It is a machine-readable block in the `deps` field, so the scheduler excludes it *and says so*; anything stranded behind it is listed by `schedule.py --plan`. **T-12.2 resolved** 2026-08-02 (Kowalska et al. citation) and **T-4.5 resolved** 2026-08-02 (SPIKE-4.5 → ADR-0007, closed as a Category B derivation *without* a citation — see §0). |
+| Complete | **111 of 118 tasks** (`schedule.py --status` is authoritative; do not trust a number typed into this file) |
+| Tests | **867 passing**, 3 skipped (CuPy/PyVista absent), ~76 s |
+| Next up | **Nothing schedulable.** `schedule.py --next` reports "nothing to schedule — all tasks complete or externally blocked" directly. |
+| Blocked | **T-2.9** needs the repo made public. Six Sprint 12 closeout tasks (T-12.1, T-12.4–T-12.8) depend on "all" and are therefore transitively blocked behind it — see `schedule.py --plan`. Everything else that was ever blocked is now resolved: T-12.2 (Kowalska et al. citation) and T-4.5 (SPIKE-4.5 → ADR-0007) on 2026-08-02, plus T-4.7/4.8/4.9 which T-4.5 freed, landed the same day — see §0. |
 
 **Landed 2026-07-31.** T-2.2 (`UNPHYSICAL` stamp propagation, ADR-0005), T-2.6
 (frozen ledger schema), T-3.7 (linear memory), T-4.3 (Love-number deformation),

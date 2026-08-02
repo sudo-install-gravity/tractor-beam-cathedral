@@ -17,7 +17,7 @@ import pytest
 
 from gwtb.array.geometry import linear_array, planar_array
 from gwtb.core.constants import AU, c
-from gwtb.ledger.gap_report import GapMetric, GapReport, aperture_gap, emission_gap
+from gwtb.ledger.gap_report import GapMetric, GapReport, aperture_gap, emission_gap, impulse_gap
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 
@@ -448,6 +448,34 @@ def test_aperture_gap_rejects_invalid_scalars(kwargs: dict, match: str) -> None:
     }
     with pytest.raises(ValueError, match=match):
         aperture_gap(**{**base, **kwargs})
+
+
+# --- impulse_gap (T-8.9) ----------------------------------------------------
+
+
+def test_impulse_gap_default_matches_the_1km_asteroid_requirement() -> None:
+    metric = impulse_gap(achieved_impulse=1.16e7)
+    assert metric.required == pytest.approx(1.4e10)
+
+
+def test_impulse_gap_dart_achieved_is_seven_decades_short() -> None:
+    """AC: benchmarked against DART (1.16e7 N s) and the 1 km requirement
+    (1.4e10 N s)."""
+    metric = impulse_gap(achieved_impulse=1.16e7)
+    assert metric.gap_decades == pytest.approx(math.log10(1.4e10 / 1.16e7), rel=1e-9)
+    assert 2.5 < metric.gap_decades < 3.5
+
+
+def test_impulse_gap_row_identity() -> None:
+    metric = impulse_gap(achieved_impulse=1.16e7)
+    assert metric.name == "impulse"
+    assert metric.units == "N s"
+
+
+def test_impulse_gap_custom_requirement() -> None:
+    metric = impulse_gap(achieved_impulse=100.0, required_impulse=1000.0)
+    assert metric.required == 1000.0
+    assert metric.gap_decades == pytest.approx(1.0)
 
 
 def test_len_and_iteration() -> None:

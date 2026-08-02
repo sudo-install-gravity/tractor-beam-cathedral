@@ -477,4 +477,40 @@ def aperture_gap(
     )
 
 
-__all__ = ["GapMetric", "GapReport", "aperture_gap", "emission_gap"]
+def impulse_gap(
+    achieved_impulse: float,
+    required_impulse: float = 1.4e10,
+    source_module: str = "gwtb.target.deflection",
+) -> GapMetric:
+    """Ledger row: achieved momentum transfer versus the requirement.
+
+    Default ``required_impulse`` is the 1 km asteroid figure used throughout
+    this project (``docs/PHYSICS.md``: ~1.4e10 N s for 0.01 m/s of Δv on a
+    1.4e12 kg body). The canonical ``achieved_impulse`` to compare it against
+    is DART's ~1.16e7 N s (Daly et al., *Nature* 616, 443 (2023)) — see
+    :func:`gwtb.target.deflection.delta_v`.
+
+    Parameters
+    ----------
+    achieved_impulse
+        N s. Must be finite and non-negative.
+    required_impulse
+        N s. Must be positive and finite.
+    source_module
+        Dotted path of the module that computed ``achieved_impulse``.
+
+    Returns
+    -------
+    GapMetric
+        ``name="impulse"``, ``units="N s"``.
+    """
+    return GapMetric(
+        name="impulse",
+        achieved=achieved_impulse,
+        required=required_impulse,
+        units="N s",
+        source_module=source_module,
+    )
+
+
+__all__ = ["GapMetric", "GapReport", "aperture_gap", "emission_gap", "impulse_gap"]

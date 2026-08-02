@@ -641,22 +641,22 @@ degrade gracefully if absent.
 
 ## Sprint 8 — Target coupling and deflection (23 pts)
 
-**T-8.1 · Geodesic deviation · 3 pts · `sonnet-low` · deps T-6.8**
+**T-8.1 · Geodesic deviation · 3 pts · `sonnet-low` · deps T-6.8** ✅
 `src/gwtb/target/geodesic.py` — `deviation_acceleration(h_ddot, separation)`.
 `d²ξ_i/dt² = ½ ḧ_ij^TT ξ_j`.
 *Citation:* MTW §37.2 `[verify]`.
 *AC:* transverse to propagation; **net acceleration of the center of mass is zero** — the
 defining property, asserted directly.
 
-**T-8.2 · Tidal strain on a body · 2 pts · `sonnet-low` · deps T-8.1**
+**T-8.2 · Tidal strain on a body · 2 pts · `sonnet-low` · deps T-8.1** ✅
 `src/gwtb/target/coupling.py` — `tidal_strain(h_amplitude, body_radius)`.
 *AC:* scales linearly with both arguments; dimensionless output.
 
-**T-8.3 · Coupling channel 1: tidal · 2 pts · `sonnet-low` · deps T-8.2**
+**T-8.3 · Coupling channel 1: tidal · 2 pts · `sonnet-low` · deps T-8.2** ✅
 `src/gwtb/target/coupling.py` — `channel_tidal(...) -> CouplingResult`.
 *AC:* returns strain, not force; a test asserts the result carries no net-force field.
 
-**T-8.4 · Coupling channel 2: absorption thrust · 3 pts · `sonnet-low` · deps T-8.2**
+**T-8.4 · Coupling channel 2: absorption thrust · 3 pts · `sonnet-low` · deps T-8.2** ✅
 `src/gwtb/target/coupling.py` — `channel_absorption(luminosity, cross_section, distance)`. Momentum flux × absorption
 cross-section.
 *AC:* for a 1 km asteroid at 40 AU the result is below 1e-30 N — **the smallness is the finding**,
@@ -667,20 +667,20 @@ asserted rather than hidden.
 *Citation:* Lu & Love, *Nature* 438:177 (2005) `[verify]`.
 *AC:* reproduces the paper's worked example to rtol 1e-2. **Open question OQ-5.**
 
-**T-8.6 · Coupling comparison · 2 pts · `sonnet-low` · deps T-8.3–T-8.5**
+**T-8.6 · Coupling comparison · 2 pts · `sonnet-low` · deps T-8.3–T-8.5** ✅
 `src/gwtb/target/coupling.py` — `compare_channels(...) -> GapReport` reporting all three side by side.
 *AC:* all three present; ordered by magnitude; never sums them (they are not additive
 mechanisms).
 
-**T-8.7 · Impulse to Δv · 2 pts · `sonnet-low` · deps T-8.6**
+**T-8.7 · Impulse to Δv · 2 pts · `sonnet-low` · deps T-8.6** ✅
 `src/gwtb/target/deflection.py` — `delta_v(force, duration, asteroid_mass)`.
 *AC:* DART cross-check — 4.3e9 kg, ~1.16e7 N·s → 2.7 mm/s to rtol 1e-2.
 
-**T-8.8 · Δv to miss distance · 3 pts · `sonnet` · deps T-8.7**
+**T-8.8 · Δv to miss distance · 3 pts · `sonnet` · deps T-8.7** ✅
 `src/gwtb/target/deflection.py` — `miss_distance(delta_v, lead_time, orbit)`.
 *AC:* scales linearly with both `delta_v` and `lead_time` in the impulsive limit to rtol 1e-6.
 
-**T-8.9 · Ledger v2: coupling and deflection rows · 3 pts · `sonnet-low` · deps T-2.6, T-8.6**
+**T-8.9 · Ledger v2: coupling and deflection rows · 3 pts · `sonnet-low` · deps T-2.6, T-8.6** ✅
 `src/gwtb/ledger/gap_report.py` — *AC:* rows for all three channels plus required-vs-achieved impulse, benchmarked against DART
 (1.16e7 N·s) and a 1 km asteroid requirement (1.4e10 N·s).
 

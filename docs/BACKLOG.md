@@ -712,10 +712,32 @@ rtol 1e-12.
 Phases such that all components coincide at one space-time point.
 *AC:* residual phase error at the focus < 1e-9 rad for all elements and frequencies.
 
-**T-9.6 · Spatiotemporal focusing · 3 pts · `opus` · deps T-9.5, T-6.5** ⚠️ **critical path**
+**SPIKE-9.6 · `focused_field` superposition regime · 2 pts · `opus` · deps T-9.5, T-6.5** ✅ ⚠️
+Scratch prototype only, no production code. Resolved whether `focused_field` can build on
+`superpose_tt` given ADR-0003's common-`n̂` premise and its Fraunhofer guard.
+*Output:* [ADR-0006](adr/0006-focused-field-far-field-regime.md). **Answer: yes** — the angular
+spread at 40 AU is 1.03e-9 rad against ADR-0003's 5.0e-2 rad budget, a 2.4e7× margin, so the
+reversal condition is not triggered. Near-field focusing stays out of scope.
+
+**T-9.6 · Spatiotemporal focusing · 3 pts · `opus` · deps SPIKE-9.6, T-9.5, T-6.5** ⚠️ **critical path**
 `src/gwtb/array/focus.py` — `focused_field(array, drive, field_points, times)`.
-*AC:* peak amplitude at the focus is `N·A` to rtol 1e-6; background is `~√N·A`; **peak-to-
-background ratio scales as √N** — the mode-locking signature.
+Weights are `exp(+i · focal_phases(...))`, superposed by `superpose_tt`; **no new projection
+logic**. Propagate `superpose_tt`'s Fraunhofer `ValueError` rather than catching it — a
+near-field request is out of scope and must fail loudly.
+*AC:* peak amplitude at the focus is `N·A` to rtol 1e-6 **at broadside**; **peak-to-background
+ratio scales as √N** — the mode-locking signature.
+⚠️ **Four measured traps; every one of them yields a passing but meaningless test.** Full detail
+in [ADR-0006](adr/0006-focused-field-far-field-regime.md) §"Four traps":
+1. **Test at `f ≥ 1e5 Hz`, and assert `D/λ > 1` in the test.** At the nominal 1 kHz the 12.4 km
+   reference aperture spans **0.041 λ** — a point source, no beam. Every weighting, including
+   `w = 1`, returns exactly `N`, so the AC passes with the focusing logic deleted.
+2. **Pin the sign convention ≥ 50 beamwidths off-axis.** At 5 beamwidths `exp(+iφ)` and
+   `exp(−iφ)` differ by 0.08% and both pass; at 50 they give 44.97 vs 5.68. Assert the wrong
+   sign fails.
+3. **`N·A` holds at broadside only.** At 50 beamwidths the correctly-steered peak is 44.97, not
+   64 — the element pattern falls off. Do not tighten the tolerance to force agreement.
+4. **Background mean is `√(Nπ)/2 ≈ 0.886√N`, not `√N`** (7.09 vs 8.00 at N=64). The *ratio* is
+   what scales as √N.
 
 **T-9.7 · Focus propagation · 3 pts · `sonnet-low` · deps T-9.6**
 `src/gwtb/array/focus.py` — `focus_trajectory(...)` — track the focal region over time.

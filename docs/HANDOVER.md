@@ -20,10 +20,11 @@ are green at **553 tests**. The session ended on a weekly usage limit, not on a
 problem. Eight tasks landed: T-2.2, T-2.6, T-3.7, T-4.3, T-9.5, T-11.3 at Opus,
 and T-6.8, T-11.2 at Sonnet in a concurrent session.
 
-**Pick up at SPIKE-9.6 — and read §9 first.** T-9.6 is tiered `opus` and marked
-critical path, but it is **not Definition-of-Ready**: it needs a design decision
-recorded in an ADR before any code. That is the single most important thing on
-this page.
+**Pick up at T-9.6, and read §9 first.** SPIKE-9.6 has since closed the design
+decision that blocked it (ADR-0006), so T-9.6 is now Definition-of-Ready — but
+its backlog entry carries **four measured traps, each of which yields a test that
+passes while asserting nothing.** Read them before writing tests, not after. That
+is the single most important thing on this page.
 
 Nothing is half-finished. No task was left partially implemented, no test is
 skipped or xfailed, and every module added is fully covered.
@@ -234,9 +235,30 @@ the Blanchet route is the one worth re-attempting here.
 
 ## 9. Open work needing `opus` judgment — read before starting T-9.6
 
-### T-9.6 `focused_field` — an unresolved design tension, not a Ready task
+### ✅ T-9.6 is now Ready — SPIKE-9.6 closed the tension (ADR-0006)
 
-T-9.6 is tiered `opus` and marked critical path. It is **not** Definition-of-Ready
+**Resolved 2026-07-31.** `focused_field` builds on `superpose_tt` unchanged, with
+weights `exp(+i · focal_phases(...))`. The angular spread of per-element
+observation directions at 40 AU is **1.03e-9 rad** against ADR-0003's 5.0e-2 rad
+alignment budget — a **2.4e7× margin** — so ADR-0003's common-`n̂` reversal
+condition is not triggered. Near-field focusing stays out of scope and
+`superpose_tt`'s Fraunhofer guard enforces it; propagate that error, don't catch
+it.
+
+**Before writing T-9.6's tests, read the four traps** in its backlog entry and
+[ADR-0006](adr/0006-focused-field-far-field-regime.md). Each produces a test that
+passes while asserting nothing. The worst: at the nominal 1 kHz drive the
+reference aperture is **sub-wavelength** (`D/λ = 0.041`), so every weighting —
+including uniform `w = 1` — returns exactly `N`, and the AC passes with the
+focusing logic deleted. Test at `f ≥ 1e5 Hz` and assert `D/λ > 1`.
+
+The original tension is recorded below for context.
+
+---
+
+### T-9.6 `focused_field` — the tension as it stood
+
+T-9.6 is tiered `opus` and marked critical path. It was **not** Definition-of-Ready
 as written, and the reason was found while building T-9.5:
 
 `superpose_tt` (T-6.5) sums TT tensors along **one common observation direction**
@@ -257,10 +279,10 @@ is a steered far-field superposition and `superpose_tt` applies unchanged. The
 open decision is whether the API should *also* support genuine near-field focusing
 (it is reachable: ~1e5 m at 1 MHz), and if so under what projection rule.
 
-**Do not resolve this inside T-9.6's implementation.** It is a spike producing an
-ADR, per the Definition of Ready. T-10.1 (`spot_size`) sits behind it.
+**This was resolved by SPIKE-9.6 → ADR-0006, above.** T-10.1 (`spot_size`) sits
+behind T-9.6.
 
-Two things are already settled and waiting, so the spike need not re-derive them:
+Two further things are already settled and waiting:
 
 - **T-10.1's citation is verified.** The −3 dB (FWHM) transverse extent of a
   uniformly-illuminated circular aperture is `w = 1.029 λr/D`, from the root

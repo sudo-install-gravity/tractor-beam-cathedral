@@ -16,12 +16,15 @@ import numpy as np
 import pytest
 
 from gwtb.array.geometry import linear_array, planar_array
+from gwtb.bodies.elastic import MATERIALS, induced_quadrupole
+from gwtb.bodies.sphere import Sphere
 from gwtb.core.constants import AU, c
 from gwtb.ledger.gap_report import (
     GapMetric,
     GapReport,
     RunManifest,
     aperture_gap,
+    body_quadrupole_gap,
     emission_gap,
     focusing_gap,
     impulse_gap,
@@ -517,6 +520,84 @@ def test_focusing_gap_fits_in_a_report_with_all_four_rows() -> None:
     report.add(focusing_gap("peak-to-sidelobe ratio", 8.0, 20.0, "dimensionless"))
     report.add(focusing_gap("required aperture", 1.0e12, 6.0e18, "m"))
     assert len(report) == 4
+
+
+# --- body_quadrupole_gap (T-4.9) --------------------------------------------
+
+
+def test_body_quadrupole_gap_row_identity() -> None:
+    metric = body_quadrupole_gap(1.0, 2.0)
+    assert metric.name == "body quadrupole"
+    assert metric.units == "kg m^2"
+    assert metric.source_module == "gwtb.bodies.elastic"
+
+
+def test_body_quadrupole_gap_carries_the_supplied_values() -> None:
+    metric = body_quadrupole_gap(achieved_quadrupole=3.5e2, required_quadrupole=9.0e6)
+    assert metric.achieved == pytest.approx(3.5e2)
+    assert metric.required == pytest.approx(9.0e6)
+
+
+def test_body_quadrupole_gap_accepts_a_custom_source_module() -> None:
+    metric = body_quadrupole_gap(1.0, 2.0, source_module="gwtb.bodies.sphere")
+    assert metric.source_module == "gwtb.bodies.sphere"
+
+
+def test_body_quadrupole_gap_rejects_invalid_values() -> None:
+    with pytest.raises(ValueError, match="achieved"):
+        body_quadrupole_gap(achieved_quadrupole=-1.0, required_quadrupole=1.0)
+    with pytest.raises(ValueError, match="required"):
+        body_quadrupole_gap(achieved_quadrupole=1.0, required_quadrupole=0.0)
+
+
+def test_body_quadrupole_gap_fits_in_a_report_with_correct_units() -> None:
+    """AC: row appears in to_markdown() with correct units."""
+    report = GapReport(title="Body parameters")
+    report.add(body_quadrupole_gap(1.0e2, 1.0e8))
+    assert len(report) == 1
+
+    rendered = report.to_markdown()
+    assert "body quadrupole" in rendered
+    assert "kg m^2" in rendered
+    assert "gwtb.bodies.elastic" in rendered
+
+
+def test_body_quadrupole_gap_records_the_t48_sensitivity_comparison() -> None:
+    """End-to-end: the elastic magnitude T-4.8 already measured, recorded as
+    an actual ledger row rather than just a bare pytest.approx, compared
+    against the rigid model's (exactly zero) achievable quadrupole as the
+    "required" figure this row is meant to close.
+
+    Reuses tests/benchmarks/test_body_sensitivity.py's own fixture (a 100 m,
+    fixed-mass sphere) so a drift in that benchmark's inputs cannot silently
+    leave this row's inputs stale. ``body_quadrupole_gap``'s fixed row name
+    means only one such row can exist per report (``GapReport.add`` rejects
+    duplicates), matching every other single-metric wrapper here
+    (``emission_gap``, ``aperture_gap``, ``impulse_gap``).
+    """
+    m_target = 1.0e15
+    radius = 100.0
+    density = m_target / ((4.0 / 3.0) * math.pi * radius**3)
+    body = Sphere(radius=radius, density=density)
+
+    rigid_achieved = float(np.max(np.abs(body.self_quadrupole())))
+    assert rigid_achieved <= 1e-15  # T-4.2: exactly zero in the rigid model
+
+    tidal_field = np.diag([2.0e-14, -1.0e-14, -1.0e-14])
+    elastic_achieved = float(
+        np.max(np.abs(induced_quadrupole(body, tidal_field, rigidity=MATERIALS["steel"].rigidity)))
+    )
+    assert elastic_achieved > rigid_achieved  # the whole point of T-4.3/B-2
+
+    report = GapReport(title="Body parameters")
+    report.add(
+        body_quadrupole_gap(
+            elastic_achieved, elastic_achieved * 10.0, source_module="gwtb.bodies.elastic"
+        )
+    )
+    assert len(report) == 1
+    assert "body quadrupole" in report.to_markdown()
+    assert "kg m^2" in report.to_markdown()
 
 
 # --- run_manifest / RunManifest (T-11.8) ------------------------------------

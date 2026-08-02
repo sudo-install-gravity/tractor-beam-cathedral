@@ -548,6 +548,54 @@ def focusing_gap(name: str, achieved: float, required: float, units: str) -> Gap
     )
 
 
+def body_quadrupole_gap(
+    achieved_quadrupole: float,
+    required_quadrupole: float,
+    source_module: str = "gwtb.bodies.elastic",
+) -> GapMetric:
+    """Ledger row: achievable body quadrupole moment magnitude versus required.
+
+    A thin wrapper, in the style of :func:`focusing_gap`: both values are
+    supplied by the caller rather than derived here, because *which* body
+    model produced ``achieved_quadrupole`` — rigid (identically zero, T-4.2),
+    elastic (:func:`gwtb.bodies.elastic.induced_quadrupole`, T-4.3), oblate
+    (:func:`gwtb.bodies.sphere.oblateness_quadrupole`, T-4.6), or finite-size
+    corrected (:func:`gwtb.bodies.multipole.finite_size_correction`, T-4.5) —
+    and what scenario fixes ``required_quadrupole`` are decisions made at the
+    call site, not by the ledger. See ``tests/benchmarks/test_body_sensitivity.py``
+    (T-4.8) for a worked comparison of the rigid and elastic magnitudes this
+    row is meant to record.
+
+    Parameters
+    ----------
+    achieved_quadrupole
+        kg m^2. Magnitude of the achievable body quadrupole moment. Must be
+        finite and non-negative.
+    required_quadrupole
+        kg m^2. Magnitude of the quadrupole moment the scenario under study
+        needs. Must be finite and strictly positive.
+    source_module
+        Dotted path of the module that computed ``achieved_quadrupole``.
+        Defaults to ``"gwtb.bodies.elastic"``, the module that broke the
+        rigid model's mass/radius/density degeneracy (T-4.3); pass the
+        actual module if ``achieved_quadrupole`` came from elsewhere.
+
+    Returns
+    -------
+    GapMetric
+        ``name="body quadrupole"``, ``units="kg m^2"`` — matching
+        :func:`gwtb.bodies.multipole.quadrupole_moment`'s own documented
+        units, so this row is directly comparable to that function's output.
+    """
+    return GapMetric(
+        name="body quadrupole",
+        achieved=achieved_quadrupole,
+        required=required_quadrupole,
+        units="kg m^2",
+        source_module=source_module,
+    )
+
+
 def _git_sha(root: str | None = None) -> str | None:
     """Best-effort current commit SHA, or ``None`` outside a git checkout."""
     import subprocess
@@ -654,6 +702,7 @@ __all__ = [
     "GapReport",
     "RunManifest",
     "aperture_gap",
+    "body_quadrupole_gap",
     "emission_gap",
     "focusing_gap",
     "impulse_gap",

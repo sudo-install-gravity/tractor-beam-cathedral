@@ -500,9 +500,14 @@ realistic rigidity (measured: ~7.6e4–1.0e5 across the three materials, i.e. ei
 of magnitude above the threshold; pinned at >1e4 so a weakened `R⁵` dependence still
 fails even though it would pass the AC's own looser bound).
 
-**T-4.9 · Ledger: body-parameter row · 3 pts · `sonnet-low` · deps T-2.6, T-4.8**
-`src/gwtb/ledger/gap_report.py` — record achievable quadrupole vs. required.
-*AC:* row appears in `to_markdown()` with correct units.
+**T-4.9 · Ledger: body-parameter row · 3 pts · `sonnet-low` · deps T-2.6, T-4.8** ✅
+`src/gwtb/ledger/gap_report.py` — `body_quadrupole_gap(achieved_quadrupole,
+required_quadrupole, source_module=...)`. A thin wrapper in `focusing_gap`'s style:
+`name="body quadrupole"` and `units="kg m^2"` are fixed; both values are supplied by the
+caller, since which body model (rigid/elastic/oblate/finite-size) produced `achieved` and
+what scenario fixes `required` are call-site decisions, not the ledger's.
+*AC:* row appears in `to_markdown()` with correct units — verified end-to-end using
+T-4.8's own fixed-mass sphere fixture and its measured elastic-quadrupole magnitude.
 
 ---
 

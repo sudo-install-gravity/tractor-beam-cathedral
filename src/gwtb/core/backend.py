@@ -19,7 +19,7 @@ from numpy.typing import ArrayLike, NDArray
 from gwtb.core.constants import G_OVER_C4
 from gwtb.core.validation import as_float64
 
-_KNOWN_BACKENDS = ("numpy", "numba")
+_KNOWN_BACKENDS = ("numpy", "numba", "cupy")
 
 
 def _identity_jit(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -55,17 +55,26 @@ def get_backend(name: str) -> Backend:
     Parameters
     ----------
     name
-        ``"numpy"`` or ``"numba"``.
+        ``"numpy"``, ``"numba"``, or ``"cupy"``.
 
     Returns
     -------
     Backend
-        See class docstring.
+        See class docstring. For ``"cupy"``, ``xp`` is the CuPy module
+        itself, so array-creation calls (e.g. ``backend.xp.asarray``) run on
+        the GPU; ``jit`` is an identity pass-through, since the vectorized
+        kernels this backend targets (:func:`field_grid_split_phase`) are
+        already array-level code, not scalar loops needing compilation.
 
     Raises
     ------
     ValueError
         If ``name`` is not one of the known backends.
+    RuntimeError
+        For ``"cupy"``, if CuPy is not installed (T-11.4: optional
+        dependency, degrades gracefully rather than silently falling back to
+        CPU — a caller who asked for the GPU backend and silently got CPU
+        would draw the wrong conclusion from a subsequent timing comparison).
     """
     if name == "numpy":
         return Backend(name="numpy", xp=np, jit=_identity_jit)
@@ -73,6 +82,9 @@ def get_backend(name: str) -> Backend:
         import numba
 
         return Backend(name="numba", xp=np, jit=numba.njit)
+    if name == "cupy":
+        cp = _gpu_module()
+        return Backend(name="cupy", xp=cp, jit=_identity_jit)
     raise ValueError(f"unknown backend {name!r}; expected one of {_KNOWN_BACKENDS}")
 
 
@@ -360,11 +372,189 @@ def split_phase(
     delta_range = (np.einsum("ai,ai->a", q, q) - 2.0 * (q @ s)) / (range_a + range_ref)
 
     wavenumber = 2.0 * np.pi / wavelength
+    differential = (wavenumber * delta_range).astype(np.float32)
+    # The one authorized float32-phase call site in the codebase (T-11.5) —
+    # every other float32 phase value must go through the same guard with
+    # authorized=False and be rejected.
+    assert_phase_precision(differential, authorized=True)
     return SplitPhase(
         reference=wavenumber * range_ref,
-        differential=(wavenumber * delta_range).astype(np.float32),
+        differential=differential,
         wavelength=float(wavelength),
     )
 
 
-__all__ = ["Backend", "SplitPhase", "field_grid", "get_backend", "split_phase"]
+class PrecisionError(TypeError):
+    """A float32 phase value was used outside an authorized split-phase kernel.
+
+    Subclasses :class:`TypeError`, matching :class:`gwtb.core.validation`'s
+    convention for dtype violations.
+    """
+
+
+def assert_phase_precision(value: ArrayLike, *, authorized: bool) -> None:
+    """Guard against float32 absolute phase outside :func:`split_phase`.
+
+    ADR-0002 §5 rejects float32 project-wide; :func:`split_phase` is the
+    single, explicitly authorized exception, and only for its *differential*
+    term (:attr:`SplitPhase.differential`) — never for an absolute phase.
+    This function is that exception made checkable: call it with
+    ``authorized=True`` only at the one call site inside :func:`split_phase`
+    that constructs the differential; every other float32 phase value in the
+    codebase should call it with ``authorized=False`` (the default a caller
+    should use) and get a loud failure instead of ~1e4 rad of silent noise
+    (see :class:`SplitPhase`'s docstring for why that magnitude is not a
+    rounding error but a total loss of signal).
+
+    Parameters
+    ----------
+    value
+        The phase value(s) to check.
+    authorized
+        ``True`` only inside the split-phase kernel's own construction of the
+        differential term. Any other float32 input must pass ``False``.
+
+    Raises
+    ------
+    PrecisionError
+        If ``value`` is float32 and ``authorized`` is ``False``.
+    """
+    arr = np.asarray(value)
+    if arr.dtype == np.float32 and not authorized:
+        raise PrecisionError(
+            "float32 phase value used outside the authorized split-phase "
+            "kernel (gwtb.core.backend.split_phase). Per ADR-0002 §5, float32 "
+            "phase is rejected project-wide except for SplitPhase's own "
+            "differential term: at 40 AU an absolute phase in float32 carries "
+            "~1e4 rad of error, not a rounding error but a total loss of "
+            "signal. Use split_phase() and SplitPhase.phasor() instead."
+        )
+
+
+def _gpu_module() -> Any:
+    """Import CuPy, or raise a clear error if it is not installed."""
+    try:
+        import cupy as cp
+    except ImportError as exc:
+        raise RuntimeError(
+            "the 'cupy' backend was requested but CuPy is not installed; "
+            "this is an optional dependency (BACKLOG.md T-11.4) — install "
+            "cupy for your CUDA version, or use the 'numpy'/'numba' backend"
+        ) from exc
+    return cp
+
+
+def field_grid_split_phase(
+    reference_geometry: ArrayLike,
+    element_offsets: ArrayLike,
+    q_ddots: ArrayLike,
+    wavelength: float,
+    xp: Any = np,
+) -> NDArray[np.complex128]:
+    """Vectorized, backend-agnostic per-element phasor for a field-point grid,
+    built on :func:`split_phase`.
+
+    Unlike :func:`field_grid` (a scalar Python loop, JIT-compiled for the
+    ``"numba"`` backend), this is written with pure array operations so the
+    identical code runs under plain NumPy *or* CuPy by passing ``xp`` — the
+    array module each library exposes with a NumPy-compatible API. This is
+    what makes the optional GPU backend (T-11.4) possible without a second,
+    GPU-specific reimplementation of the physics.
+
+    Source: gwtb.core.backend.split_phase, gwtb.array.focus._differential_range
+    (composition; introduces no new equation)
+
+    Parameters
+    ----------
+    reference_geometry
+        Shape ``(3,)``, m. As for :func:`split_phase`.
+    element_offsets
+        Shape ``(N, 3)``, m. As for :func:`split_phase`.
+    q_ddots
+        Shape ``(N,)``, complex amplitude-like weight per element (e.g. drive
+        amplitude and phase folded together); combined with each element's
+        split-phase phasor.
+    wavelength
+        m. Must be positive and finite.
+    xp
+        The array module to compute with — ``numpy`` (default) or ``cupy``.
+        Must expose a NumPy-compatible array API.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N,)``, complex128 (or the ``xp``-native equivalent): each
+        element's phasor, from :meth:`SplitPhase.phasor`, multiplied by its
+        weight.
+    """
+    split = split_phase(reference_geometry, element_offsets, wavelength)
+    phasors = split.phasor()
+    weights = np.asarray(q_ddots, dtype=np.complex128)
+    if weights.shape != phasors.shape:
+        raise ValueError(f"q_ddots must have shape {phasors.shape}, got {weights.shape}")
+    result = xp.asarray(phasors * weights)
+    return result  # type: ignore[no-any-return]
+
+
+def field_grid_chunked(
+    positions: ArrayLike,
+    q_ddots: ArrayLike,
+    field_points: ArrayLike,
+    backend: Backend,
+    chunk_size: int,
+) -> NDArray[np.float64]:
+    """:func:`field_grid`, evaluated in chunks along the field-point axis.
+
+    Bounds peak memory to ``O(chunk_size)`` field points' worth of output
+    rather than the full grid at once: a 512^3 grid is 1.3e8 points, and the
+    ``(M, 3, 3)`` float64 output alone is ~9.7 GB — evaluating it in chunks of
+    a few million points at a time keeps any single allocation within a
+    modest budget while producing the identical result, since
+    :func:`field_grid`'s per-point contributions are independent (no
+    cross-point coupling in the source formula it implements).
+
+    Source: gwtb.core.backend.field_grid (chunking is an evaluation-order
+    change only; introduces no new equation)
+
+    Parameters
+    ----------
+    positions, q_ddots, backend
+        As for :func:`field_grid`.
+    field_points
+        Shape ``(M, 3)``, m.
+    chunk_size
+        Number of field points per chunk. Must be a positive integer.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(M, 3, 3)``, dimensionless. Identical to
+        ``field_grid(positions, q_ddots, field_points, backend)`` to float64
+        roundoff (rtol 1e-12) — each point is computed by the exact same
+        per-point formula, only the batching differs.
+    """
+    if chunk_size < 1:
+        raise ValueError(f"chunk_size must be a positive integer, got {chunk_size!r}")
+    fp = as_float64(field_points, "field_points")
+    if fp.ndim != 2 or fp.shape[1] != 3:
+        raise ValueError(f"field_points must have shape (M, 3), got {fp.shape}")
+
+    n_points = fp.shape[0]
+    out = np.empty((n_points, 3, 3), dtype=np.float64)
+    for start in range(0, n_points, chunk_size):
+        end = min(start + chunk_size, n_points)
+        out[start:end] = field_grid(positions, q_ddots, fp[start:end], backend)
+    return out
+
+
+__all__ = [
+    "Backend",
+    "PrecisionError",
+    "SplitPhase",
+    "assert_phase_precision",
+    "field_grid",
+    "field_grid_chunked",
+    "field_grid_split_phase",
+    "get_backend",
+    "split_phase",
+]

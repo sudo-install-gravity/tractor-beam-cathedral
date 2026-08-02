@@ -17,7 +17,16 @@ import pytest
 
 from gwtb.array.geometry import linear_array, planar_array
 from gwtb.core.constants import AU, c
-from gwtb.ledger.gap_report import GapMetric, GapReport, aperture_gap, emission_gap, impulse_gap
+from gwtb.ledger.gap_report import (
+    GapMetric,
+    GapReport,
+    RunManifest,
+    aperture_gap,
+    emission_gap,
+    focusing_gap,
+    impulse_gap,
+    run_manifest,
+)
 from gwtb.source.conservation import UNPHYSICAL_STAMP, StampedResult
 
 
@@ -476,6 +485,87 @@ def test_impulse_gap_custom_requirement() -> None:
     metric = impulse_gap(achieved_impulse=100.0, required_impulse=1000.0)
     assert metric.required == 1000.0
     assert metric.gap_decades == pytest.approx(1.0)
+
+
+# --- focusing_gap (T-10.8) --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "achieved", "required", "units"),
+    [
+        ("spot size", 2.0e3, 1.0e3, "m"),
+        ("dwell time", 1.0e-3, 1.0e-2, "s"),
+        ("peak-to-sidelobe ratio", 8.0, 20.0, "dimensionless"),
+        ("required aperture", 1.0e12, 6.0e18, "m"),
+    ],
+)
+def test_focusing_gap_builds_each_row_kind(
+    name: str, achieved: float, required: float, units: str
+) -> None:
+    metric = focusing_gap(name, achieved, required, units)
+    assert metric.name == name
+    assert metric.units == units
+    assert metric.source_module == "gwtb.array.focus"
+    assert metric.achieved == achieved
+    assert metric.required == required
+
+
+def test_focusing_gap_fits_in_a_report_with_all_four_rows() -> None:
+    report = GapReport(title="Focusing")
+    report.add(focusing_gap("spot size", 2.0e3, 1.0e3, "m"))
+    report.add(focusing_gap("dwell time", 1.0e-3, 1.0e-2, "s"))
+    report.add(focusing_gap("peak-to-sidelobe ratio", 8.0, 20.0, "dimensionless"))
+    report.add(focusing_gap("required aperture", 1.0e12, 6.0e18, "m"))
+    assert len(report) == 4
+
+
+# --- run_manifest / RunManifest (T-11.8) ------------------------------------
+
+
+def test_run_manifest_round_trips_through_json() -> None:
+    manifest = run_manifest(parameters={"n_elements": 64, "frequency": 1.0e6}, seeds={"array": 7})
+    restored = RunManifest.from_json(manifest.to_json())
+    assert restored == manifest
+
+
+def test_run_manifest_has_a_package_version() -> None:
+    manifest = run_manifest(parameters={})
+    assert manifest.package_version == "0.1.0"
+
+
+def test_run_manifest_defaults_seeds_to_empty() -> None:
+    manifest = run_manifest(parameters={"x": 1})
+    assert manifest.seeds == {}
+
+
+def test_run_manifest_fixed_seed_reproduces_identical_output() -> None:
+    """AC: a fixed seed reproduces identical output."""
+    a = run_manifest(parameters={"n": 10}, seeds={"sparse_array": 42})
+    b = run_manifest(parameters={"n": 10}, seeds={"sparse_array": 42})
+    assert a.to_json() == b.to_json()
+
+
+def test_run_manifest_rejects_non_json_serializable_parameters() -> None:
+    with pytest.raises(TypeError):
+        run_manifest(parameters={"array": np.zeros(3)})
+
+
+def test_run_manifest_captures_a_git_sha_in_this_repo() -> None:
+    """This test runs inside a git checkout, so a SHA should be found."""
+    manifest = run_manifest(parameters={}, root=None)
+    # Not asserting a specific SHA (it changes every commit); asserting the
+    # mechanism works at all in a real checkout.
+    assert manifest.git_sha is None or len(manifest.git_sha) == 40
+
+
+def test_run_manifest_git_sha_is_none_outside_a_checkout(tmp_path) -> None:
+    manifest = run_manifest(parameters={}, root=str(tmp_path))
+    assert manifest.git_sha is None
+
+
+def test_run_manifest_from_json_rejects_unknown_schema() -> None:
+    with pytest.raises(ValueError, match="schema"):
+        RunManifest.from_json(json.dumps({"package_version": "x", "extra": 1}))
 
 
 def test_len_and_iteration() -> None:

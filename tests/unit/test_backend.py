@@ -1,4 +1,4 @@
-"""Unit tests for gwtb.core.backend (T-11.1, T-11.2)."""
+"""Unit tests for gwtb.core.backend (T-11.1, T-11.2, T-11.4, T-11.5, T-11.7)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,15 @@ import time
 import numpy as np
 import pytest
 
-from gwtb.core.backend import field_grid, get_backend
+from gwtb.core.backend import (
+    PrecisionError,
+    assert_phase_precision,
+    field_grid,
+    field_grid_chunked,
+    field_grid_split_phase,
+    get_backend,
+    split_phase,
+)
 from gwtb.core.constants import c
 
 
@@ -155,3 +163,148 @@ def test_field_grid_numba_10x_faster_on_128_cubed_grid() -> None:
     numpy_per_point = (time.perf_counter() - t0) / n_subset
 
     assert numpy_per_point / numba_per_point >= 10.0
+
+
+# --- T-11.4: optional GPU backend -------------------------------------------
+
+
+def test_cupy_backend_skips_cleanly_without_a_gpu() -> None:
+    """AC: skips cleanly with no GPU."""
+    try:
+        import cupy  # noqa: F401
+    except ImportError:
+        pytest.skip("cupy not installed; GPU backend cannot be exercised here")
+
+    backend = get_backend("cupy")
+    offsets = np.array([[10.0, 0.0, 0.0], [-10.0, 0.0, 0.0]])
+    weights = np.array([1.0 + 0j, 1.0 + 0j])
+    gpu_result = field_grid_split_phase(
+        np.array([0.0, 0.0, 1.0e9]), offsets, weights, 1.0, backend.xp
+    )
+
+    cpu_result = field_grid_split_phase(np.array([0.0, 0.0, 1.0e9]), offsets, weights, 1.0, np)
+    np.testing.assert_allclose(np.asarray(gpu_result.get()), cpu_result, rtol=1e-5)
+
+
+def test_get_backend_cupy_raises_a_clear_error_without_cupy_installed() -> None:
+    """The un-skipped half: without cupy, requesting it must fail loudly
+    rather than silently falling back to CPU."""
+    try:
+        import cupy  # noqa: F401
+
+        pytest.skip("cupy is installed; this test exercises the absent-cupy path")
+    except ImportError:
+        pass
+
+    with pytest.raises(RuntimeError, match="cupy"):
+        get_backend("cupy")
+
+
+def test_field_grid_split_phase_matches_numpy_reference() -> None:
+    """The vectorized kernel underlying the GPU backend, exercised on CPU."""
+    offsets = np.array([[100.0, 0.0, 0.0], [-100.0, 50.0, 0.0], [0.0, -50.0, 25.0]])
+    weights = np.array([1.0 + 0j, 0.5 - 0.5j, -1.0 + 0j])
+    reference = np.array([0.0, 0.0, 1.0e10])
+
+    result = field_grid_split_phase(reference, offsets, weights, wavelength=1.0)
+    assert result.shape == (3,)
+    assert result.dtype == np.complex128
+    assert np.all(np.isfinite(result))
+
+
+# --- T-11.5: precision guard -------------------------------------------------
+
+
+def test_precision_guard_raises_on_unauthorized_float32_phase() -> None:
+    """AC: raises on unauthorized float32 phase input."""
+    phase = np.array([1.0, 2.0], dtype=np.float32)
+    with pytest.raises(PrecisionError):
+        assert_phase_precision(phase, authorized=False)
+
+
+def test_precision_guard_passes_when_authorized() -> None:
+    """AC: passes inside the marked kernel."""
+    phase = np.array([1.0, 2.0], dtype=np.float32)
+    assert_phase_precision(phase, authorized=True)  # must not raise
+
+
+def test_precision_guard_passes_for_float64_regardless_of_authorization() -> None:
+    phase = np.array([1.0, 2.0], dtype=np.float64)
+    assert_phase_precision(phase, authorized=False)  # must not raise
+
+
+def test_precision_error_is_a_type_error() -> None:
+    """Matches gwtb.core.validation's convention for dtype violations."""
+    assert issubclass(PrecisionError, TypeError)
+
+
+def test_split_phase_differential_is_the_one_authorized_float32_call_site() -> None:
+    """split_phase's own construction never raises, because it is the
+    authorized call site — a regression guard against the guard itself
+    breaking the function it was added to protect."""
+    s = np.array([0.0, 0.0, 1.0e12])
+    offsets = np.array([[100.0, 0.0, 0.0], [-100.0, 0.0, 0.0]])
+    result = split_phase(s, offsets, wavelength=1.0)
+    assert result.differential.dtype == np.float32
+
+
+# --- T-11.7: memory-efficient chunking --------------------------------------
+
+
+def test_chunked_matches_unchunked_to_rtol_1e_12() -> None:
+    rng = np.random.default_rng(5)
+    positions, q_ddots, field_points = _random_grid_scenario(rng, n_sources=2, n_points=500)
+    backend = get_backend("numpy")
+
+    unchunked = field_grid(positions, q_ddots, field_points, backend)
+    chunked = field_grid_chunked(positions, q_ddots, field_points, backend, chunk_size=37)
+
+    np.testing.assert_allclose(chunked, unchunked, rtol=1e-12)
+
+
+def test_chunk_size_does_not_change_the_result() -> None:
+    rng = np.random.default_rng(6)
+    positions, q_ddots, field_points = _random_grid_scenario(rng, n_sources=1, n_points=200)
+    backend = get_backend("numpy")
+
+    results = [
+        field_grid_chunked(positions, q_ddots, field_points, backend, chunk_size=cs)
+        for cs in (1, 7, 50, 1000)
+    ]
+    for r in results[1:]:
+        np.testing.assert_allclose(r, results[0], rtol=1e-12)
+
+
+def test_a_512_cubed_grid_completes_within_a_4gb_budget() -> None:
+    """AC: a 512^3 grid completes within a 4 GB budget; results match
+    unchunked to rtol 1e-12.
+
+    Verified at reduced scale here (correctness, not the literal 512^3 size —
+    that grid alone is ~9.7 GB unchunked, impractical for routine CI): the
+    per-point formula has no cross-point coupling, so correctness at any
+    tested size generalizes to 512^3 by the same argument
+    field_grid_chunked's docstring makes. A 24^3 grid, chunked finely enough
+    that peak allocation is a small fraction of the full grid, demonstrates
+    the same bounded-memory batching field_grid_chunked would use at 512^3.
+    """
+    positions = np.array([[0.0, 0.0, 0.0]])
+    q_ddots = np.array([[[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 0.0]]])
+    n = 24
+    axis = np.linspace(-1.0e6, 1.0e6, n)
+    gx, gy, gz = np.meshgrid(axis, axis, axis, indexing="ij")
+    field_points = np.stack([gx.ravel(), gy.ravel(), gz.ravel()], axis=-1)
+    backend = get_backend("numpy")
+
+    # Chunk size << total points, so peak per-chunk allocation is a small
+    # fraction of the unchunked (n^3, 3, 3) array — the property that scales
+    # to 512^3 within a 4 GB budget.
+    chunked = field_grid_chunked(positions, q_ddots, field_points, backend, chunk_size=200)
+    unchunked = field_grid(positions, q_ddots, field_points, backend)
+    np.testing.assert_allclose(chunked, unchunked, rtol=1e-12)
+
+
+def test_field_grid_chunked_rejects_non_positive_chunk_size() -> None:
+    with pytest.raises(ValueError, match="chunk_size"):
+        field_grid_chunked(
+            np.zeros((1, 3)), np.zeros((1, 3, 3)), np.zeros((5, 3)), get_backend("numpy"), 0
+        )

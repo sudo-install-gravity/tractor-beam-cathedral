@@ -739,12 +739,12 @@ in [ADR-0006](adr/0006-focused-field-far-field-regime.md) §"Four traps":
 4. **Background mean is `√(Nπ)/2 ≈ 0.886√N`, not `√N`** (7.09 vs 8.00 at N=64). The *ratio* is
    what scales as √N.
 
-**T-9.7 · Focus propagation · 3 pts · `sonnet-low` · deps T-9.6**
+**T-9.7 · Focus propagation · 3 pts · `sonnet-low` · deps T-9.6** ✅
 `src/gwtb/array/focus.py` — `focus_trajectory(...)` — track the focal region over time.
 *AC:* the focus **moves at c** and does not remain stationary — the non-dispersive consequence
 that requirement 6's framing must confront, asserted rather than glossed.
 
-**T-9.8 · Benchmark: mode-locking · 3 pts · `sonnet-low` · deps T-9.6**
+**T-9.8 · Benchmark: mode-locking · 3 pts · `sonnet-low` · deps T-9.6** ✅
 `tests/benchmarks/test_focusing.py`.
 *AC:* N·A peak and √N background to rtol 1e-3 for N ∈ {10, 100, 1000}.
 
@@ -762,25 +762,25 @@ with `scipy` *and* measures it from a simulated filled circular aperture.
 ⚠️ The coefficient assumes a **uniformly-illuminated circular** aperture; a square aperture's
 FWHM is `0.886 λ/D`, 14% narrower — outside the AC's own rtol.
 
-**T-10.2 · Benchmark: diffraction limit · 3 pts · `sonnet-low` · deps T-10.1**
+**T-10.2 · Benchmark: diffraction limit · 3 pts · `sonnet-low` · deps T-10.1** ✅
 `tests/benchmarks/test_diffraction.py`.
 *AC:* numerically recovered spot size matches `λr/D` to rtol 1e-2; a 1 km spot at 40 AU requires
 `D/λ ≳ 6e9` **independent of frequency**, asserted across 4 decades of frequency.
 
-**T-10.3 · Focal dwell time · 2 pts · `sonnet-low` · deps T-9.7**
+**T-10.3 · Focal dwell time · 2 pts · `sonnet-low` · deps T-9.7** ✅
 `src/gwtb/array/focus.py` — `dwell_time(...)` — how long the focus persists at a point.
 *AC:* scales inversely with drive bandwidth to rtol 1e-2.
 
-**T-10.4 · Peak-to-sidelobe ratio · 2 pts · `sonnet-low` · deps T-9.6**
+**T-10.4 · Peak-to-sidelobe ratio · 2 pts · `sonnet-low` · deps T-9.6** ✅
 `src/gwtb/array/focus.py` — `peak_to_sidelobe(...)`.
 *AC:* improves as √N; degrades with sparse geometries (links OQ-4).
 
-**T-10.5 · Band sweep · 3 pts · `sonnet` · deps T-9.2, T-1.8**
+**T-10.5 · Band sweep · 3 pts · `sonnet` · deps T-9.2, T-1.8** ✅
 `src/gwtb/array/focus.py` — `band_sweep(config, unit_range_hz)` sweeping the prime unit scale.
 *AC:* radiated power scales as f⁶ to rtol 1e-6 across Hz → MHz; **the sweep spans ~10³⁶ in
 power**, the dominant design lever.
 
-**T-10.6 · Aperture/frequency trade surface · 3 pts · `sonnet` · deps T-10.1, T-10.5**
+**T-10.6 · Aperture/frequency trade surface · 3 pts · `sonnet` · deps T-10.1, T-10.5** ✅
 `src/gwtb/array/focus.py` — `trade_surface(...)` producing the required-aperture-vs-frequency curve.
 *AC:* reproduces 1.8e18 m at 1 Hz and 1.8e12 m at 1 MHz to rtol 1e-2.
 
@@ -788,7 +788,7 @@ power**, the dominant design lever.
 `src/gwtb/viz/patterns.py` — `plot_trade_surface(...)`.
 *AC:* log-log axes; renders headless; annotates the 6e9 wavelength invariant.
 
-**T-10.8 · Ledger v3: focusing rows · 3 pts · `sonnet-low` · deps T-2.6, T-10.2**
+**T-10.8 · Ledger v3: focusing rows · 3 pts · `sonnet-low` · deps T-2.6, T-10.2** ✅
 `src/gwtb/ledger/gap_report.py` — *AC:* rows for spot size, dwell time, PSL, and required aperture, each with achieved-vs-required.
 
 ---
@@ -810,23 +810,23 @@ reference phase plus FP32-safe differential.
 *AC:* recombined phase matches full FP64 to <1e-5 rad for D=10 km at 40 AU; a test asserts naive
 FP32 **fails** the same check — documenting why the decomposition exists.
 
-**T-11.4 · Optional GPU backend · 3 pts · `sonnet-low` · deps T-11.3**
+**T-11.4 · Optional GPU backend · 3 pts · `sonnet-low` · deps T-11.3** ✅
 `src/gwtb/core/backend.py` — CuPy/JAX backend using the split-phase scheme. Optional dependency; degrade gracefully.
 *AC:* skips cleanly with no GPU; matches CPU to rtol 1e-5 when present.
 
-**T-11.5 · Precision guard · 2 pts · `sonnet-low` · deps T-11.3**
+**T-11.5 · Precision guard · 2 pts · `sonnet-low` · deps T-11.3** ✅
 `src/gwtb/core/backend.py` — Raise if FP32 is used for absolute phase outside an authorized split-phase kernel.
 *AC:* raises on unauthorized float32 phase input; passes inside the marked kernel.
 
-**T-11.6 · Performance benchmarks · 3 pts · `sonnet-low` · deps T-11.2**
+**T-11.6 · Performance benchmarks · 3 pts · `sonnet-low` · deps T-11.2** ✅
 `tests/benchmarks/test_performance.py` — timing across grid sizes.
 *AC:* records timings; fails if a 128³ evaluation exceeds 60 s on CPU (the G2 watch threshold).
 
-**T-11.7 · Memory-efficient chunking · 2 pts · `sonnet-low` · deps T-11.2**
+**T-11.7 · Memory-efficient chunking · 2 pts · `sonnet-low` · deps T-11.2** ✅
 `src/gwtb/core/backend.py` — Chunked evaluation for grids exceeding RAM.
 *AC:* a 512³ grid completes within a 4 GB budget; results match unchunked to rtol 1e-12.
 
-**T-11.8 · Run manifest · 2 pts · `sonnet-low` · deps T-2.6**
+**T-11.8 · Run manifest · 2 pts · `sonnet-low` · deps T-2.6** ✅
 `src/gwtb/ledger/gap_report.py` — emit version, git SHA, full parameters, seeds.
 *AC:* manifest round-trips through JSON; a fixed seed reproduces identical output.
 
@@ -869,7 +869,7 @@ number would violate citation discipline. Escalate to a spike to pin the
 equation number (e.g. via a session with normal internet/library access, or
 by deriving it from already-cited multipole formulas) before implementing.
 
-**T-12.3 · Benchmark: energy conservation · 3 pts · `sonnet-low` · deps T-6.8**
+**T-12.3 · Benchmark: energy conservation · 3 pts · `sonnet-low` · deps T-6.8** ✅
 `tests/benchmarks/test_energy_conservation.py` — Radiated energy integrated over a distant sphere vs. the quadrupole luminosity integral.
 *AC:* agreement to rtol 1e-4.
 

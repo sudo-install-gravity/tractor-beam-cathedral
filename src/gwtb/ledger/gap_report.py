@@ -513,4 +513,149 @@ def impulse_gap(
     )
 
 
-__all__ = ["GapMetric", "GapReport", "aperture_gap", "emission_gap", "impulse_gap"]
+def focusing_gap(name: str, achieved: float, required: float, units: str) -> GapMetric:
+    """Ledger row for a focusing metric (spot size, dwell time, peak-to-
+    sidelobe ratio, or required aperture).
+
+    A thin, explicit wrapper rather than four separate near-identical
+    functions: each focusing metric already has its own computation
+    (:mod:`gwtb.array.focus`) and its own natural "required" value supplied
+    by the caller — this only assembles the frozen row.
+
+    Parameters
+    ----------
+    name
+        e.g. ``"spot size"``, ``"dwell time"``, ``"peak-to-sidelobe ratio"``,
+        ``"required aperture"``.
+    achieved
+        In ``units``. Must be finite and non-negative.
+    required
+        In ``units``. Must be positive and finite.
+    units
+        e.g. ``"m"``, ``"s"``, ``"dimensionless"``.
+
+    Returns
+    -------
+    GapMetric
+        ``source_module="gwtb.array.focus"``.
+    """
+    return GapMetric(
+        name=name,
+        achieved=achieved,
+        required=required,
+        units=units,
+        source_module="gwtb.array.focus",
+    )
+
+
+def _git_sha(root: str | None = None) -> str | None:
+    """Best-effort current commit SHA, or ``None`` outside a git checkout."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() or None
+
+
+@dataclass(frozen=True)
+class RunManifest:
+    """A record of exactly what produced a run's results, for reproducibility.
+
+    Attributes
+    ----------
+    package_version
+        ``gwtb.__version__``, or ``"unknown"`` if unavailable.
+    git_sha
+        Current commit hash, or ``None`` outside a git checkout.
+    parameters
+        The run's full parameter set, as a JSON-serializable mapping.
+    seeds
+        Named RNG seeds used, e.g. ``{"sparse_array": 7}``.
+    """
+
+    package_version: str
+    git_sha: str | None
+    parameters: dict[str, Any]
+    seeds: dict[str, int]
+
+    def to_json(self, indent: int = 2) -> str:
+        """Serialize to a JSON string."""
+        return json.dumps(
+            {
+                "package_version": self.package_version,
+                "git_sha": self.git_sha,
+                "parameters": self.parameters,
+                "seeds": self.seeds,
+            },
+            indent=indent,
+            sort_keys=True,
+        )
+
+    @classmethod
+    def from_json(cls, text: str) -> RunManifest:
+        """Inverse of :meth:`to_json`."""
+        payload = json.loads(text)
+        expected = {"package_version", "git_sha", "parameters", "seeds"}
+        if set(payload) != expected:
+            raise ValueError(
+                f"RunManifest payload does not match the schema; got keys "
+                f"{sorted(payload)}, expected {sorted(expected)}"
+            )
+        return cls(**payload)
+
+
+def run_manifest(
+    parameters: dict[str, Any], seeds: dict[str, int] | None = None, root: str | None = None
+) -> RunManifest:
+    """Build a :class:`RunManifest` for the current package and commit.
+
+    Parameters
+    ----------
+    parameters
+        The run's full parameter set. Must be JSON-serializable.
+    seeds
+        Named RNG seeds used in the run. Defaults to empty.
+    root
+        Repository root to run ``git rev-parse`` in, or ``None`` for the
+        current working directory.
+
+    Returns
+    -------
+    RunManifest
+    """
+    try:
+        from gwtb import __version__ as package_version
+    except ImportError:
+        package_version = "unknown"
+
+    # Round-trip through JSON immediately: fails loudly here, at manifest
+    # construction, rather than later when someone tries to persist it.
+    json.dumps(parameters)
+
+    return RunManifest(
+        package_version=package_version,
+        git_sha=_git_sha(root),
+        parameters=parameters,
+        seeds=dict(seeds) if seeds else {},
+    )
+
+
+__all__ = [
+    "GapMetric",
+    "GapReport",
+    "RunManifest",
+    "aperture_gap",
+    "emission_gap",
+    "focusing_gap",
+    "impulse_gap",
+    "run_manifest",
+]

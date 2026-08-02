@@ -1,15 +1,17 @@
-"""Unit tests for gwtb.bodies.multipole (T-1.3, T-1.4, T-1.5, T-4.5)."""
+"""Unit tests for gwtb.bodies.multipole (T-1.3, T-1.4, T-1.5, T-4.5, T-4.7)."""
 
 from __future__ import annotations
 
 import itertools
 import math
+import warnings
 
 import numpy as np
 import pytest
 from scipy.special import sici
 
 from gwtb.bodies.multipole import (
+    LongWavelengthAssumptionWarning,
     finite_size_correction,
     octupole_moment,
     quadrupole_moment,
@@ -293,6 +295,7 @@ def _f2_closed_form(x: float) -> float:
     return float(75.0 * (3.0 * si + x * math.cos(x) - 4.0 * math.sin(x)) / x**5)
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_coefficient_is_exactly_5_over_98() -> None:
     """The exact-coefficient pin — the single strongest assertion in this file.
 
@@ -308,6 +311,9 @@ def test_finite_size_correction_coefficient_is_exactly_5_over_98() -> None:
     ``rel=1e-12`` needs a departure above ~2.2e-4, i.e. R/lambda >~ 0.011.
     Extending this loop downwards measures float64, not the formula — the
     point-mass limit is covered by the monotone test below instead.
+
+    Several points here are >= 0.1, T-4.7's warning threshold; that warning is
+    tested on its own below and is deliberately ignored here.
     """
     for r_over_lambda in (0.5, 0.3, 0.2, 0.1, 0.05, 0.03):
         k_r = 2.0 * math.pi * r_over_lambda
@@ -333,13 +339,15 @@ def test_finite_size_correction_tends_to_unity_in_the_point_mass_limit() -> None
     assert finite_size_correction(*_sphere_at(1e-8)) == pytest.approx(1.0, abs=1e-13)
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_departure_at_the_regime_boundary() -> None:
     """The *corrected* AC (ADR-0007 "Recomputed acceptance criterion").
 
     T-4.5's original criterion said "departs from unity by >1% when R/lambda >
     0.1". That was written against the wrong form factor. The true departure
     there is 2.0142%, so assert the actual value — ">1%" is satisfied by a
-    formula that is wrong by a factor of two.
+    formula that is wrong by a factor of two. R/lambda = 0.1 is exactly T-4.7's
+    warning threshold; ignored here since the warning has its own tests.
     """
     f = finite_size_correction(*_sphere_at(0.1))
     departure = 1.0 - f
@@ -351,6 +359,7 @@ def test_finite_size_correction_departure_at_the_regime_boundary() -> None:
     assert 1.0 - one_percent == pytest.approx(0.01, rel=1e-7)
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_matches_the_exact_closed_form() -> None:
     """Eq. 3 (implemented) against eq. 4 (exact), inside eq. 4's valid window.
 
@@ -420,6 +429,7 @@ def test_finite_size_correction_rejects_bad_wavelength(wavelength: float) -> Non
 # the project's highest-risk bug class.
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_is_not_the_spin1_sinc_form_factor() -> None:
     """Guard: sin(kR)/(kR), leading term 1 - (kR)^2/6, is l=0 ANTENNA machinery.
 
@@ -437,6 +447,7 @@ def test_finite_size_correction_is_not_the_spin1_sinc_form_factor() -> None:
     assert (1.0 - implemented) / k_r**2 != pytest.approx(1.0 / 6.0, rel=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_is_not_the_monopole_form_factor() -> None:
     """Guard: 3 j_1(kR)/(kR), leading term 1 - (kR)^2/10, is the TOTAL-MASS monopole.
 
@@ -454,6 +465,7 @@ def test_finite_size_correction_is_not_the_monopole_form_factor() -> None:
     assert (1.0 - implemented) / k_r**2 != pytest.approx(1.0 / 10.0, rel=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore::gwtb.bodies.multipole.LongWavelengthAssumptionWarning")
 def test_finite_size_correction_is_not_the_surface_profile_form_factor() -> None:
     """Guard: 1 - (kR)^2/14 is the SURFACE-deformation profile (ADR-0007 eq. 5).
 
@@ -473,9 +485,65 @@ def test_finite_size_correction_validity_floor_is_recorded() -> None:
     """The truncated series goes negative at kR = sqrt(98/5) — a wall, not a bug.
 
     T-4.7 adds the structured out-of-regime warning; this pins where the leading
-    -order form actually breaks so that nobody "fixes" the sign later.
+    -order form actually breaks so that nobody "fixes" the sign later. Both
+    calls are well past the R/lambda >= 0.1 warning threshold, so each is
+    expected to warn — asserted explicitly rather than left as test-output
+    noise.
     """
     zero_crossing = math.sqrt(98.0 / 5.0) / (2.0 * math.pi)
     assert zero_crossing == pytest.approx(0.70460896946282, rel=1e-12)
-    assert finite_size_correction(*_sphere_at(zero_crossing)) == pytest.approx(0.0, abs=1e-12)
-    assert finite_size_correction(*_sphere_at(0.9)) < 0.0
+    with pytest.warns(LongWavelengthAssumptionWarning):
+        assert finite_size_correction(*_sphere_at(zero_crossing)) == pytest.approx(0.0, abs=1e-12)
+    with pytest.warns(LongWavelengthAssumptionWarning):
+        assert finite_size_correction(*_sphere_at(0.9)) < 0.0
+
+
+# =============================================================================
+# T-4.7 — assumption-ledger warning
+# =============================================================================
+
+
+def test_finite_size_correction_does_not_warn_below_the_threshold() -> None:
+    """No warning strictly below R/lambda = 0.1 — the common, in-regime case."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LongWavelengthAssumptionWarning)
+        for r_over_lambda in (1e-6, 1e-3, 0.05, 0.099999):
+            finite_size_correction(*_sphere_at(r_over_lambda))
+
+
+def test_finite_size_correction_warns_exactly_at_the_threshold() -> None:
+    """AC: 'warning raised exactly at the threshold.'
+
+    The boundary is inclusive: R/lambda = 0.1 itself warns, one part in a
+    million below it does not. A '>' vs '>=' typo is exactly the kind of
+    off-by-one that a looser test (e.g. only checking R/lambda = 0.5) would
+    miss.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LongWavelengthAssumptionWarning)
+        with pytest.raises(LongWavelengthAssumptionWarning):
+            finite_size_correction(*_sphere_at(0.1))
+        # Just below the threshold: must NOT raise.
+        finite_size_correction(*_sphere_at(0.1 - 1e-9))
+
+
+def test_finite_size_correction_warning_names_the_assumption() -> None:
+    """AC: 'message names the assumption.'
+
+    Points at the exact assumption-ledger row (docs/INDEX.md §3) so a caller
+    does not have to guess which of several assumptions was violated.
+    """
+    with pytest.warns(LongWavelengthAssumptionWarning, match="Long wavelength"):
+        finite_size_correction(*_sphere_at(0.2))
+
+    with pytest.warns(LongWavelengthAssumptionWarning) as record:
+        finite_size_correction(*_sphere_at(0.2))
+    message = str(record[0].message)
+    assert "R << lambda" in message
+    assert "INDEX.md" in message
+    assert "§3" in message
+
+
+def test_finite_size_correction_warning_is_a_user_warning_subclass() -> None:
+    """Discoverable via the standard ``UserWarning`` filter machinery."""
+    assert issubclass(LongWavelengthAssumptionWarning, UserWarning)

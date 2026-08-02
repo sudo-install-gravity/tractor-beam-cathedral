@@ -479,10 +479,13 @@ structured out-of-regime warning at `R/λ > 0.1`.
 `src/gwtb/bodies/sphere.py` — `oblateness_quadrupole(sphere, spin_rate)`.
 *AC:* zero at zero spin; scales as spin²; matches the Maclaurin spheroid limit to rtol 1e-3.
 
-**T-4.7 · Assumption-ledger integration · 2 pts · `sonnet-low` · deps T-4.5**
-`src/gwtb/bodies/multipole.py` — emit a structured warning when `R/λ > 0.1` naming the
-violated assumption and pointing at `docs/INDEX.md` §3.
-*AC:* warning raised exactly at the threshold; message names the assumption.
+**T-4.7 · Assumption-ledger integration · 2 pts · `sonnet-low` · deps T-4.5** ✅
+`src/gwtb/bodies/multipole.py` — `LongWavelengthAssumptionWarning`, raised by
+`finite_size_correction` when `R/λ ≥ 0.1` (inclusive), naming the "Long wavelength
+(R << lambda)" row of `docs/INDEX.md` §3 by name in the message text.
+*AC:* warning raised exactly at the threshold (tested at `R/λ = 0.1` and one part in a
+million below it, so a `>` vs `≥` off-by-one would be caught); message contains "Long
+wavelength", "R << lambda", "INDEX.md" and "§3".
 
 **T-4.8 · Sensitivity study · 3 pts · `sonnet` · deps T-4.3, T-4.5**
 `tests/benchmarks/test_body_sensitivity.py` — sweep R and ρ at fixed M; assert radiation is

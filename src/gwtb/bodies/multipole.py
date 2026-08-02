@@ -18,6 +18,7 @@ error curve.
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -30,6 +31,25 @@ _IDENTITY = np.eye(3, dtype=np.float64)
 #: Coefficient of ``-(kR)^2`` in the l=2 uniform-ball form factor, ADR-0007 eq. 3.
 #: ``(l+3) / [2(2l+3)(l+5)]`` at ``l=2`` is ``5 / (2*7*7) = 5/98``.
 _QUADRUPOLE_FORM_FACTOR_COEFF = 5.0 / 98.0
+
+#: R/wavelength above which the long-wavelength assumption (docs/INDEX.md §3,
+#: "Long wavelength (R << lambda)") is considered violated for T-4.7's purposes.
+#: At this ratio the departure from unity is already 2.0142% (ADR-0007
+#: "Recomputed acceptance criterion"); the series is meaningless past R/lambda
+#: = 0.7046, where it goes negative (ADR-0007, validity floor).
+_LONG_WAVELENGTH_ASSUMPTION_LIMIT = 0.1
+
+
+class LongWavelengthAssumptionWarning(UserWarning):
+    """Raised when a caller uses ``finite_size_correction`` outside its regime.
+
+    Source: docs/adr/0007-uniform-sphere-quadrupole-form-factor.md, eq. n/a — a
+    governance class, not a physics result; introduces no equation of its own.
+
+    Names the specific assumption violated, per ``docs/INDEX.md`` §3's "Long
+    wavelength (R << lambda)" row, so a caller can find the row and its
+    consequences without guessing which of several assumptions tripped.
+    """
 
 
 def quadrupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float64]:
@@ -311,17 +331,36 @@ def finite_size_correction(sphere: Sphere, wavelength: float) -> float:
     -----
     This is a **leading-order** correction. It reaches 0.98 at
     ``R/wavelength = 0.1`` (a 2.0142% departure) and passes through zero at
-    ``R/wavelength = 0.7046``; it is meaningless well before that. T-4.7 adds
-    the structured out-of-regime warning at ``R/wavelength > 0.1``.
+    ``R/wavelength = 0.7046``; it is meaningless well before that.
+
+    Warns with :class:`LongWavelengthAssumptionWarning` (T-4.7) when
+    ``R/wavelength >= 0.1`` — the "Long wavelength (R << lambda)" row of
+    ``docs/INDEX.md`` §3 — since the correction itself cannot detect how far
+    past that point it has been pushed; only the caller's choice of ``R`` and
+    ``wavelength`` can.
     """
     if not math.isfinite(wavelength) or wavelength <= 0.0:
         raise ValueError(f"wavelength must be positive and finite, got {wavelength!r}")
 
-    k_r = 2.0 * math.pi * sphere.radius / wavelength
+    r_over_lambda = sphere.radius / wavelength
+    if r_over_lambda >= _LONG_WAVELENGTH_ASSUMPTION_LIMIT:
+        warnings.warn(
+            "finite_size_correction: R/wavelength = "
+            f"{r_over_lambda:.6g} >= {_LONG_WAVELENGTH_ASSUMPTION_LIMIT} violates the "
+            "'Long wavelength (R << lambda)' assumption (docs/INDEX.md §3, Assumption "
+            "Ledger). The leading-order form factor departs from unity by "
+            f"{100.0 * _QUADRUPOLE_FORM_FACTOR_COEFF * (2.0 * math.pi * r_over_lambda) ** 2:.4g}% "
+            "here and is not valid past R/wavelength = 0.7046 (ADR-0007).",
+            LongWavelengthAssumptionWarning,
+            stacklevel=2,
+        )
+
+    k_r = 2.0 * math.pi * r_over_lambda
     return 1.0 - _QUADRUPOLE_FORM_FACTOR_COEFF * k_r * k_r
 
 
 __all__ = [
+    "LongWavelengthAssumptionWarning",
     "finite_size_correction",
     "octupole_moment",
     "quadrupole_moment",

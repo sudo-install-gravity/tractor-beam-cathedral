@@ -16,22 +16,25 @@ If it doesn't, though, the next key question is how much expert intervention wil
 
 A final acknowledgement: not to overuse the quote, but I (perhaps more than most scientists) truly stand on the shoulders of giants in this endeavor.  I wish to acknowledge that the AI tools I am using have scraped much of the entire corpus of English-language literature in existence, and that I am almost certainly borrowing heavily from the work of people to whom I cannot specifically attribute it.  This lack of ability to give credit where it is richly due is a severe problem, and I do not have a good solution to it.  However, I do not think that this should stop me (or anyone) from using these tools for the benefit of humanity.  I will continue to think about this problem as I continue this work, and I will update this section of the readme with any insights I gain along the way.
 
+**Optimize for auditability over speed. A cathedral built on a sign error is a ruin.**
+
 ---
 
-## What this tool actually computes
+## What this tool computes
 
-1. Gravitational-wave characteristics from accelerating spherical masses, using equations
-   traceable to primary literature (every implemented equation carries a citation).
-2. Radiation from **finite maneuvers** — non-impulsive acceleration profiles — including the
-   linear memory effect that a finite maneuver leaves behind.
-3. The effect of body parameters (radius, density, elastic response) on emitted radiation.
-4. Phased-array beamforming, extended from the spin-1 electromagnetic case to the **spin-2**
-   gravitational case.
-5. Visualization of field propagation and beam patterns.
-6. Spatiotemporal focusing using mutually incommensurate (prime-valued) drive frequencies.
+All six capabilities are **implemented and tested**.
 
-And, on every run, a **feasibility ledger**: a quantitative statement of how far the modeled
-configuration sits from actually deflecting an asteroid.
+| # | Capability | Where |
+|---|---|---|
+| 1 | Gravitational-wave characteristics from accelerating spherical masses, using equations traceable to primary literature — every implemented equation carries a citation | `source/`, `bodies/` |
+| 2 | Radiation from **finite maneuvers** (non-impulsive acceleration profiles), including the linear memory effect a finite maneuver leaves behind | `kinematics/`, `source/memory.py` |
+| 3 | The effect of body parameters — radius, density, elastic response, finite size — on emitted radiation | `bodies/` |
+| 4 | Phased-array beamforming, extended from the spin-1 electromagnetic case to the **spin-2** gravitational case | `array/`, `propagate/polarization.py` |
+| 5 | Visualization of field propagation and beam patterns | `viz/` |
+| 6 | Spatiotemporal focusing using mutually incommensurate (prime-valued) drive frequencies | `array/focus.py`, `kinematics/oscillators.py` |
+
+And, on every run, a **feasibility ledger** (`ledger/`): a quantitative statement of how far
+the modeled configuration sits from actually deflecting an asteroid.
 
 ## What this tool is honest about
 
@@ -40,18 +43,107 @@ a framework that hides them would be worse than useless:
 
 | Wall | Statement |
 |---|---|
-| **Diffraction** | Focusing to a 1 km spot at 40 AU requires an aperture of **6×10⁹ wavelengths**, at any frequency. |
+| **Diffraction** | Focusing to a 1 km spot at 40 AU requires an aperture of **6×10⁹ wavelengths**, at any frequency. Raising frequency does not relax the ratio — it shrinks the physical size that ratio corresponds to (1.2×10⁷ AU at 1 Hz; ~12 AU at 1 MHz). |
 | **Coupling** | A gravitational wave produces tidal *strain*, not net force. Momentum transfer requires absorption, and an asteroid's absorption cross-section is negligible. |
 | **Magnitude** | Roughly 40 orders of magnitude separate plausible engineered sources from deflection-relevant power. Radiated power scales as f⁶, making frequency the dominant lever. |
+
+**A wall is a finding, not a bug.** If a change makes one disappear, the change is presumed
+defective until proven otherwise. This rule is enforced in review.
 
 The most valuable output of this project is not a working tractor beam. It is a rigorous,
 parameterized quantification of **which orders of magnitude must be attacked, and in what
 order** — so that contributors across the project's lifetime aim at the real bottleneck rather
 than a comfortable one.
 
+## Where this sits relative to the discredited literature
+
+This work is adjacent to the high-frequency gravitational wave (HFGW) claims associated with
+Robert Baker and collaborators, which a JASON Defense Advisory Panel review commissioned by the
+ODNI's National MASINT Committee (*High Frequency Gravitational Waves*, JSR-08-506, MITRE, 2008)
+found to be fundamentally in error.
+
+We stay on the right side of that line deliberately and mechanically:
+
+- Never cite gravwave.com, drrobertbaker.com, HFGW patent literature, or the associated
+  conference proceedings as authority for anything. A source tracing there **halts review**.
+- The credible prior art on deliberately engineered gravitational radiation is Grishchuk &
+  Sazhin, *Sov. Phys. JETP* **38**(2):215 (1974).
+- **A claim being adjacent to bad literature does not make it wrong. It means the citation
+  standard is higher, not lower.**
+
+The feasibility ledger is the working mechanism that holds the line: it makes the framework
+report its own distance from the application on every run. A framework that could not state its
+own gap would be indistinguishable from the literature above. See [`docs/CLAIMS.md`](docs/CLAIMS.md).
+
+---
+
 ## Status
 
-Pre-alpha. Sprint 0 (foundation and governance). Nothing here computes physics yet.
+**Pre-alpha, v0.1.0, unreleased.** The repository is not yet public.
+
+The planned backlog is essentially complete — but that is a statement about the *modeling
+framework*, not about the concept. Nothing here asserts that gravitational-wave asteroid
+deflection is feasible. The framework's own ledger says the opposite, quantitatively.
+
+| | |
+|---|---|
+| Tasks | **111 of 118 complete** (304 story points) |
+| Tests | **867 passing**, 3 skipped (2 need PyVista, 1 needs CuPy), ~70–85 s |
+| Code | 7,117 lines source; 8,801 lines test |
+| Equation registry | **53 equations**, each mapped to source, implementation and test |
+| Claims registry | 11 established / 7 our derivation / 4 open conjecture |
+| Assumption ledger | 30 approximations, each with its breakdown regime |
+| Errata | 2 verified errors found in the cited literature |
+| Decision records | 7 ADRs |
+
+**Remaining work is externally blocked.** `T-2.9` (branch protection) needs the repository made
+public; the six Sprint 12 closeout tasks (`T-12.1`, `T-12.4`–`T-12.8`) depend on *all* tasks and
+are therefore stranded behind it. `python tools/schedule.py --next` reports this directly rather
+than showing an empty list.
+
+**Known documentation gap:** `docs/INDEX.md` §4 (Validation Status) has no rows for roughly 30
+completed tasks, including `T-6.5`/`T-6.6` — the spin-2 tensor superposition. The tests exist and
+pass; only the table rows are missing. Recorded here rather than left to be discovered.
+
+### Results established so far
+
+Selected, all reproducible from the test suite:
+
+- **The dipole cancels.** The project's central physics premise: in momentum-conserving
+  configurations the mass-dipole term vanishes to < 10⁻¹² relative across 20 seeded
+  configurations, with a deliberate positive control exceeding 10⁻³.
+- **Hulse–Taylor reproduced to 0.21%.** PSR B1913+16 orbital decay: −2.4031×10⁻¹² computed
+  against −2.398×10⁻¹² observed.
+- **Quadrupole luminosity exact to 4.1×10⁻¹⁶** against the independent closed form
+  `L = (32/5)(G/c⁵)μ²a⁴ω⁶` — an algebraic identity, far stronger evidence than any
+  finite-difference check.
+- **The spin-2 array laws, derived and validated** (ADR-0003): element mismatch is `cos(2Δψ)`,
+  maximal at **45°, not 90°**; elements 90° apart **cancel completely** where electromagnetic
+  intuition predicts twice the power; alignment tolerance is `exp(−4σ²)`, so 1% gain loss
+  requires co-orientation to **σ ≤ 2.87° — exactly twice as tight as spin-1**.
+- **Linear memory cross-validated** to bit-for-bit agreement on-axis against an independent
+  quadrupole route, as ADR-0004 predicted before the code existed.
+- **The uniform-sphere `l=2` finite-size form factor**, `F₂(kR) = 1 − 5(kR)²/98`, derived and
+  verified by three independent numerical routes — the strongest agreeing to 1.7×10⁻¹²
+  (ADR-0007). No citable numbered equation for it exists; that outcome is recorded as the
+  decision, not hidden.
+
+### Findings of independent interest
+
+Two numerical results here are not specific to gravitational waves:
+
+- **Differencing two ~10¹² m ranges at 40 AU returns exactly zero in float64.** Every element's
+  range rounds to the same value, so 100% of the focusing information is lost with no error, no
+  warning, and a plausible-looking array of zeros.
+- **Absolute propagation phase is not representable, in float64 either.** At 40 AU / 1 kHz the
+  phase is ~1.25×10⁸ rad, where float64's spacing is ~340× *larger* than the entire per-element
+  differential. The reference/differential split is not a single-precision optimization — it is
+  the only way to obtain the number at all.
+
+Both are validated against 60-digit `decimal` references rather than the implementation's own
+arithmetic.
+
+---
 
 ## Documentation
 
@@ -60,31 +152,109 @@ Pre-alpha. Sprint 0 (foundation and governance). Nothing here computes physics y
 | [`docs/HANDOVER.md`](docs/HANDOVER.md) | **Start here** — current state, what to run next, known traps |
 | [`CLAUDE.md`](CLAUDE.md) | Operating instructions for AI agents working on this repo |
 | [`docs/PHYSICS.md`](docs/PHYSICS.md) | First-principles derivation of the framework |
-| [`docs/CLAIMS.md`](docs/CLAIMS.md) | Established physics vs. our derivation vs. conjecture |
-| [`docs/INDEX.md`](docs/INDEX.md) | Equation registry, module map, assumption ledger |
+| [`docs/CLAIMS.md`](docs/CLAIMS.md) | Established physics vs. our derivation vs. conjecture, plus the epistemic firewall |
+| [`docs/INDEX.md`](docs/INDEX.md) | Equation registry, module map, assumption ledger, validation status |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | Sprint plan and task specifications |
 | [`docs/ERRATA.md`](docs/ERRATA.md) | Verified errors found in cited literature |
-| [`docs/adr/`](docs/adr/) | Architecture decision records |
+| [`docs/adr/`](docs/adr/) | Architecture decision records (7) |
+| [`docs/paper/`](docs/paper/) | Manuscript drafts *(work in progress)* |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
 
+**If you read only one thing beyond this file**, read `docs/INDEX.md` §3, the assumption ledger.
+Several approximations here hold across most of the parameter space and fail at its edges — and
+this project's interesting configurations live near those edges.
+
+## Package layout
+
+```
+src/gwtb/
+  core/       constants, unit scaling, validation guards, backend shim
+  bodies/     mass distributions, multipole moments, elastic deformation
+  kinematics/ acceleration profiles, oscillator drive synthesis
+  source/     radiation: quadrupole, multipoles, memory, conservation audit
+  propagate/  retarded fields, TT projection, spin-2 polarization
+  array/      geometry, beamforming, grating lobes, focusing
+  target/     geodesic deviation, coupling channels, deflection
+  ledger/     feasibility gap report
+  viz/        field slices, beam patterns, volumetric rendering
+```
+
+⚠️ **`array/beamform.py` is deliberately two things at once.** Its scalar functions
+(`array_factor`, `steering_phases`, `beamwidth_3db`, `peak_sidelobe_level`, `taper`) are the
+**spin-1 baseline** — ordinary classical array theory, never to be read as gravitational
+radiation. Only `superpose_tt` and `mismatch_loss` carry spin-2 physics. **Any code borrowed
+from antenna, radar, or acoustics references is spin-1 and will be silently wrong.** This is the
+project's highest-risk bug class.
+
 ## Installation
+
+Requires Python ≥ 3.10.
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-## Development
+Optional extras: `.[viz]` adds PyVista for volumetric rendering and VTK export. Without it,
+`viz.render_volume` degrades quietly (returns `None` with a message) while `viz.export_field`
+raises `RuntimeError` — the difference is deliberate — and **2 tests skip**.
 
-```bash
-pytest
+A **third test skips without CuPy**, which exercises the optional GPU path in
+`core/backend.py:field_grid_split_phase`. CuPy is not a declared extra; install it separately if
+you need that path. A full local run is therefore **867 passed, 3 skipped**.
+
+**On Windows** (the primary development host since 2026-07-29), a working venv lives at `.venv`.
+Use it for everything — the system Python has no numpy. In **Windows PowerShell**:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
 ```
 
-See what to work on next — the scheduler batches tasks by execution tier and
-dependency order:
+The same applies to `ruff.exe`, `mypy.exe` and `pytest.exe` under `.venv\Scripts\`.
+
+## Development
+
+Run the tests:
+
+```bash
+pytest -q
+```
+
+**Five checks gate every commit. All five must pass:**
+
+```bash
+ruff check src tests tools && ruff format --check src tests tools && mypy src && python tools/check_citations.py && pytest -q
+```
+
+`check_citations.py` is the mechanical half of this project's central rule: every public function
+in `source/`, `propagate/`, `bodies/` and `array/` must carry a docstring line of the form
+`Source: <reference>, eq. <number>`. **"Blanchet ch. 3" is rejected; "Blanchet eq. 3" is
+accepted.** A contributor auditing this code decades from now must be able to open one page and
+check one line. The tool verifies a citation is *present and specific* — it cannot verify it is
+*correct*, which remains a human review gate.
+
+See what to work on next — the scheduler batches tasks by execution tier and dependency order,
+and reports externally blocked work rather than silently omitting it:
 
 ```bash
 python tools/schedule.py --next
 ```
+
+Completion is read from ✅ markers on task headers in `docs/BACKLOG.md`, so the plan always
+matches reality. **Mark a task ✅ when you finish it.**
+
+## Contributing
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md), then [`docs/HANDOVER.md`](docs/HANDOVER.md). Three
+rules matter more than the rest:
+
+1. **Never implement a physics formula from memory.** Confirm the governing equation and its
+   exact equation number against a primary source first. Prefer open-access sources — a citation
+   a stranger cannot open is not a citation.
+2. **Never strip an `UNPHYSICAL` stamp.** Mass-dipole radiation exists only if the system's
+   momentum is not conserved; that artifact is roughly 10¹⁰× the true quadrupole signal.
+   Unstamped, it does not look like a bug — it looks like a breakthrough.
+3. **Published sources contain errors.** See [`docs/ERRATA.md`](docs/ERRATA.md) for two we
+   verified numerically. Never "fix" correct code to match a printed typo.
 
 ## License
 

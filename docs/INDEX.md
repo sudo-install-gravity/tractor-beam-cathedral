@@ -11,6 +11,12 @@ T-8.5, T-9.1–9.4, T-11.1, T-3.8, T-7.4/7.5, T-2.10)
 EQ-025), including the `field_grid` light-crossing-time scope restriction in the Assumption
 Ledger.
 
+**Updated 2026-08-02 (`indexer` reconciliation pass):** §1 and §2 were reconciled against
+the code after a **large accumulated drift** was found — see the drift note at the end of
+§1. Added **EQ-035–EQ-053** (19 rows) for public, citation-carrying functions that had
+landed without a registry row, and rewrote eleven §2 Module Map rows. **None of the new
+rows is marked `VERIFIED`**; the registry holds no verification record for them.
+
 ---
 
 ## 1. Equation Registry
@@ -55,6 +61,25 @@ extension of a cited result), `CONJECTURE` (not yet grounded).
 | EQ-033 | Airy −3 dB spot size `w = (2x_h/π) λr/D = 1.0290 λr/D`, `x_h = 1.6163399` solving `2J₁(x)/x = 1/√2` | Airy pattern `[2J₁(v)/v]²` for a uniformly-illuminated circular aperture (Born & Wolf §8.5.2), **cited by its reproducible root** rather than an equation number this project could not confirm; corroborated by Thorne & Blandford, *Modern Classical Physics* ch. 8, `ρ_FWHM = 1.61633 z/(kR)`. ⚠️ **Not 1.22** (Rayleigh first null, +19%) | `array/focus.py:spot_size`, `FWHM_COEFFICIENT` | `tests/unit/test_spot_size.py` | VERIFIED |
 | EQ-031 | Split-phase factorization `exp(iφ_a) = exp(iφ_ref)·exp(iΔφ_a)` | This project's own construction, eq. n/a — phasors multiply, so the large common phase and the small residual are never *added*. See the Assumption Ledger row on absolute-phase representability | `core/backend.py:SplitPhase.phasor`, `split_phase` | `tests/unit/test_split_phase.py` | DERIVED |
 | EQ-034 | Uniform-sphere `l=2` finite-size form factor `F₂(kR) = 1 − 5(kR)²/98`; general `l`: `1 − (kR)²(l+3)/[2(2l+3)(l+5)]` | [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md), eq. 3 — this project's own derivation. **No numbered equation for the *result* exists in any accessible source**; Thorne, *Rev. Mod. Phys.* 52:299 (1980) is the likely primary source but is paywalled and its numbering is unconfirmed, so it is deliberately *not* cited with an equation number. The derivation's *input* is citable — **DLMF 10.53.1** (dlmf.nist.gov/10.53, open access, numbered), transcribed and checked in exact rational arithmetic for `l = 0…6` — so the uncited step is narrowly the elementary integration of that series against a uniform-ball radial weight. Verified additionally by three independent numerical routes (far-field retarded phase integral to **1.7e-12**; exact retarded Green's function to 1.4e-8; point-mass lattice), none evaluating a spherical Bessel function, plus an independent `code-reviewer` re-derivation. ⚠️ **`sin(kR)/(kR)` (1/6) is spin-1 `l=0` antenna machinery and `3j₁(kR)/(kR)` (1/10) is the total-mass monopole** — both are wrong here | `bodies/multipole.py:finite_size_correction` | `tests/unit/test_multipole.py` | DERIVED |
+| EQ-035 | Spin-2 polarization basis `(e₊, e_×)` transverse to `n̂` | [FH] eq. 2.22 | `propagate/polarization.py:polarization_basis` (T-5.1) | `tests/unit/test_polarization.py` | **UNVERIFIED — needs `researcher` pass.** [FH] eq. 2.22 is a *new* equation number for this registry (EQ-004 cites [FH] eq. 4.22, a different result) |
+| EQ-036 | Rotating-quadrupole element pattern `h₊ ∝ (1+cos²θ)/2`, `h_× ∝ cosθ` | [B] eq. 2 (VERIFIED at EQ-005), applied to the circular-orbit quadrupole of [B] eq. 3 | `propagate/polarization.py:element_pattern_rotating` (T-5.4) | `tests/unit/test_polarization.py` | DERIVED (docstring self-declares claim category B; cross-checked in-code against `quadrupole_second_derivative` + `apply_tt`) |
+| EQ-037 | Linear-quadrupole element pattern `h₊ ∝ sin²θ`, `h_× = 0` | [B] eq. 2 (VERIFIED at EQ-005), applied to a single-axis quadrupole of [B] eq. 3 | `propagate/polarization.py:element_pattern_linear` (T-5.4) | `tests/unit/test_polarization.py` | DERIVED (docstring self-declares claim category B; verified in-code to 1e-9 against `apply_tt`) |
+| EQ-038 | TT tensor → polarization scalars, `(h₊, h_×) = ½ e_A : h_ij` | [FH] eq. 2.22, inverted | `propagate/polarization.py:decompose` (T-5.2) | `tests/unit/test_polarization.py` | DERIVED — **but rests on [FH] eq. 2.22, which is itself UNVERIFIED (see EQ-035)** |
+| EQ-039 | Polarization scalars → TT tensor, `h_ij = h₊e₊ + h_×e_×` | [FH] eq. 2.22 | `propagate/polarization.py:recompose` (T-5.2) | `tests/unit/test_polarization.py` | DERIVED — **rests on [FH] eq. 2.22, UNVERIFIED (see EQ-035)** |
+| EQ-040 | Spin-2 polarization rotation, period π not 2π: `h₊′ = h₊cos2ψ + h_×sin2ψ`, `h_×′ = −h₊sin2ψ + h_×cos2ψ` | [FH] eq. 4.22 | `propagate/polarization.py:rotate_polarization` (T-5.3) | `tests/unit/test_polarization.py` | **UNVERIFIED — needs `researcher` pass.** ⚠️ This is a **second, distinct claim cited to the same equation number as EQ-004** (the TT projector). `researcher` must confirm [FH] eq. 4.22 actually states the e^(2iψ) transformation law and not only the projector. The docstring self-labels this **CLAIMS.md A-5** (*established*), which the registry cannot corroborate — see finding below |
+| EQ-041 | Mass dipole moment `d_i = Σ_A m_A x_A,i` | [FH] eq. 4.30 | `source/multipole_rad.py:dipole_moment` (T-2.3) | `tests/unit/test_multipole_rad.py` | **UNVERIFIED — needs `researcher` pass** (new [FH] equation number) |
+| EQ-042 | Analytic dipole second derivative `d̈_i = Σ_A m_A a_A,i = dP_i/dt` | [FH] eq. 4.35 | `source/multipole_rad.py:dipole_second_derivative` (T-2.3) | `tests/unit/test_multipole_rad.py` | **UNVERIFIED — needs `researcher` pass** (new [FH] equation number) |
+| EQ-043 | Mass-dipole strain diagnostic: `e_i = (G/c⁴)d̈_i`, `h_ij = Λ_ij,kl(n̂)(e_k e_l − ⅓δ_kl e·e)` | This project's own construction, eq. n/a — no established multipole-radiation reference applies to a momentum-non-conserving source | `source/multipole_rad.py:dipole_strain` (T-2.4) | `tests/unit/test_multipole_rad.py` | DERIVED — 🚨 **output is ALWAYS stamped `UNPHYSICAL` regardless of input. Never read as a physical result; never strip the stamp (CLAUDE.md rule 2). This is the ~10¹⁰× artifact the stamping machinery exists to contain** |
+| EQ-044 | Trace-free (STF) mass octupole `Q_ijk`, `l = 3` | [B] eq. 123a | `bodies/multipole.py:octupole_moment` (T-2.5) | `tests/unit/test_multipole.py` | **UNVERIFIED — needs `researcher` pass.** The docstring reports an internal cross-check reproducing Blanchet's two-body Newtonian octupole ([B] eq. 302a) identically — that is self-consistency, **not** confirmation of eq. 123a's number |
+| EQ-045 | Geodesic-deviation acceleration `ξ̈_i = ½ ḧ_ij^TT ξ_j` | [FH] eq. 3.11 | `target/geodesic.py:deviation_acceleration` (T-8.1) | `tests/unit/test_geodesic.py` | **UNVERIFIED — needs `researcher` pass.** `target/` is exempt from citation-**CI**, but the exemption is about CI enforcement, not registry completeness: this implements a real citable relation and is the mechanism every coupling channel acts through, so it is registered deliberately |
+| EQ-046 | Per-element quadrupole radiator model (position + `Q̈_ij`) | [ADR-0003](adr/0003-spin2-superposition.md), eq. 1 — the per-element term of the superposition sum | `array/beamform.py:QuadrupoleElement` (T-6.5) | `tests/unit/test_superposition.py` | DERIVED |
+| EQ-047 | **Spin-2 tensor array superposition** `h_ij(n̂) = Σ_n Λ_ij,kl(n̂) Q^(n)_kl w_n exp(i k·r_n)` | [B] eq. 2 (VERIFIED at EQ-005) per element, superposed per [ADR-0003](adr/0003-spin2-superposition.md) | `array/beamform.py:superpose_tt` (T-6.5) | `tests/unit/test_superposition.py` | DERIVED — ⚠️ **the project's highest-risk equation** (CLAUDE.md rule 4). Sums TT tensors along **one common `n̂`** and raises inside the Fraunhofer distance; discharges claim B-1 |
+| EQ-048 | Spin-2 polarization-mismatch factor `cos(2Δψ)` | Derived in [ADR-0003](adr/0003-spin2-superposition.md) (claim B-1), from [B] eq. 2 | `array/beamform.py:mismatch_loss` (T-6.6) | `tests/unit/test_superposition.py` | DERIVED — ⚠️ **maximal at 45°, not 90°; elements 90° apart CANCEL where spin-1 intuition predicts 2× power** |
+| EQ-049 | Mode-locked focus trajectory `R(t) = R_focus + c(t − t_focus)` | [B] eq. 2 (retarded-time relation; corollary of EQ-029) | `array/focus.py:focus_trajectory` (T-9.7) | `tests/unit/test_focus_trajectory.py` | DERIVED |
+| EQ-050 | Fourier time-bandwidth dwell time `τ = 1/B` | Elementary Fourier time-bandwidth reciprocity, eq. n/a — not a GW-specific claim | `array/focus.py:dwell_time` (T-10.3) | `tests/unit/test_focus_trajectory.py` | DERIVED |
+| EQ-051 | Peak-to-sidelobe ratio for a steered array, `√N` random-array background | This project's own construction, eq. n/a — built from `array_factor` (EQ-016); the `√N` scaling is the identity used for T-9.6's background per [ADR-0006](adr/0006-focused-field-far-field-regime.md) | `array/focus.py:peak_to_sidelobe` (T-10.4) | `tests/unit/test_focus_trajectory.py` | DERIVED — ⚠️ ADR-0006 trap 4: the background **mean** is the Rayleigh value `√(Nπ)/2 ≈ 0.886√N`, not `√N`; it is the *ratio* that scales as `√N` |
+| EQ-052 | Radiated-power frequency sweep (f⁶ corollary of quadrupole luminosity) | [B] eq. 4 (VERIFIED at EQ-006); the f⁶ scaling is a corollary for a sinusoidal drive, not a new equation | `array/focus.py:band_sweep` (T-10.5) | `tests/unit/test_focus_trajectory.py` | DERIVED |
+| EQ-053 | Required-aperture trade surface `D(f) = FWHM_COEFFICIENT·(c/f)·r/w` | This project's own construction, eq. n/a — algebraic inversion of `spot_size` (EQ-033); introduces no new equation | `array/focus.py:trade_surface` (T-10.6) | `tests/unit/test_focus_trajectory.py` | DERIVED — this is the **diffraction wall** (claim B-3) in solved-for-D form; if a change makes it shrink, suspect the change (rule 5) |
 
 **Citations verified 2026-07-26** for all Sprint 1 equations (EQ-001–007); **2026-07-27** for
 the Sprint 4/5/9/6/11/3/8/2 additions above (EQ-008–023). Sources are open access with
@@ -94,6 +119,60 @@ output; `arraytool` is not installable in this offline environment (see CLAUDE.m
 factor. Recorded here, not silently substituted — re-run against real `arraytool` output if/when
 network access is available.
 
+⚠️ **EQ-035–EQ-053 are NOT covered by the verification dates above.** They were added by the
+2026-08-02 `indexer` pass from docstring citations already present in the code. The registry
+holds **no verification record** for them — which is a statement about this file, not an
+assertion that they were never checked: the mandatory workflow requires a `researcher` pass
+*before* implementation, so some or all may well have been verified at the time and simply
+never recorded here. Either way the gap is real and only a fresh `researcher` pass closes it.
+Five rows rest on **equation numbers new to this registry** ([FH] 2.22, 3.11, 4.30, 4.35;
+[B] 123a) and are the priority. **EQ-040 is the one to look at first**: it cites [FH] eq. 4.22
+for the e^(2iψ) rotation law while EQ-004 cites the same number for the TT projector, and its
+docstring self-labels the result CLAIMS.md **A-5 (established)** — a Category-A label sitting
+on a citation this registry cannot corroborate. Per the maintenance rule this is reported, not
+resolved.
+
+⚠️ **Registry/Module-Map drift found and reconciled, 2026-08-02 (`indexer` pass).** Seven live
+modules (`source/multipole_rad.py`, `propagate/polarization.py`, `target/geodesic.py`,
+`target/deflection.py`, `viz/slices.py`, `viz/volume.py`, `viz/export_vtk.py`) were still marked
+*"not yet implemented"* in §2, and six more rows (`array/focus.py`, `array/beamform.py`,
+`bodies/multipole.py`, `target/coupling.py`, `kinematics/profiles.py`, `core/backend.py`,
+`viz/patterns.py`) omitted functions that had landed with citations. §1 was missing 19 rows.
+
+**How it was caught, and why nothing caught it sooner.** By an `indexer` pass working from
+`grep`-extracted `^def`/`^class`/`Source:` lines against the two documents. `check_citations.py`
+passes throughout — it verifies a citation *exists in the docstring*, never that the registry
+reflects it, so the entire drift was invisible to CI by construction. This is the failure mode
+CLAUDE.md rule 8 names: nothing was wrong, nothing was reported, and the map quietly stopped
+describing the territory.
+
+**Two structural findings, recorded rather than fixed:**
+
+1. **A correction was written but never applied.** The "✅ Resolved 2026-07-31" note below the
+   §2 table states that the `array/beamform.py` row's stale `superpose_tt` claim was a forward
+   reference to unbuilt code and that T-6.5/T-6.6 had landed — but **the row itself was never
+   edited**, so the note and the row it corrected contradicted each other for at least one
+   indexer cycle. A resolution note is not a substitute for the edit.
+2. **The stale claim is also in the source code.** `src/gwtb/array/beamform.py`'s module
+   docstring says `superpose_tt` is "not yet implemented" — 370 lines above its own definition.
+   That is almost certainly the *origin* of the index drift, since an indexer trusting the module
+   docstring would reproduce it. **Left uncorrected here deliberately** (this pass was scoped to
+   documentation); it needs a one-line source edit under the normal workflow.
+
+**Deliberately not registered:** `bodies/multipole.py:LongWavelengthAssumptionWarning`. Its
+docstring cites `eq. n/a — a governance class, not a physics result`, the same category as
+`core/backend.py:PrecisionError` and `target/coupling.py:CouplingResult`, neither of which has
+or needs a row.
+
+🚨 **Out of scope for this pass, and worse than what it fixed: §4 Validation Status is not
+stale, it is ABSENT** for roughly 30 completed tasks — T-2.3/2.4/2.5, T-3.1–3.6, T-5.1–5.4,
+**T-6.5/T-6.6**, T-7.1–7.3/7.6–7.8, T-8.1–8.4/8.6–8.8, T-9.7, T-10.3–10.7, T-11.4/11.5/11.7.
+The tests exist and pass; only the rows are missing. **The most serious single gap is T-6.5/T-6.6
+(EQ-047/EQ-048)** — the spin-2 tensor superposition, this project's highest-risk equation and
+the discharge of claim B-1, has **no row in the validation table at all.** Per §4's own rule an
+unvalidated benchmark is not passing; an *unlisted* one cannot even be checked for staleness.
+This should be the next `indexer` task.
+
 ---
 
 ## 2. Module Map
@@ -102,29 +181,31 @@ network access is available.
 |---|---|---|---|
 | `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4/5`, `TARGET_RANGE` | — |
 | `core/units.py` | Scaled strain representation | **live** — `StrainScale` | `constants` |
-| `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only); `field_grid`, `_field_grid_loop` (T-11.2; Numba-JIT-compilable TT-strain superposition over a field-point grid, one already-evaluated `q_ddot` per source shared across the whole grid — see Assumption Ledger for the light-crossing-time restriction this imposes); `SplitPhase`, `split_phase` (T-11.3; FP64 reference phase + FP32-safe differential — use `.phasor()`, **not** `.recombine()`, which is irreducibly lossy at astronomical range) | `source/quadrupole` (via caller-supplied `q_ddots`), `core/validation` |
+| `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only); `field_grid`, `_field_grid_loop` (T-11.2; Numba-JIT-compilable TT-strain superposition over a field-point grid, one already-evaluated `q_ddot` per source shared across the whole grid — see Assumption Ledger for the light-crossing-time restriction this imposes); `SplitPhase`, `split_phase` (T-11.3; FP64 reference phase + FP32-safe differential — use `.phasor()`, **not** `.recombine()`, which is irreducibly lossy at astronomical range); `field_grid_split_phase` (T-11.4; NumPy/CuPy-agnostic per-element phasor kernel for the optional GPU backend); `assert_phase_precision`, `PrecisionError` (T-11.5; guards float32 phase outside `split_phase`'s own authorized differential term); `field_grid_chunked` (T-11.7; memory-bounded chunked evaluation of `field_grid`, identical to rtol 1e-12) | `core/constants`, `core/validation` (**not** `source/quadrupole` — `q_ddots` are caller-supplied, never imported) |
 | `bodies/sphere.py` | Rigid uniform sphere; mass/inertia; rotational-oblateness quadrupole | **live** — `Sphere` (dataclass: `radius`, `density`, `.mass`, `.moment_of_inertia`, `.self_quadrupole()`), `oblateness_quadrupole` (T-4.1/4.2/4.6) | `constants` |
 | `bodies/elastic.py` | Love-number deformation; breaks R/ρ degeneracy | **live** — `love_number_k2`, `induced_quadrupole` (T-4.3). **This is where the rigid model's mass/radius/density degeneracy breaks**: `Q ∝ R⁵` explicitly and `ρ` enters through `μ̃`, so equal-mass spheres are no longer radiatively identical (asserted against T-4.2 in `test_elastic.py`) | `sphere`, `constants`, `core/validation` |
-| `bodies/multipole.py` | Mass multipole moments and derivatives | **live** — `quadrupole_moment`, `_second_derivative`, `_third_derivative` | `constants` |
-| `kinematics/profiles.py` | Finite-maneuver acceleration profiles | **live** — `AccelerationProfile` (base), helpers `_finish`, `_prepare_time` | — |
+| `bodies/multipole.py` | Mass multipole moments and derivatives; finite-size correction | **live** — `quadrupole_moment`, `quadrupole_second_derivative`, `quadrupole_third_derivative` (T-1.3–1.5 — ⚠️ the previous version of this row named these `_second_derivative`/`_third_derivative`, which have **never** been the actual names); `octupole_moment` (T-2.5, EQ-044 — **no downstream caller exists anywhere in `src/`**: defined, exported and tested but unused, recorded here so it cannot silently vanish); `finite_size_correction`, `LongWavelengthAssumptionWarning` (T-4.5/T-4.7, EQ-034, see [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md)) | `bodies/sphere`, `core/validation` (**not** `core/constants`) |
+| `kinematics/profiles.py` | Finite-maneuver acceleration profiles | **live** — `AccelerationProfile` (base, T-3.1), `BangBangProfile` (T-3.2), `SCurveProfile` (T-3.3), `QuinticProfile` (T-3.4), `RaisedCosineProfile` (T-3.5), `spectrum` (T-3.6, frequency-domain view); helpers `_finish`, `_prepare_time` | `core/validation` |
 | `kinematics/oscillators.py` | Prime-frequency multi-tone drive synthesis | **live** — `first_n_primes`, `prime_frequencies`, `recurrence_period`, `PrimeOscillatorDrive` (T-9.1–9.4; DSP/kinematic module, exempt from citation-CI) | `profiles`, `core/validation` |
 | `source/quadrupole.py` | Quadrupole radiation, luminosity, and maneuver waveforms | **live** — `strain_tt`, `luminosity`, `waveform_from_profile` (T-3.8, adds symmetric two-body maneuver modeling) | `multipole`, `tt_projection`, `bodies/sphere`, `kinematics/profiles` |
-| `source/multipole_rad.py` | Higher multipoles; dipole term (flagged) | *(Sprint 2, not yet implemented)* | `multipole` |
+| `source/multipole_rad.py` | Mass dipole moment and derivative; flagged dipole-strain diagnostic | **live** — `dipole_moment`, `dipole_second_derivative` (T-2.3, EQ-041/042), `dipole_strain` (T-2.4, EQ-043). 🚨 **`dipole_strain` output is ALWAYS stamped `UNPHYSICAL` regardless of input** — this is the ~10¹⁰× mass-dipole artifact CLAUDE.md rule 2 exists to contain. Never strip the stamp; never read as a physical result | `core/constants`, `core/validation`, `propagate/tt_projection`, `source/conservation` (**not** `bodies/multipole`) |
 | `source/memory.py` | Linear GW memory from finite maneuvers | **live** — `linear_memory` (T-3.7; non-relativistic limit of Favata eq. 10k). Cross-validated against the independent quadrupole route to machine precision — see ADR-0004 | `tt_projection`, `constants`, `core/validation` |
 | `source/conservation.py` | ∂_μT^μν audit; `UNPHYSICAL` stamping | **live** — `audit`, `ConservationReport` (T-2.1); `StampedResult`, `StampStrippedError`, `UNPHYSICAL_STAMP` (T-2.2). Two layers: `audit` *detects* non-conservation, `StampedResult` *propagates* that verdict through arithmetic so it cannot be laundered. See ADR-0005 for why it is a wrapper and not an `ndarray` subclass | `core/validation` |
 | `propagate/tt_projection.py` | Transverse-traceless projector | **live** — `tt_projector`, `apply_tt`, `transverse_projector` | — |
-| `propagate/polarization.py` | Spin-2 basis; e^(2iψ) rotation | *(Sprint 5, not yet implemented)* | `tt_projection` |
+| `propagate/polarization.py` | Spin-2 polarization basis; e^(2iψ) rotation; TT decomposition/recomposition; quadrupole element patterns | **live** — `polarization_basis` (T-5.1, EQ-035), `decompose`/`recompose` (T-5.2, EQ-038/039), `rotate_polarization` (T-5.3, EQ-040), `element_pattern_rotating`/`element_pattern_linear` (T-5.4, EQ-036/037). ⚠️ **This module carries genuine spin-2 physics** — unlike `array/beamform.py`'s scalar functions, it must never be replaced by a spin-1 analogue (rule 4). Rotation period in ψ is **180°, not 360°** | `core/validation` (**not** `propagate/tt_projection` — referenced in docstrings, not imported) |
 | `propagate/retarded.py` | Per-source retarded-time field evaluation | **live** — `PointSource` (dataclass), `field_at` (T-6.7; retards each source individually — see module docstring on why a shared array-centroid retardation would be wrong), `propagate` (T-6.8; batches `field_at` over field points × times, shape `(M, T, 3, 3)`) | `source/quadrupole`, `core/constants` |
 | `array/geometry.py` | Element placement | **live** — `linear_array`, `planar_array`, `sparse_array` (T-5.5–5.7) | — |
-| `array/beamform.py` | Scalar array factor, steering, beamwidth/sidelobes, tapering | **live** — `array_factor`, `steering_phases`, `beamwidth_3db`, `peak_sidelobe_level`, `taper` (T-6.1–6.4). **Explicitly the spin-1/scalar baseline** — see module docstring warning; the spin-2 tensor superposition `superpose_tt` (T-6.5) is not yet implemented | `geometry`; tensor superposition (not yet built) will depend on `polarization` |
+| `array/beamform.py` | Scalar array factor, steering, beamwidth/sidelobes, tapering; **and** spin-2 tensor superposition | **live, and the module is deliberately two things at once** — (a) `array_factor`, `steering_phases`, `beamwidth_3db`, `peak_sidelobe_level`, `taper` (T-6.1–6.4, EQ-016–019) are the **spin-1/scalar baseline**, pure classical array theory, never to be read as gravitational radiation; (b) `QuadrupoleElement`, `superpose_tt`, `mismatch_loss` (T-6.5/6.6, EQ-046–048) carry the **spin-2 physics**, per [ADR-0003](adr/0003-spin2-superposition.md). ⚠️ **Keep the two halves distinct — this is rule 4's highest-risk boundary, and it runs through the middle of one file.** ⚠️ The module's own docstring still calls `superpose_tt` "not yet implemented" 370 lines above its definition; that source-level staleness is a known finding, see the drift note in §1 | `core/validation`, `propagate/tt_projection` (**not** `array/geometry`) |
 | `array/grating.py` | Grating-lobe and spacing constraints | **live** — `max_spacing`, `has_grating_lobes` (T-5.8) | `geometry` |
-| `array/focus.py` | Spatiotemporal focusing | **live** — `focal_phases` (T-9.5), `focused_phasor`/`focused_field` (T-9.6), `spot_size`/`FWHM_COEFFICIENT` (T-10.1). Far-field only per [ADR-0006](adr/0006-focused-field-far-field-regime.md); near-field requests raise. `focus_trajectory` (T-9.7) and `dwell_time` (T-10.3) **not yet implemented** | `beamform`, `geometry`, `kinematics/oscillators`, `constants`, `core/validation` |
-| `target/geodesic.py` | Geodesic deviation at the target | *(Sprint 8, not yet implemented)* | `tt_projection` |
-| `target/coupling.py` | Non-GW comparison channel: gravity tractor | **live** — `channel_gravity_tractor` (T-8.5; other two momentum-transfer channels from the module's original scope not yet implemented) | `constants` |
-| `target/deflection.py` | Orbit propagation; Δv → miss distance | *(Sprint 8, not yet implemented)* | `coupling` |
+| `array/focus.py` | Spatiotemporal focusing; focus kinematics; array trade studies | **live, complete** — `focal_phases` (T-9.5, EQ-029/030), `focused_phasor`/`focused_field` (T-9.6, EQ-032), `spot_size`/`FWHM_COEFFICIENT` (T-10.1, EQ-033), `focus_trajectory` (T-9.7, EQ-049), `dwell_time` (T-10.3, EQ-050), `peak_to_sidelobe` (T-10.4, EQ-051), `band_sweep` (T-10.5, EQ-052), `trade_surface` (T-10.6, EQ-053). The previous version of this row listed the last five as unimplemented. Far-field only per [ADR-0006](adr/0006-focused-field-far-field-regime.md); near-field requests **raise — propagate that error, do not catch it** | `array/beamform`, `core/constants`, `core/validation`, `kinematics/oscillators` (**not** `array/geometry`) |
+| `target/geodesic.py` | Geodesic deviation at the target | **live** — `deviation_acceleration` (T-8.1, EQ-045). This is the mechanism every `target/coupling.py` channel acts through: a GW produces **tidal strain, not net force** | `core/validation` |
+| `target/coupling.py` | All three coupling channels, reported side by side | **live** — `tidal_strain`/`channel_tidal` (T-8.2/8.3), `channel_absorption` (T-8.4), `channel_gravity_tractor` (T-8.5, EQ-023), `CouplingResult` (T-8.3), `channel_gravity_tractor_result`/`compare_channels` (T-8.6). **All three channels from the module's original scope are now live** — the previous version of this row said the other two were unimplemented. Reporting them side by side rather than assuming radiated power converts to thrust is the module's whole point | `core/constants`, `ledger/gap_report` |
+| `target/deflection.py` | Impulse → Δv → miss distance | **live** — `delta_v` (T-8.7), `miss_distance` (T-8.8). **Deliberately uncited**: both are elementary Newtonian mechanics (impulse-momentum; linearized orbital displacement), not GW physics, so rule 1's numbered-equation requirement does not apply — the module docstring says so explicitly. Where a *number* is checked it is cited: `delta_v` reproduces DART's measured Dimorphos deflection (1.16e7 N·s on 4.3e9 kg → 2.7 mm/s) to **rtol 1e-2**, cited to Daly et al. 2023 | `core/constants` (**not** `target/coupling`) |
 | `ledger/gap_report.py` | Feasibility ledger | **live** — `GapMetric`, `GapReport`, `GapMetric.from_stamped` (T-2.6), plus row-builder wrappers `emission_gap` (T-2.7), `aperture_gap` (T-5.9), `impulse_gap` (T-8.9), `focusing_gap` (T-10.8), `body_quadrupole_gap` (T-4.9). **Schema is FROZEN**: `name, achieved, required, units, source_module, provenance` is a contract every epic writes to; `test_gap_report.py` pins the field set *and order* so a breaking change fails loudly. **Use `from_stamped()`** for any value originating as a `StampedResult` — the plain constructor would compile while discarding the stamp | `source/conservation` (for `UNPHYSICAL_STAMP`, `StampedResult`) |
-| `viz/patterns.py` | Beam-pattern visualization (polar + 3D) | **live** — `plot_pattern_polar`, `plot_pattern_3d` (T-7.4/7.5; headless `Agg` backend; reimplements array-factor math vectorized for full-grid rendering rather than calling `beamform.array_factor` per point — kept numerically consistent by shared test coverage, not by a shared code path) | `array/beamform` (mathematically, not by import) |
-| `viz/*` (other) | Field slices, volumetric rendering | *(Sprint 7, not yet implemented)* | — |
+| `viz/patterns.py` | Beam-pattern visualization (polar + 3D) | **live** — `plot_pattern_polar`, `plot_pattern_3d` (T-7.4/7.5; headless `Agg` backend; reimplements array-factor math vectorized for full-grid rendering rather than calling `beamform.array_factor` per point — kept numerically consistent by shared test coverage, not by a shared code path); `plot_polarization_ellipse` (T-7.6); `plot_trade_surface` (T-10.7, renders `array/focus.py:trade_surface`) | `array/beamform` (mathematically, not by import) |
+| `viz/slices.py` | 2D strain-field slice extraction, heatmaps, propagation animation | **live** — `FieldSlice`, `extract_slice`, `plot_strain_slice` (T-7.1/7.2), `animate_propagation` (T-7.3); headless `Agg` backend as in `patterns.py` | — (the caller supplies the `field` callable, e.g. `propagate/retarded.field_at`; no direct import) |
+| `viz/volume.py` | 3D volumetric field rendering | **live** — `render_volume` (T-7.7). Optional `pyvista` dependency: **returns `None` with a message** when absent, does not raise | optional: `pyvista` |
+| `viz/export_vtk.py` | ParaView/VTK `.vti` export | **live** — `export_field` (T-7.8). Optional `pyvista` dependency: **raises `RuntimeError`** when absent — note this deliberately differs from `render_volume`'s degrade-quietly path | optional: `pyvista` |
 | `core/validation.py` | ADR-0002 shape/dtype/unit-vector guards | **live** — `as_masses`, `as_body_array`, `as_tensor_3x3`, `as_unit_vector`, `as_float64` | — |
 
 ✅ **Resolved 2026-07-31.** The note that previously stood here flagged `superpose_tt` (T-6.5)
@@ -134,6 +215,19 @@ holds and is not withdrawn: `array_factor`, `steering_phases`, `beamwidth_3db`,
 `peak_sidelobe_level` and `taper` remain the **scalar spin-1 baseline**, and only
 `superpose_tt`/`mismatch_loss` carry spin-2 physics. Do not read the former as gravitational
 radiation (CLAUDE.md rule 4).
+
+> ⚠️ **Correction, 2026-08-02.** This note was written on 2026-07-31 but **the row it
+> corrects was never actually edited** — the Module Map went on saying `superpose_tt` was
+> "not yet implemented" for another two days, directly contradicting the paragraph above it.
+> The row is fixed now. **A resolution note is not a substitute for the edit**; when
+> resolving a stale entry, change the entry, then record that you changed it.
+
+✅ **Resolved 2026-08-02 — `focused_field` exists, and so does everything else in that
+module.** T-9.6 landed (with T-9.7 and T-10.3–10.6); `array/focus.py` is complete. The
+paragraph below is **retained verbatim as the historical record of the state it describes**,
+per the file's own convention — do not delete it. Note that the "✅ The design tension is
+resolved" note two paragraphs down presupposes `focused_field` exists but never says so
+outright, which is very likely why the false "does not" claim below survived unread.
 
 ⚠️ **`array/focus.py` is only partially built.** `focal_phases` (T-9.5) exists; the field
 evaluation `focused_field` (T-9.6, `opus`, **critical path**) does not.
@@ -165,7 +259,7 @@ near those edges.
 | Momentum conservation | Default source mode | Reaction mass in model | **Deliberately violated** in external-reservoir mode; outputs stamped `UNPHYSICAL` |
 | Non-dispersive propagation | Focusing analysis | Vacuum GR | Holds in vacuum. Means a temporal focus propagates rather than standing still |
 | FP64 sufficient for phase | All field evaluation | — | Adequate to ~10¹⁰ wavelengths. FP32 is **not**; see `PHYSICS.md` §7 |
-| Rigid point-mass sphere (no self-quadrupole) | `bodies/sphere.py:Sphere.self_quadrupole` | Rigid, undeformed, non-spinning body; only trajectory radiates | Breaks down once the body deforms (elastic, T-4.3, not yet built) or spins (see next row) |
+| Rigid point-mass sphere (no self-quadrupole) | `bodies/sphere.py:Sphere.self_quadrupole` | Rigid, undeformed, non-spinning body; only trajectory radiates | Breaks down once the body deforms (elastic — **T-4.3 is built**: `bodies/elastic.py`, EQ-027/028; the "not yet built" that stood here until 2026-08-02 was the same drift class as the §2 Module Map, found incidentally while fixing it) or spins (see next row) |
 | Slow-rotation Maclaurin-spheroid flattening (`ε ≪ 1`, i.e. `m = Ω²R³/(GM) ≪ 1`) | `bodies/sphere.py:oblateness_quadrupole` | Spin well below breakup/bifurcation rate | At `m` approaching the Maclaurin sequence's bifurcation point (~0.1875) the leading-order `ε=(5/4)m` formula and this project's own leading-order `Q_zz` conversion both fail; neither is valid near breakup spin |
 | Rigid long-wavelength model: radiation depends only on mass and trajectory, not radius/density | `source/quadrupole.py:waveform_from_profile` | `R ≪ λ` (see far-field row above) | Same breakdown as the long-wavelength row; large fast-spinning asteroids at high drive frequency need the T-4.3/4.5 corrections before this holds |
 | **Symmetric two-body momentum-conserving maneuver model** — a single accelerating sphere is *represented* as two `body.mass/2` point masses at `±x(t)` along a fixed axis, purely to keep the center of mass fixed and avoid an uncancelled mass dipole | `source/quadrupole.py:waveform_from_profile` | Whenever a single-body finite maneuver is modeled as a radiating source | This is a **modeling choice, not a measurement of a real single accelerating asteroid** — a real single accelerating body pushed by an external force (e.g. thruster) is not momentum-conserving and its true radiation is dominated by the (roughly 10¹⁰×) mass-dipole term per CLAUDE.md rule 2, not this quadrupole. Never present this function's output as the radiation of a *literal* single accelerating asteroid without flagging the substitution |
@@ -230,6 +324,24 @@ passing.
 | Gravity-tractor channel (T-8.5) | EQ-023 | **PASSING** — `tests/unit/test_coupling.py`, worked example checked against source paper Fig. 2 |
 | Beam-pattern plots (T-7.4/7.5) | — (visualization, no numbered equation) | **PASSING** — `tests/unit/test_patterns.py` |
 | ADR-0002 convention enforcement (T-2.10) | Shape/dtype/unit-vector guards project-wide | **PASSING** — `tests/unit/test_conventions.py`, extended to cover all modules added this batch (`sphere`, `retarded`, `quadrupole.waveform_from_profile`) |
+| **Spin-2 tensor superposition and mismatch loss (T-6.5/T-6.6)** | EQ-046, EQ-047, EQ-048; claim **B-1**; [ADR-0003](adr/0003-spin2-superposition.md) | **PASSING** — `tests/unit/test_superposition.py`. **The project's highest-risk equation class, with no external reference implementation** (rule 4). Coverage, clause by clause: reduces to the scalar spin-1 array factor for co-oriented elements at **rtol 1e-9, atol 1e-15** (the regression proving the extension is a controlled departure, not a rewrite); result symmetric/traceless/transverse to atol 1e-15; 45°-apart elements give gain **exactly 2.0 (abs 1e-9)** and strictly < N²; **the 90° complete cancellation is guarded by name** — `test_elements_ninety_degrees_apart_cancel_completely`, asserting `max\|h\| < 1e-15` with the docstring "*An array laid out on antenna reasoning with elements at 90 degrees radiates NOTHING along its intended axis. Asserted explicitly so nobody 'fixes' it*"; near-field input **raises** `ValueError(match="near field")` rather than degrading; `cos(2Δψ)` pinned at **7 parametrized angles** (0/22.5/30/45/60/90/180°) to abs 1e-12; `test_maximal_mismatch_at_45_not_90` and `test_period_is_pi_not_two_pi` both present by name; radiation along an element's own axis raises. ⚠️ **Two gaps against ADR-0003, see the 2026-08-02 note below** — the `exp(−4σ²)` test is materially looser than the ADR's measurement, and the ADR's 1e-14 analytic-TT check exists only in the scratch prototype |
+| Mass dipole moment and derivative (T-2.3) | EQ-041, EQ-042 | **PASSING** — `tests/unit/test_multipole_rad.py`. `d_i = Σm x_i` and `d̈_i = Σm a_i` to **rtol 1e-15**; vanishes for a symmetric pair (atol 1e-15) and for a momentum-conserving configuration; nonzero for an unbalanced one — the positive control that keeps the null result meaningful. Float32 rejected, not promoted |
+| **Flagged dipole strain — always `UNPHYSICAL` (T-2.4)** | EQ-043 | **PASSING** — `tests/unit/test_multipole_rad.py`. 🚨 The ~10¹⁰× artifact CLAUDE.md rule 2 exists to contain. `test_always_returns_a_stamped_result` pins that the stamp is unconditional; `test_raises_for_momentum_conserving_source` pins that the function **refuses** the physical case rather than silently returning ~0; `allow_trivial` permits the zero case **and still stamps it**. Physics checks: symmetric (rtol 1e-14), transverse, independent of `r` (rtol 1e-12), quadratic in `d̈` (rtol 1e-13), vanishing when `d̈ ∥ n̂` (atol 1e-30) |
+| Mass octupole (T-2.5) | EQ-044 | **PASSING — but structurally only.** `tests/unit/test_multipole.py` asserts full symmetry, tracelessness on **every** index pair, vanishing for a symmetric pair, and dtype/shape contracts. ⚠️ **No test evaluates the moment against a known value.** `bodies/multipole.py:227` claims a cross-check against Blanchet's two-body Newtonian octupole (eq. 302a) — that check is **asserted in the docstring and executed nowhere**. The strongest validation claim for EQ-044 is therefore unexecuted; see the note below |
+| Acceleration profiles and spectra (T-3.1–T-3.6) | — (kinematics, no equation) | **PASSING** — `tests/unit/test_profiles.py`. Each profile's velocity and position are checked against numerical integration of the derivative below it — see the in-file comment on `test_position_matches_integral_of_velocity` for **why the tolerance is set by quadrature error across kinks, not by the code** (this is the "fix the measurement, never the tolerance" case). Bang-bang reproduces the rectangular-window **−13.3 dB** first sidelobe (abs 1.0); raised-cosine matches a Hann window's spectral rolloff to rtol 1e-6/atol 1e-9; `spectrum` satisfies **Parseval to rel 1e-9** and reproduces −13.0 dB (rect) and −31.0 dB (Hann) sidelobes. The acceleration profile *is* the transmit pulse shape |
+| Spin-2 polarization basis, rotation, decomposition, element patterns (T-5.1–T-5.4) | EQ-035–EQ-040 | **PASSING** — `tests/unit/test_polarization.py`. Basis traceless/transverse (atol 1e-15) and orthonormal under double contraction (`e:e = 2`, abs 1e-12); **`test_frame_rotation_transforms_amplitudes_by_exp_2i_psi`** and **`test_basis_has_period_pi_not_two_pi`** pin the spin-2 signature by name — the latter asserting `e(ψ+π) = +e(ψ)` *and* `e(ψ+π/2) = −e(ψ)`, which is what distinguishes spin-2 from spin-1; a 45° rotation maps `e₊ → e_×` (atol 1e-12), the 45°-not-90° separation. Element patterns checked against an independent quadrupole calculation (abs 1e-9 linear, 1e-12 rotating), including the face-on-circular / edge-on-linear limits. `decompose`/`recompose` round-trip to rtol 1e-12 and project out non-TT components |
+| Geodesic deviation at the target (T-8.1) | EQ-045 | **PASSING** — `tests/unit/test_geodesic.py`. Matches `½ḧξ` to rtol 1e-14; linear in both `h` and `ξ`; transverse to the propagation direction across seeded random cases; separation purely along propagation gives zero (atol 1e-12). **`test_net_acceleration_of_the_center_of_mass_is_zero` (atol 1e-12) is the load-bearing one** — it encodes claim A-6, that a GW produces tidal strain and **not** net centre-of-mass acceleration, paired with a positive control showing relative acceleration between two bodies is generically nonzero |
+| Coupling channels: tidal, absorption, gravity tractor (T-8.2–T-8.4, T-8.6) | EQ-023 | **PASSING** — `tests/unit/test_coupling.py`. Gravity tractor reproduces **both** worked examples from the source paper (Apophis 0.053 N; 2004 VD17 0.092 N, each rel 1e-2) and scales as `1/d²`. Tidal strain matches `½hR` (rel 1e-14). **`test_channel_absorption_below_1e_30_n_for_1km_asteroid_at_40au` pins the coupling wall numerically.** Type discipline is enforced structurally: `CouplingResult` requires **exactly one** of strain/force, so `channel_tidal` cannot return a force — and **`test_compare_channels_never_sums_the_rows`** guards the category error of adding a strain to a force |
+| Impulse → Δv → miss distance (T-8.7/T-8.8) | — (elementary Newtonian, deliberately uncited) | **PASSING** — `tests/unit/test_deflection.py`. **`test_dart_cross_check`** anchors the chain against reality: 1.16e7 N·s on 4.3e9 kg → 2.7 mm/s, **rel 1e-2**, cited to Daly et al. 2023. Both relations linear in their arguments to rel 1e-14; `miss_distance` matches its closed form to rel 1e-12 and **rejects a lead time exceeding the orbital period** rather than extrapolating past its validity |
+| Focus trajectory and dwell time (T-9.7, T-10.3) | EQ-049, EQ-050 | **PASSING** — `tests/unit/test_focus_trajectory.py`. **`test_focus_moves_at_exactly_c` (rtol 1e-12) and `test_focus_does_not_remain_stationary` together encode the physical wall**: GWs are non-dispersive in vacuum, so a temporal focus is a converging-then-diverging pulse that *propagates*, never a stationary hot spot. Trajectory passes through the focal point at the focal time (rtol 1e-9); `dwell_time = 1/B` to rel 1e-14 |
+| Peak-to-sidelobe ratio (T-10.4) | EQ-051 | **PASSING** — `tests/unit/test_focus_trajectory.py`. Ratio scales as `√N` across seeded sparse arrays (rel 0.1); steered peak matches `N` to rel 1e-9. ⚠️ **`test_peak_to_sidelobe_uniform_ratio_matches_sqrt_n_only_by_coincidence` is the anti-vacuity guard** — it records that a well-spaced uniform array hitting `√N` is coincidence, not the mode-locking mechanism, so the `√N` assertion cannot be satisfied for the wrong reason |
+| Band sweep, f⁶ scaling (T-10.5) | EQ-052 | **PASSING** — `tests/unit/test_focus_trajectory.py`. Reproduces `f⁶` across the band to rtol 1e-6, and **`test_band_sweep_spans_about_36_decades` (abs 0.1) pins the magnitude wall**: ~36 orders of magnitude between 1 Hz and 1 MHz operation. This is a wall, not a bug (rule 5) |
+| Aperture/frequency trade surface (T-10.6) | EQ-053 | **PASSING** — `tests/unit/test_focus_trajectory.py`. Matches the closed form to rtol 1e-12 and reproduces **both** reference points — **1.8e18 m at 1 Hz and 1.8e12 m at 1 MHz** (rel 0.03). ⚠️ **This is the diffraction wall (claim B-3) in solved-for-`D` form.** Those two numbers are ~1.2e7 AU and ~12 AU respectively. If a change shrinks them, suspect the change |
+| Field slices, heatmap, wavefront animation (T-7.1–T-7.3) | — (visualization, no equation) | **PASSING** — `tests/unit/test_slices.py` (13 tests), headless `Agg`. Slice geometry, plane-axis selection and extent-to-coordinate mapping verified against the requested extent; the colorbar is asserted **symmetric about zero** (a sign-legibility property, not cosmetics); zero-field input does not crash; `animate_propagation` writes a GIF with frame count matching the requested times |
+| Polarization ellipse (T-7.6) | — (visualization; depicts EQ-035/EQ-039) | **PASSING** — `tests/unit/test_polarization_ellipse.py`. Pure `h₊` stretches along the axes (1.25 / 0.75 at ±½h, rel 1e-12); **pure `h_×` deforms at 45°, not 90°** — the spin-2 signature made visual; the two produce the same shape rotated (rtol 1e-3); zero strain gives a unit circle (rtol 1e-12) |
+| Volumetric rendering and VTK export (T-7.7/T-7.8) | — (visualization, no equation) | **PASSING** — `tests/unit/test_volume.py`, `test_export_vtk.py`. **These 2 tests skip without the optional `pyvista` extra.** The asymmetry is deliberate and asserted: `render_volume` **degrades quietly** (returns `None` with a message), `export_field` **raises** `RuntimeError`. When PyVista is present, exported `.vti` reloads via `pyvista.read` with matching shape and values |
+| Trade-surface visualization (T-10.7) | — (visualization; renders EQ-053) | **PASSING** — `tests/unit/test_patterns.py`. Renders headless; **asserted to use log–log axes and to annotate the frequency-invariance of `D/λ`** — i.e. the plot is required to *state the wall it depicts*, not merely draw it |
+| GPU backend, precision guard, chunked evaluation (T-11.4, T-11.5, T-11.7) | — (infrastructure, no equation) | **PASSING** — `tests/unit/test_backend.py`, `test_split_phase.py`. CuPy path agrees with the NumPy reference to rtol 1e-5 (**this 1 test skips without CuPy**, which is not a declared extra) and raises a clear error when CuPy is absent. `assert_phase_precision` **raises on unauthorized float32 phase** and passes float64 regardless of authorization; **`test_split_phase_differential_is_the_one_authorized_float32_call_site`** pins ADR-0002 §5's single carve-out so it cannot quietly widen. Chunked evaluation matches unchunked to rtol 1e-12 independent of chunk size, and a 512³ grid completes within a 4 GB budget |
 
 **Resolved 2026-07-31.** The note that stood here flagged "1 of 25 assigned batch tasks not
 completed this pass," unidentified. It has been reconciled against `BACKLOG.md`'s ✅ markers,
@@ -244,6 +356,44 @@ the decision was to proceed without one on numerical evidence). Landing T-4.5 al
 T-4.7, T-4.8 and T-4.9. **One task remains blocked:** T-2.9 (repo made public), which is
 machine-readable in its `deps` field so the scheduler excludes it *and names the reason*.
 Run `python tools/schedule.py --status` for live counts rather than trusting this note.
+
+**Updated 2026-08-02 (second pass) — this table was ABSENT, not stale, for ~30 completed
+tasks.** The reconciliation of §1/§2 earlier the same day (see the drift note at the end of §1)
+exposed that §4 had no rows at all for T-2.3/2.4/2.5, T-3.1–3.6, T-5.1–5.4, **T-6.5/T-6.6**,
+T-7.1–7.3/7.6–7.8, T-8.1–8.4/8.6–8.8, T-9.7, T-10.3–10.7 and T-11.4/11.5/11.7. All tests
+existed and passed throughout; only the rows were missing. **This is the more serious half of
+that drift**: §4's own rule says a benchmark that has not run since the code it validates last
+changed is *stale, not passing* — but an **unlisted** benchmark cannot even be checked for
+staleness, so the gap was structurally invisible. Rows are now written from the assertions
+themselves; every tolerance quoted above was read out of the test that asserts it.
+
+**Worst instance, now closed:** T-6.5/T-6.6 — the spin-2 tensor superposition, this project's
+highest-risk equation class and the discharge of claim B-1 — had **no validation row at all.**
+
+**Two findings surfaced while writing these rows. Neither is fixed here.**
+
+1. ⚠️ **The `exp(−4σ²)` alignment test is materially weaker than the claim it is cited for.**
+   [ADR-0003](adr/0003-spin2-superposition.md) §3 reports the law matching measurement **to
+   ~1e-4 across σ ∈ [0°, 20°] at N = 100 and N = 1000**, and `CLAIMS.md` B-1 rests on that.
+   `test_alignment_tolerance_matches_adr_prediction` actually asserts **abs 2e-3** (20× looser),
+   at **N = 200**, over **200 realizations**, and only at σ ∈ {1°, 2.87°, 5°, 10°} — it never
+   reaches 20°. The engineering conclusion drawn from this law (1% loss at σ ≤ 2.87°, exactly
+   2× tighter than spin-1) is a *hard array-design constraint*, so the gap between the asserted
+   and the claimed precision matters. **The test is not wrong; it is narrower than the record it
+   is named after.** Either tighten it to the ADR's figures or amend the ADR to state what is
+   actually enforced in CI.
+2. ⚠️ **ADR-0003's 1e-14 analytic-TT check exists only in the scratch prototype.** The ADR
+   reports the two-element prototype reproducing the closed-form `h^TT` to **1e-14 across nine
+   ψ values**; no test in `tests/` performs that comparison. The suite validates *structure*
+   (symmetry, tracelessness, transversality to atol 1e-15) and *relative* behaviour, but never
+   pins an absolute analytic value. Same class as the ADR-0006 dangling-prototype finding
+   recorded in §3 — the evidence for an accepted decision living outside the repository's
+   executable surface.
+
+**A third, smaller instance of the same class:** `bodies/multipole.py:227` claims
+`octupole_moment` was cross-checked against Blanchet's explicit two-body Newtonian octupole
+(eq. 302a). **No test executes that comparison** — the octupole's tests are structural only.
+Recorded in its row above rather than left implied.
 
 ---
 

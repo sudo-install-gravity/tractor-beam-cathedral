@@ -198,14 +198,112 @@ def test_orientation_along_line_of_sight_raises() -> None:
         mismatch_loss(N_HAT, _axis(0.0), N_HAT)
 
 
-def test_alignment_tolerance_matches_adr_prediction() -> None:
-    """ADR-0003: gain/N^2 ~ exp(-4 sigma^2). 1% loss at sigma = 2.87 deg."""
-    rng = np.random.default_rng(20260727)
-    for sigma_deg in (1.0, 2.87, 5.0, 10.0):
-        s = np.radians(sigma_deg)
-        gains = []
-        for _ in range(200):
-            psi = rng.normal(0.0, s, 200)
-            h = np.array([np.cos(2 * psi).sum(), np.sin(2 * psi).sum()])
-            gains.append(h @ h / 200**2)
-        assert np.mean(gains) == pytest.approx(np.exp(-4 * s**2), abs=2e-3)
+_ALIGN_N = 200
+_ALIGN_REALIZATIONS = 50_000
+_ALIGN_SEED = 20260727
+#: The tolerance is STATISTICAL, not a fixed absolute: each assertion allows
+#: `_ALIGN_SIGMAS` standard errors of the estimator's own sampling distribution,
+#: computed from the sample itself.
+#:
+#: A flat absolute tolerance was tried first and is the wrong tool here. The
+#: estimator's standard error grows steeply with sigma (4.5e-6 at 2.87 deg but
+#: 1.4e-4 at 20 deg, a 30x span), so any single number is either far too loose at
+#: small sigma or below one standard error at large sigma. A flat abs=1e-4 sat at
+#: 0.7 SE at sigma=20 deg and failed on 13 of 30 reseeds while passing on the
+#: committed seed -- a coin flip dressed as a margin. Do not reintroduce one.
+#:
+#: At 5 SE every parametrized point still rejects the uncorrected law by 2.2-2.8x,
+#: so the 1/N bias term is load-bearing at ALL four sigmas, not just the large ones.
+_ALIGN_SIGMAS = 5.0
+
+
+def _asymptotic_law(sigma_rad: float) -> float:
+    """ADR-0003's alignment law -- the N -> infinity limit."""
+    return float(np.exp(-4 * sigma_rad**2))
+
+
+def _finite_n_prediction(sigma_rad: float, n_elements: int) -> float:
+    """ADR-0003 as amended 2026-08-03: the law plus its exact finite-N bias.
+
+    E[gain/N^2] = exp(-4 sigma^2) + (1 - exp(-4 sigma^2)) / N
+
+    The second term is the |z|^2 = 1 self-term of |sum_n exp(2 i psi_n)|^2. It
+    cannot vanish, and divided by N^2 it leaves a positive 1/N floor.
+    """
+    asymptotic = _asymptotic_law(sigma_rad)
+    return asymptotic + (1.0 - asymptotic) / n_elements
+
+
+def _measure_gain_fraction(
+    sigma_deg: float, n_elements: int, n_real: int, seed: int
+) -> tuple[float, float]:
+    """Mean gain fraction, and the standard error of that mean.
+
+    Returning the standard error is what lets every assertion below size its own
+    tolerance from the estimator's actual sampling distribution instead of from a
+    hardcoded number that happens to suit one seed.
+    """
+    rng = np.random.default_rng(seed)
+    psi = rng.normal(0.0, np.radians(sigma_deg), size=(n_real, n_elements))
+    c = np.cos(2 * psi).sum(axis=1)
+    d = np.sin(2 * psi).sum(axis=1)
+    gains = (c * c + d * d) / n_elements**2
+    return float(gains.mean()), float(gains.std(ddof=1) / np.sqrt(n_real))
+
+
+@pytest.mark.parametrize("sigma_deg", [2.87, 5.0, 10.0, 20.0])
+def test_alignment_tolerance_matches_adr_prediction(sigma_deg: float) -> None:
+    """ADR-0003 (amended 2026-08-03): gain/N^2 = exp(-4 sigma^2) + (1-exp(-4 sigma^2))/N.
+
+    The bare exp(-4 sigma^2) is the N -> infinity limit. Asserting it directly at
+    finite N forces a tolerance loose enough to swallow the bias -- which is what
+    the previous abs=2e-3 was doing, and why it could not be tightened to the
+    figure ADR-0003 originally claimed. Against the bias-corrected prediction the
+    residual is pure sampling noise, so the tolerance can be stated in standard
+    errors and the 1/N term becomes load-bearing (see the positive control below).
+    """
+    measured, sem = _measure_gain_fraction(sigma_deg, _ALIGN_N, _ALIGN_REALIZATIONS, _ALIGN_SEED)
+    expected = _finite_n_prediction(np.radians(sigma_deg), _ALIGN_N)
+    assert measured == pytest.approx(expected, abs=_ALIGN_SIGMAS * sem)
+
+
+@pytest.mark.parametrize("sigma_deg", [2.87, 5.0, 10.0, 20.0])
+def test_uncorrected_asymptotic_law_is_rejected_at_finite_n(sigma_deg: float) -> None:
+    """Positive control: the 1/N bias term must be load-bearing, not decorative.
+
+    Dropping it puts the prediction 2.2-2.8x outside the tolerance at EVERY sigma
+    tested -- the whole point of sizing the tolerance in standard errors rather
+    than absolutely, since the bias and the noise both scale with sigma and a flat
+    tolerance loses discrimination at exactly one end or the other.
+
+    This is what stops a future contributor "simplifying" `_finite_n_prediction`
+    back to the bare law.
+    """
+    measured, sem = _measure_gain_fraction(sigma_deg, _ALIGN_N, _ALIGN_REALIZATIONS, _ALIGN_SEED)
+    bare_law = _asymptotic_law(np.radians(sigma_deg))
+    tol = _ALIGN_SIGMAS * sem
+
+    assert abs(measured - bare_law) > tol, (
+        f"the uncorrected law must be rejected at sigma={sigma_deg} deg, "
+        "or the 1/N bias term is untested here"
+    )
+    # And the departure IS the predicted bias, not an arbitrary disagreement.
+    predicted_bias = (1.0 - bare_law) / _ALIGN_N
+    assert (measured - bare_law) == pytest.approx(predicted_bias, abs=tol)
+
+
+def test_one_percent_loss_at_2_87_degrees_is_an_asymptotic_statement() -> None:
+    """Guard the headline engineering number against silent drift.
+
+    NOTE: this pins a closed-form identity, not a simulation -- it validates no
+    new numerics and should not be credited as physics evidence. Its job is to
+    make 2.87 deg (and the spin-1 5.73 deg it is exactly 2x tighter than) fail
+    loudly if anyone edits the law, since those two numbers are quoted in
+    ADR-0003, CLAIMS.md B-1 and the paper draft.
+
+    Stated for the asymptotic law deliberately: at finite N the measured loss is
+    smaller, because the bias works in the optimistic direction.
+    """
+    assert _asymptotic_law(np.radians(2.87)) == pytest.approx(0.99, abs=5e-5)
+    # Spin-1 would be exp(-sigma^2); 1% loss there needs 5.73 deg, twice as loose.
+    assert float(np.exp(-(np.radians(5.73) ** 2))) == pytest.approx(0.99, abs=5e-5)

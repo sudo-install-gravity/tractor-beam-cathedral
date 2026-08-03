@@ -276,10 +276,12 @@ as h → h e^(2iψ), and the consequences depart sharply from the electromagneti
   it is invisible by analogy from antenna theory.
 - Array gain is N² **only** for co-oriented elements: gain = |Σ_n A_n e^(2iψ_n)|² / A².
 - For orientations jittered with standard deviation σ about a common axis, the gain
-  fraction is **exp(−4σ²)**, verified against 400 realizations at N = 100 and N = 1000
-  to ~10⁻⁴ across σ ∈ [0°, 20°]. **A 1% power loss requires co-orientation to
-  σ ≤ 2.87°, exactly twice as tight as the spin-1 equivalent.** This is a constraint on
-  any physical array, not a modelling detail.
+  fraction is **exp(−4σ²)** in the N → ∞ limit, with an exact finite-N bias
+  **+(1 − exp(−4σ²))/N** — verified to within 5% of that prediction across
+  N ∈ {100, 200, 1000} and σ ∈ {2.87°, 10°, 20°}, the deviation halving as N doubles. The bias is
+  *positive*, so a real finite array marginally outperforms the limiting law. **A 1% power
+  loss requires co-orientation to σ ≤ 2.87°, exactly twice as tight as the spin-1
+  equivalent.** This is a constraint on any physical array, not a modelling detail.
 
 ***Non-expert summary:*** This is the paper's central physics result, and it's the part a
 radio engineer would get wrong. When you combine gravitational emitters, how much they
@@ -291,7 +293,11 @@ multiplied-up power if every emitter is turned the same way. (4) Real hardware i
 perfectly aligned, and we can say exactly how much sloppiness costs: to lose no more than
 1% of your power, every emitter must be aligned to within **2.87 degrees** — precisely
 twice as strict as the radio equivalent. That last number is a hard engineering
-requirement for anyone who ever tries to build one of these.
+requirement for anyone who ever tries to build one of these. One refinement worth
+noting: that alignment formula describes an array with *infinitely many* emitters. A real
+array with a finite number does slightly **better** than it, by an amount we can calculate
+exactly — so the 2.87° figure is a safe, conservative requirement rather than an optimistic
+one.
 
 The two-element prototype that established these results reproduced the analytic TT form
 to 10⁻¹⁴ across nine orientation angles and confirmed that the period in ψ is 180°, not
@@ -1289,9 +1295,10 @@ derivation predicts for the same geometry.
 | **90°** | **0.000000** | 0.000000 | 2.000000 | **complete cancellation** |
 | 180° | 4.000000 | 4.000000 | 0.000000 | full coherence again |
 
-*Alignment tolerance (not shown): gain/N² ≈ exp(−4σ²), matching measurement to ~10⁻⁴
-across σ ∈ [0°, 20°] at N = 100 and N = 1000. 1% loss at σ = 2.87°, exactly 2× tighter
-than the spin-1 exp(−σ²).*
+*Alignment tolerance (not shown): gain/N² = exp(−4σ²) + (1 − exp(−4σ²))/N, the second term
+an exact finite-N bias; the bare exponential is the N → ∞ limit. Verified to within 5% of
+that prediction across N ∈ {100, 200, 1000} and σ ∈ {2.87°, 10°, 20°}. 1% loss at σ = 2.87°,
+exactly 2× tighter than the spin-1 exp(−σ²) — a statement about the limiting law.*
 
 ***Non-expert summary:*** The paper's key result in one table, and the fastest way to see
 the point. Take two emitters and rotate one relative to the other. Column 2 is what
@@ -1452,16 +1459,33 @@ mistakes* would actually read it.
 4. ~~`docs/INDEX.md` §2 is stale.~~ ~~§4 Validation Status is absent.~~ **Both resolved
    2026-08-02.** §2 was rewritten against the code and §1 gained EQ-035–EQ-053; §4 then
    gained 18 rows covering the ~30 tasks it had never documented, including T-6.5/T-6.6.
-   **Three findings from that pass remain open and two of them touch claims this
-   manuscript makes.** (a) The `exp(−4σ²)` alignment law is quoted in the Abstract, the
-   Main and Table 1 from ADR-0003's prototype measurement (~10⁻⁴ across σ ∈ [0°, 20°] at
-   N = 100 and N = 1000), but the *committed test* asserts only abs 2 × 10⁻³ at N = 200
-   over σ ≤ 10° — **the CI check is materially weaker and narrower than the figure the
-   manuscript prints.** Either tighten the test to the ADR's figures or restate the claim.
-   (b) ADR-0003's 1 × 10⁻¹⁴ analytic-TT agreement, quoted in the Main, exists **only in the
-   scratch prototype** — no committed test pins an absolute analytic value, so as printed
-   it is not reproducible from the repository. (c) `octupole_moment` claims a cross-check
-   against ref. 4 eq. 302a that no test executes.
+   **Three findings from that pass; (a) is now closed, (b) and (c) remain open.**
+   ✅ **(a) RESOLVED 2026-08-03, and the diagnosis inverted the fix.** The finding was
+   originally written as "the CI check is weaker than the figure the manuscript prints,
+   so tighten the test." **Tightening was impossible and the ADR was the defective
+   document.** `exp(−4σ²)` is the N → ∞ limit; at finite N there is an exact positive bias
+   (1 − exp(−4σ²))/N that neither ADR-0003 nor the test named. At the test's N = 200 the
+   bias alone is 5.7 × 10⁻⁴, so no tolerance there could ever reach 10⁻⁴ — the old
+   abs 2 × 10⁻³ was correctly sized. Meanwhile ADR-0003's "~10⁻⁴" is contradicted by its
+   own printed table (8.8 × 10⁻⁴ at σ = 20°) and unreachable at the N = 100 it also cites.
+   Closed by an ADR amendment, EQ-054, and a rebuilt test asserting the corrected prediction
+   to **5 standard errors of its own sampling distribution** — statistical rather than
+   absolute, after a flat tolerance was caught in review failing 13 of 30 reseeds at σ = 20°
+   while passing on the committed seed — with a parametrized positive control and a
+   committed evidence script. **The Main text and Table 1 caption above are updated
+   accordingly; no claim was demoted, and the σ ≤ 2.87° requirement is unaffected.**
+   *One citation question is left open by this fix:* `code-reviewer` flagged Ruze, *Proc.
+   IEEE* **54**(4):633 (1966) as a plausible precedent for the finite-N random-phasor
+   statistics. It is unconfirmed and is a **spin-1** source, so it could at most promote the
+   generic `(1−μ²)/N` structure — never the `4σ²` spin-2 prefactor, which stays Category B.
+   A `researcher` pass is owed before submission.
+   ⚠️ **(b) Still open.** ADR-0003's 1 × 10⁻¹⁴ analytic-TT agreement, quoted in the Main,
+   exists **only in the scratch prototype** — no committed test pins an absolute analytic
+   value, so as printed it is not reproducible from the repository. **This is now the
+   manuscript's most serious outstanding provenance gap**, and it is the same class of
+   defect as (a): a precision quoted from a prototype rather than from the suite.
+   ⚠️ **(c) Still open.** `octupole_moment` claims a cross-check against ref. 4 eq. 302a
+   that no test executes.
 5. **EQ-040 must go through `researcher` before submission.** It cites ref. 5 eq. 4.22 for
    the e^(2iψ) rotation law — the same equation number EQ-004 cites for the TT projector —
    while its docstring self-labels the result as established physics. **The e^(2iψ)
@@ -1470,12 +1494,16 @@ mistakes* would actually read it.
    against the published record, not against memory.
 
 ***Non-expert summary:*** Six things that must be fixed before this can be submitted
-anywhere, and two of them are substantive rather than administrative. The awkward pair: the
-paper quotes a precision figure for the alignment requirement that is **better than what
-our own automated tests actually check**, and it quotes an accuracy figure that currently
-lives only in a scratch file rather than in the reproducible test suite. Both are exactly
-the kind of gap this project's whole method exists to catch — found by our own audit, in
-our own paper, about our own headline result. We either tighten the tests to match the
-claims or soften the claims to match the tests; we do not print the better number and hope.
-Separately, one citation supporting the Abstract's central assertion has not been
-independently verified, and it must be before anyone reads this.
+anywhere. **One of the two substantive ones has since been fixed** — see item 4(a). The
+paper had quoted a precision figure for the alignment requirement that was better than our
+own automated tests actually checked. Chasing it down produced a genuinely useful surprise:
+the tests weren't sloppy, the *formula* had been described imprecisely. The alignment law
+describes an array with infinitely many emitters; a real one with a finite number behaves
+slightly differently, by an amount nobody had written down. Correcting that made the test
+about twenty times stricter and the claim more accurate at the same time. **The second
+still stands:** one accuracy figure quoted in the paper lives only in a scratch file rather
+than in the reproducible test suite, so a reader could not regenerate it. Separately, one
+citation supporting the Abstract's central assertion has not been independently verified,
+and it must be before anyone reads this. All of these were found by our own audit, of our
+own paper, about our own headline results — which is the method doing its job, and also the
+reason we publish the near-misses rather than quietly patching them.

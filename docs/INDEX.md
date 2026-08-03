@@ -80,6 +80,7 @@ extension of a cited result), `CONJECTURE` (not yet grounded).
 | EQ-051 | Peak-to-sidelobe ratio for a steered array, `√N` random-array background | This project's own construction, eq. n/a — built from `array_factor` (EQ-016); the `√N` scaling is the identity used for T-9.6's background per [ADR-0006](adr/0006-focused-field-far-field-regime.md) | `array/focus.py:peak_to_sidelobe` (T-10.4) | `tests/unit/test_focus_trajectory.py` | DERIVED — ⚠️ ADR-0006 trap 4: the background **mean** is the Rayleigh value `√(Nπ)/2 ≈ 0.886√N`, not `√N`; it is the *ratio* that scales as `√N` |
 | EQ-052 | Radiated-power frequency sweep (f⁶ corollary of quadrupole luminosity) | [B] eq. 4 (VERIFIED at EQ-006); the f⁶ scaling is a corollary for a sinusoidal drive, not a new equation | `array/focus.py:band_sweep` (T-10.5) | `tests/unit/test_focus_trajectory.py` | DERIVED |
 | EQ-053 | Required-aperture trade surface `D(f) = FWHM_COEFFICIENT·(c/f)·r/w` | This project's own construction, eq. n/a — algebraic inversion of `spot_size` (EQ-033); introduces no new equation | `array/focus.py:trade_surface` (T-10.6) | `tests/unit/test_focus_trajectory.py` | DERIVED — this is the **diffraction wall** (claim B-3) in solved-for-D form; if a change makes it shrink, suspect the change (rule 5) |
+| EQ-054 | Spin-2 array alignment tolerance, with its finite-`N` bias: `E[gain/N²] = exp(−4σ²) + (1−exp(−4σ²))/N` | [ADR-0003](adr/0003-spin2-superposition.md) §3 for the `exp(−4σ²)` law, **as amended 2026-08-03** for the bias term — this project's own derivation, eq. n/a | *(no `src/` function — an ADR result asserted directly by test, as EQ-007 is)*; evidence in `scratchpad/spike_b1_alignment_bias.py` | `tests/unit/test_superposition.py` | DERIVED — ⚠️ **`exp(−4σ²)` alone is the `N → ∞` limit.** The bias is *positive*, so a finite array beats the bare law slightly; the σ ≤ 2.87° / 1% requirement is a statement about the limit and is asserted analytically. **Do not simplify the `1/N` term away** — at σ ≲ 5° no tolerance can detect its absence, which is why a named positive control guards it |
 
 **Citations verified 2026-07-26** for all Sprint 1 equations (EQ-001–007); **2026-07-27** for
 the Sprint 4/5/9/6/11/3/8/2 additions above (EQ-008–023). Sources are open access with
@@ -324,7 +325,7 @@ passing.
 | Gravity-tractor channel (T-8.5) | EQ-023 | **PASSING** — `tests/unit/test_coupling.py`, worked example checked against source paper Fig. 2 |
 | Beam-pattern plots (T-7.4/7.5) | — (visualization, no numbered equation) | **PASSING** — `tests/unit/test_patterns.py` |
 | ADR-0002 convention enforcement (T-2.10) | Shape/dtype/unit-vector guards project-wide | **PASSING** — `tests/unit/test_conventions.py`, extended to cover all modules added this batch (`sphere`, `retarded`, `quadrupole.waveform_from_profile`) |
-| **Spin-2 tensor superposition and mismatch loss (T-6.5/T-6.6)** | EQ-046, EQ-047, EQ-048; claim **B-1**; [ADR-0003](adr/0003-spin2-superposition.md) | **PASSING** — `tests/unit/test_superposition.py`. **The project's highest-risk equation class, with no external reference implementation** (rule 4). Coverage, clause by clause: reduces to the scalar spin-1 array factor for co-oriented elements at **rtol 1e-9, atol 1e-15** (the regression proving the extension is a controlled departure, not a rewrite); result symmetric/traceless/transverse to atol 1e-15; 45°-apart elements give gain **exactly 2.0 (abs 1e-9)** and strictly < N²; **the 90° complete cancellation is guarded by name** — `test_elements_ninety_degrees_apart_cancel_completely`, asserting `max\|h\| < 1e-15` with the docstring "*An array laid out on antenna reasoning with elements at 90 degrees radiates NOTHING along its intended axis. Asserted explicitly so nobody 'fixes' it*"; near-field input **raises** `ValueError(match="near field")` rather than degrading; `cos(2Δψ)` pinned at **7 parametrized angles** (0/22.5/30/45/60/90/180°) to abs 1e-12; `test_maximal_mismatch_at_45_not_90` and `test_period_is_pi_not_two_pi` both present by name; radiation along an element's own axis raises. ⚠️ **Two gaps against ADR-0003, see the 2026-08-02 note below** — the `exp(−4σ²)` test is materially looser than the ADR's measurement, and the ADR's 1e-14 analytic-TT check exists only in the scratch prototype |
+| **Spin-2 tensor superposition and mismatch loss (T-6.5/T-6.6)** | EQ-046, EQ-047, EQ-048; claim **B-1**; [ADR-0003](adr/0003-spin2-superposition.md) | **PASSING** — `tests/unit/test_superposition.py`. **The project's highest-risk equation class, with no external reference implementation** (rule 4). Coverage, clause by clause: reduces to the scalar spin-1 array factor for co-oriented elements at **rtol 1e-9, atol 1e-15** (the regression proving the extension is a controlled departure, not a rewrite); result symmetric/traceless/transverse to atol 1e-15; 45°-apart elements give gain **exactly 2.0 (abs 1e-9)** and strictly < N²; **the 90° complete cancellation is guarded by name** — `test_elements_ninety_degrees_apart_cancel_completely`, asserting `max\|h\| < 1e-15` with the docstring "*An array laid out on antenna reasoning with elements at 90 degrees radiates NOTHING along its intended axis. Asserted explicitly so nobody 'fixes' it*"; near-field input **raises** `ValueError(match="near field")` rather than degrading; `cos(2Δψ)` pinned at **7 parametrized angles** (0/22.5/30/45/60/90/180°) to abs 1e-12; `test_maximal_mismatch_at_45_not_90` and `test_period_is_pi_not_two_pi` both present by name; radiation along an element's own axis raises. **Alignment tolerance (EQ-054) rebuilt 2026-08-03**: now asserts the bias-corrected `exp(−4σ²) + (1−exp(−4σ²))/N` to **5 standard errors of the estimator's own sampling distribution**, over σ ∈ {2.87°, 5°, 10°, 20°} (N=200, 50,000 realizations, seeded), plus a parametrized positive control `test_uncorrected_asymptotic_law_is_rejected_at_finite_n`. ⚠️ **The tolerance is statistical, not absolute, deliberately** — the SE spans 30× across this σ range, and a flat `abs=1e-4` sat at 0.7 SE at σ = 20°, failing 13 of 30 reseeds while passing on the committed seed. Do not reintroduce a flat one. Seed-robust (0/40) and discriminating at **every** σ: dropping the `1/N` term is rejected by 2.2–2.9×. ⚠️ **One gap against ADR-0003 remains** — its 1e-14 analytic-TT check exists only in the scratch prototype; see the 2026-08-02 note below |
 | Mass dipole moment and derivative (T-2.3) | EQ-041, EQ-042 | **PASSING** — `tests/unit/test_multipole_rad.py`. `d_i = Σm x_i` and `d̈_i = Σm a_i` to **rtol 1e-15**; vanishes for a symmetric pair (atol 1e-15) and for a momentum-conserving configuration; nonzero for an unbalanced one — the positive control that keeps the null result meaningful. Float32 rejected, not promoted |
 | **Flagged dipole strain — always `UNPHYSICAL` (T-2.4)** | EQ-043 | **PASSING** — `tests/unit/test_multipole_rad.py`. 🚨 The ~10¹⁰× artifact CLAUDE.md rule 2 exists to contain. `test_always_returns_a_stamped_result` pins that the stamp is unconditional; `test_raises_for_momentum_conserving_source` pins that the function **refuses** the physical case rather than silently returning ~0; `allow_trivial` permits the zero case **and still stamps it**. Physics checks: symmetric (rtol 1e-14), transverse, independent of `r` (rtol 1e-12), quadratic in `d̈` (rtol 1e-13), vanishing when `d̈ ∥ n̂` (atol 1e-30) |
 | Mass octupole (T-2.5) | EQ-044 | **PASSING — but structurally only.** `tests/unit/test_multipole.py` asserts full symmetry, tracelessness on **every** index pair, vanishing for a symmetric pair, and dtype/shape contracts. ⚠️ **No test evaluates the moment against a known value.** `bodies/multipole.py:227` claims a cross-check against Blanchet's two-body Newtonian octupole (eq. 302a) — that check is **asserted in the docstring and executed nowhere**. The strongest validation claim for EQ-044 is therefore unexecuted; see the note below |
@@ -372,16 +373,31 @@ highest-risk equation class and the discharge of claim B-1 — had **no validati
 
 **Two findings surfaced while writing these rows. Neither is fixed here.**
 
-1. ⚠️ **The `exp(−4σ²)` alignment test is materially weaker than the claim it is cited for.**
-   [ADR-0003](adr/0003-spin2-superposition.md) §3 reports the law matching measurement **to
-   ~1e-4 across σ ∈ [0°, 20°] at N = 100 and N = 1000**, and `CLAIMS.md` B-1 rests on that.
-   `test_alignment_tolerance_matches_adr_prediction` actually asserts **abs 2e-3** (20× looser),
-   at **N = 200**, over **200 realizations**, and only at σ ∈ {1°, 2.87°, 5°, 10°} — it never
-   reaches 20°. The engineering conclusion drawn from this law (1% loss at σ ≤ 2.87°, exactly
-   2× tighter than spin-1) is a *hard array-design constraint*, so the gap between the asserted
-   and the claimed precision matters. **The test is not wrong; it is narrower than the record it
-   is named after.** Either tighten it to the ADR's figures or amend the ADR to state what is
-   actually enforced in CI.
+1. ✅ **RESOLVED 2026-08-03 — and the diagnosis inverted the fix.** The finding as first
+   written (retained below) assumed the *test* was the weak party and proposed tightening it
+   to ADR-0003's ~1e-4. **That was impossible, and the ADR was the defective document.**
+   `exp(−4σ²)` is the `N → ∞` limit; at finite `N` there is an exact positive bias
+   `(1−exp(−4σ²))/N` that neither document named. At the test's `N = 200` the bias *alone* is
+   5.7e-4, so no tolerance there could ever reach 1e-4 — the old `abs=2e-3` was **correctly
+   sized, not sloppy**. Meanwhile ADR-0003's "~1e-4" is contradicted by its own printed table
+   (8.8e-4 at σ = 20°) and is unreachable at the `N = 100` it also cites (bias alone 3.9e-3).
+   Closed by: an ADR-0003 amendment deriving the bias; EQ-054; a rebuilt test asserting the
+   *corrected* prediction to 5 standard errors (statistical, not absolute — a flat `abs=1e-4`
+   failed 13 of 30 reseeds at σ = 20°) with a parametrized positive control; and
+   `scratchpad/spike_b1_alignment_bias.py` as committed evidence. **No claim demoted** — the
+   bias is positive, so a finite array marginally beats the law, and σ ≤ 2.87° stands.
+   *Original finding, retained:*
+
+   > ⚠️ **The `exp(−4σ²)` alignment test is materially weaker than the claim it is cited for.**
+   > [ADR-0003](adr/0003-spin2-superposition.md) §3 reports the law matching measurement **to
+   > ~1e-4 across σ ∈ [0°, 20°] at N = 100 and N = 1000**, and `CLAIMS.md` B-1 rests on that.
+   > `test_alignment_tolerance_matches_adr_prediction` actually asserts **abs 2e-3** (20× looser),
+   > at **N = 200**, over **200 realizations**, and only at σ ∈ {1°, 2.87°, 5°, 10°} — it never
+   > reaches 20°. The engineering conclusion drawn from this law (1% loss at σ ≤ 2.87°, exactly
+   > 2× tighter than spin-1) is a *hard array-design constraint*, so the gap between the asserted
+   > and the claimed precision matters. **The test is not wrong; it is narrower than the record it
+   > is named after.** Either tighten it to the ADR's figures or amend the ADR to state what is
+   > actually enforced in CI.
 2. ⚠️ **ADR-0003's 1e-14 analytic-TT check exists only in the scratch prototype.** The ADR
    reports the two-element prototype reproducing the closed-form `h^TT` to **1e-14 across nine
    ψ values**; no test in `tests/` performs that comparison. The suite validates *structure*

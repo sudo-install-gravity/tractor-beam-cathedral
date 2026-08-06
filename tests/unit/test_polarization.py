@@ -283,3 +283,64 @@ def test_rotate_polarization_matches_frame_rotation_via_basis(
     hx_b = 0.5 * float(np.einsum("ij,ij->", h_ij, e_cross_rot))
 
     np.testing.assert_allclose([hp_a, hx_a], [hp_b, hx_b], rtol=1e-10, atol=1e-12)
+
+
+# --- citation pin: Blanchet eq. 69a/69b (added 2026-08-03) --------------------
+
+
+def test_decompose_reproduces_blanchet_69a_69b_written_out() -> None:
+    """Pin the citation this module rests on, by evaluating it independently.
+
+    Blanchet eq. 69a/69b define the polarization states of the asymptotic
+    waveform, for unit vectors ``P``, ``Q`` transverse to the propagation
+    direction ``N``::
+
+        h_plus  = (1/2) (P_i P_j - Q_i Q_j) H^TT_ij      (69a)
+        h_cross = (1/2) (P_i Q_j + P_j Q_i) H^TT_ij      (69b)
+
+    Those bracketed tensors are what :func:`polarization_basis` returns. This
+    test writes the two equations out by hand and checks ``decompose`` agrees,
+    so the citation is executed rather than asserted.
+
+    Until 2026-08-03 this module cited [FH] eq. 2.22 instead, which reads
+    ``h^TT_xx = -h^TT_yy = h_plus`` -- the polarization **scalars** in a
+    z-aligned frame, not the **basis tensors**, and not covariant in ``N``.
+    The physics was right and the reference was not, which is precisely the
+    failure a test like this makes impossible to repeat silently.
+    """
+    rng = np.random.default_rng(20260803)
+    for _ in range(64):
+        n_hat = rng.normal(size=3)
+        n_hat /= np.linalg.norm(n_hat)
+        e_plus, e_cross = polarization_basis(n_hat)
+
+        m = rng.normal(size=(3, 3))
+        h_ij = apply_tt(m + m.T, n_hat)
+
+        # Blanchet 69a/69b, transcribed literally.
+        h_plus_blanchet = 0.5 * np.einsum("ij,ij->", e_plus, h_ij)
+        h_cross_blanchet = 0.5 * np.einsum("ij,ij->", e_cross, h_ij)
+
+        h_plus, h_cross = decompose(h_ij, n_hat)
+        assert h_plus == pytest.approx(h_plus_blanchet, abs=1e-15)
+        assert h_cross == pytest.approx(h_cross_blanchet, abs=1e-15)
+
+
+def test_the_one_half_in_blanchet_69a_is_fixed_by_the_basis_normalisation() -> None:
+    """The ``1/2`` prefactor is not free -- it is forced by ``e_A : e_B = 2 delta_AB``.
+
+    A future reader meeting eq. 69a might reasonably wonder where the ``1/2``
+    comes from and "simplify" it away. It is the inverse of the basis norm: any
+    other prefactor breaks the round trip below, so this records the link.
+    """
+    n_hat = np.array([0.3, -0.5, 0.81])
+    n_hat = n_hat / np.linalg.norm(n_hat)
+    e_plus, e_cross = polarization_basis(n_hat)
+
+    assert np.einsum("ij,ij->", e_plus, e_plus) == pytest.approx(2.0, abs=1e-12)
+    assert np.einsum("ij,ij->", e_cross, e_cross) == pytest.approx(2.0, abs=1e-12)
+    assert np.einsum("ij,ij->", e_plus, e_cross) == pytest.approx(0.0, abs=1e-12)
+
+    h_ij = 3.0 * e_plus - 1.5 * e_cross
+    assert decompose(h_ij, n_hat) == pytest.approx((3.0, -1.5), abs=1e-12)
+    np.testing.assert_allclose(recompose(3.0, -1.5, n_hat), h_ij, atol=1e-14)

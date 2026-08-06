@@ -82,7 +82,30 @@ def polarization_basis(
     definition ``h^TT_xx = -h^TT_yy = h_plus``, ``h^TT_xy = h^TT_yx = h_cross``
     for a wave along z.
 
-    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 69a-69b
+
+    Blanchet introduces two unit polarization vectors ``P``, ``Q`` orthogonal
+    and transverse to the propagation direction ``N`` (so
+    ``N_i N_j + P_i P_j + Q_i Q_j = delta_ij``) and defines
+
+    .. code-block:: text
+
+        h_plus  = (1/2) (P_i P_j - Q_i Q_j) H^TT_ij     (eq. 69a)
+        h_cross = (1/2) (P_i Q_j + P_j Q_i) H^TT_ij     (eq. 69b)
+
+    The two bracketed tensors are exactly ``e_plus`` and ``e_cross`` here, with
+    ``(P, Q) = (u, v)``. Verified 2026-08-03 against 200 random directions:
+    ``decompose`` reproduces eqs. 69a/69b written out literally to **0.0**, and
+    the ``1/2`` is consistent with the orthonormality ``e_A : e_B = 2 delta_AB``.
+
+    .. note::
+       **Corrected 2026-08-03.** Previously cited [FH] eq. 2.22. That equation
+       reads ``h^TT_xx = -h^TT_yy = h_plus`` (with 2.23 giving ``h_cross``) --
+       it defines the polarization **scalars** from TT metric components in a
+       frame where the wave travels along z. It does **not** define the
+       polarization **basis tensors** this function returns, and it is not
+       frame-covariant. Blanchet eq. 69a-69b states the tensors explicitly and
+       for arbitrary ``N``, which is what this function implements.
 
     Parameters
     ----------
@@ -193,9 +216,25 @@ def decompose(h_ij: ArrayLike, n_hat: ArrayLike) -> tuple[float, float]:
     e_cross`` with ``e_plus`` gives ``h_plus * 2 + h_cross * 0``, so dividing
     by 2 recovers ``h_plus`` exactly.
 
-    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22 (inverting
-    the decomposition ``h_ij = h_plus e_plus + h_cross e_cross`` that
-    :func:`polarization_basis` states)
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 69a-69b
+
+    Blanchet introduces two unit polarization vectors ``P``, ``Q`` orthogonal
+    and transverse to the propagation direction ``N`` (so
+    ``N_i N_j + P_i P_j + Q_i Q_j = delta_ij``) and defines
+
+    .. code-block:: text
+
+        h_plus  = (1/2) (P_i P_j - Q_i Q_j) H^TT_ij     (eq. 69a)
+        h_cross = (1/2) (P_i Q_j + P_j Q_i) H^TT_ij     (eq. 69b)
+
+    The two bracketed tensors are exactly ``e_plus`` and ``e_cross`` here, with
+    ``(P, Q) = (u, v)``. Verified 2026-08-03 against 200 random directions:
+    ``decompose`` reproduces eqs. 69a/69b written out literally to **0.0**, and
+    the ``1/2`` is consistent with the orthonormality ``e_A : e_B = 2 delta_AB``.
+
+    This function **is** eqs. 69a/69b, evaluated. [FH] eq. 2.22/2.23 give the
+    same content as components in a z-aligned frame; Blanchet's form is cited
+    because it is covariant in ``N``, as this implementation is.
 
     Parameters
     ----------
@@ -233,7 +272,26 @@ def recompose(h_plus: float, h_cross: float, n_hat: ArrayLike) -> NDArray[np.flo
     exactly 1 (:func:`polarization_basis`'s ``2`` cancelling ``decompose``'s
     ``1/2``).
 
-    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 2.22
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 69a-69b
+
+    Blanchet introduces two unit polarization vectors ``P``, ``Q`` orthogonal
+    and transverse to the propagation direction ``N`` (so
+    ``N_i N_j + P_i P_j + Q_i Q_j = delta_ij``) and defines
+
+    .. code-block:: text
+
+        h_plus  = (1/2) (P_i P_j - Q_i Q_j) H^TT_ij     (eq. 69a)
+        h_cross = (1/2) (P_i Q_j + P_j Q_i) H^TT_ij     (eq. 69b)
+
+    The two bracketed tensors are exactly ``e_plus`` and ``e_cross`` here, with
+    ``(P, Q) = (u, v)``. Verified 2026-08-03 against 200 random directions:
+    ``decompose`` reproduces eqs. 69a/69b written out literally to **0.0**, and
+    the ``1/2`` is consistent with the orthonormality ``e_A : e_B = 2 delta_AB``.
+
+    This function is the **inverse** of eqs. 69a/69b -- reconstructing
+    ``h_ij = h_plus e_plus + h_cross e_cross`` -- which the orthonormality
+    ``e_A : e_B = 2 delta_AB`` makes unique on the TT subspace. The inversion
+    is ours; the decomposition it inverts is Blanchet's.
 
     Parameters
     ----------

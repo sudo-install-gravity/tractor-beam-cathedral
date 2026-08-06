@@ -152,8 +152,11 @@ written to the Definition of Ready: exact path, signature, formula, citation, an
 test assertions with tolerances. You should not have to derive anything.
 
 Use the venv for **everything**: `.venv\Scripts\python.exe`,
-`.venv\Scripts\pytest.exe`, `.venv\Scripts\ruff.exe`, `.venv\Scripts\mypy.exe`.
-The system Python has no numpy.
+`.venv\Scripts\python.exe -m pytest`, `.venv\Scripts\ruff.exe`,
+`.venv\Scripts\python.exe -m mypy`. The system Python has no numpy.
+
+⚠️ **Invoke mypy and pytest as `python -m`, not through their `.exe` shims** — both shims
+are broken on this host and fail *silently* (exit 1, no output). See §8.
 
 ---
 
@@ -447,10 +450,21 @@ must be redone. **Resolved as above; the recomputed departure is 2.0142%.**
 ```
 .venv\Scripts\ruff.exe check src tests tools
 .venv\Scripts\ruff.exe format --check src tests tools
-.venv\Scripts\mypy.exe src
+.venv\Scripts\python.exe -m mypy src
 .venv\Scripts\python.exe tools\check_citations.py
-.venv\Scripts\pytest.exe -q
+.venv\Scripts\python.exe -m pytest -q
 ```
 
-All five must pass. All five are green as of 2026-07-29. Then mark finished tasks
+All five must pass. All five are green as of 2026-08-03 (896 passing, 3 skipped).
+
+> ⚠️ **Use `python -m mypy` / `python -m pytest`, NOT `mypy.exe` / `pytest.exe`.**
+> Found 2026-08-03: both console-script shims in `.venv\Scripts\` are broken on this host —
+> they exit **1 with zero output**. The previously-documented `.venv\Scripts\mypy.exe src`
+> therefore looks exactly like a failing gate carrying no diagnostic, which is this
+> project's own rule-8 failure mode — something vanishing with no signal — reproduced
+> inside its own commit gate. **The code was clean throughout:** `python -m mypy src`
+> reports *Success: no issues found in 38 source files*. `ruff.exe` is unaffected because
+> it is a standalone Rust binary rather than a Python shim. If any `.venv\Scripts\*.exe`
+> ever exits non-zero with no output, reach for the `python -m` form before believing the
+> failure. Then mark finished tasks
 ✅ in `BACKLOG.md` so the scheduler stays truthful.

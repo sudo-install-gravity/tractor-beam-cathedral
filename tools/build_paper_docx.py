@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+"""Build an editable .docx of the paper draft for LibreOffice / Word.
+
+    .venv\\Scripts\\python.exe tools\\build_paper_docx.py
+
+Why this exists rather than a bare ``pandoc in.md -o out.docx``: three things the
+default conversion does not give us.
+
+1. **The per-paragraph "Non-expert summary" notes get their own named paragraph
+   style** (``NonExpertSummary``). They survive the round trip, they are visually
+   distinct, and — because they are a *named style* — a reviewer can restyle or
+   delete all of them in one operation. That matters: they are drafting aids and
+   must be stripped before journal submission.
+2. **Every figure legend gets a bordered placeholder frame above it**
+   (``FigurePlaceholder``), so there is an obvious slot to drop a diagram into.
+3. A table of contents, because the draft is ~1,500 lines.
+
+Dependency: pandoc, via the self-contained ``pypandoc_binary`` wheel. It is
+deliberately **not** a project dependency — nothing in ``src/`` needs it and this
+is a one-off authoring tool. Install it where you like::
+
+    .venv\\Scripts\\python.exe -m pip install pypandoc_binary
+
+Exit codes: 0 = built, 1 = missing dependency or conversion failure.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import zipfile
+from pathlib import Path
+
+SRC = Path("docs/paper/nature-draft.md")
+OUT = Path("docs/paper/nature-draft.docx")
+
+SUMMARY_STYLE = "NonExpertSummary"
+PLACEHOLDER_STYLE = "FigurePlaceholder"
+
+# Injected into the reference doc's styles.xml. w:name is what pandoc matches on.
+STYLE_XML = f"""
+<w:style w:type="paragraph" w:customStyle="1" w:styleId="{SUMMARY_STYLE}">
+  <w:name w:val="{SUMMARY_STYLE}"/><w:basedOn w:val="BodyText"/><w:qFormat/>
+  <w:pPr>
+    <w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="4A7EBB"/></w:pBdr>
+    <w:shd w:val="clear" w:color="auto" w:fill="EEF3FA"/>
+    <w:spacing w:before="120" w:after="200"/><w:ind w:left="340" w:right="170"/>
+  </w:pPr>
+  <w:rPr><w:i/><w:color w:val="1F3864"/><w:sz w:val="19"/></w:rPr>
+</w:style>
+<w:style w:type="paragraph" w:customStyle="1" w:styleId="{PLACEHOLDER_STYLE}">
+  <w:name w:val="{PLACEHOLDER_STYLE}"/><w:basedOn w:val="BodyText"/><w:qFormat/>
+  <w:pPr>
+    <w:pBdr>
+      <w:top w:val="dashed" w:sz="8" w:space="12" w:color="A6A6A6"/>
+      <w:left w:val="dashed" w:sz="8" w:space="12" w:color="A6A6A6"/>
+      <w:bottom w:val="dashed" w:sz="8" w:space="12" w:color="A6A6A6"/>
+      <w:right w:val="dashed" w:sz="8" w:space="12" w:color="A6A6A6"/>
+    </w:pBdr>
+    <w:shd w:val="clear" w:color="auto" w:fill="F7F7F7"/>
+    <w:spacing w:before="280" w:after="120" w:line="360" w:lineRule="auto"/>
+    <w:jc w:val="center"/>
+  </w:pPr>
+  <w:rPr><w:b/><w:color w:val="808080"/><w:sz w:val="20"/></w:rPr>
+</w:style>
+"""
+
+_FIG_RE = re.compile(r"^\*\*Fig\.\s*(\d+)\s*\|\s*(.+?)\*\*")
+
+
+def preprocess(text: str) -> tuple[str, int, int]:
+    """Wrap summaries in a styled Div; put a placeholder above each figure legend."""
+    lines = text.split("\n")
+    out: list[str] = []
+    i = n_sum = n_fig = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        match = _FIG_RE.match(line)
+        if match:
+            n_fig += 1
+            num, title = match.group(1), match.group(2).rstrip(".")
+            out += [
+                f'::: {{custom-style="{PLACEHOLDER_STYLE}"}}',
+                f"[ FIGURE {num} GOES HERE — {title} ]",
+                "",
+                "Delete this frame and Insert ▸ Image in its place.",
+                ":::",
+                "",
+                line,
+            ]
+            i += 1
+            continue
+
+        if line.startswith("***Non-expert summary:***"):
+            n_sum += 1
+            para = [line]
+            i += 1
+            while i < len(lines) and lines[i].strip() != "":
+                para.append(lines[i])
+                i += 1
+            out += [f'::: {{custom-style="{SUMMARY_STYLE}"}}', *para, ":::"]
+            continue
+
+        out.append(line)
+        i += 1
+
+    return "\n".join(out), n_sum, n_fig
+
+
+def build_reference(pandoc: str, work: Path) -> Path:
+    """Pandoc's default reference doc with our two custom styles injected."""
+    ref = work / "reference.docx"
+    with open(ref, "wb") as fh:
+        subprocess.run(
+            [pandoc, "--print-default-data-file", "reference.docx"], stdout=fh, check=True
+        )
+
+    unpacked = work / "ref"
+    with zipfile.ZipFile(ref) as z:
+        z.extractall(unpacked)
+
+    styles = unpacked / "word" / "styles.xml"
+    xml = styles.read_text(encoding="utf-8")
+    if "</w:styles>" not in xml:
+        raise RuntimeError("unexpected reference styles.xml -- pandoc format changed?")
+    styles.write_text(xml.replace("</w:styles>", STYLE_XML + "</w:styles>"), encoding="utf-8")
+
+    out = work / "reference-custom.docx"
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for root, _, files in os.walk(unpacked):
+            for name in files:
+                path = Path(root) / name
+                z.write(path, path.relative_to(unpacked).as_posix())
+    return out
+
+
+def main() -> int:
+    try:
+        import pypandoc
+    except ImportError:
+        print(
+            "pypandoc not installed. This is an authoring tool, not a project dependency:\n"
+            "    .venv\\Scripts\\python.exe -m pip install pypandoc_binary",
+            file=sys.stderr,
+        )
+        return 1
+
+    if not SRC.exists():
+        print(f"missing {SRC} -- run from the repository root", file=sys.stderr)
+        return 1
+
+    pandoc = pypandoc.get_pandoc_path()
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp)
+        processed, n_sum, n_fig = preprocess(open(SRC, encoding="utf-8").read())
+        md = work / "processed.md"
+        open(md, "w", encoding="utf-8", newline="\n").write(processed)
+        print(f"wrapped {n_sum} non-expert summaries; inserted {n_fig} figure placeholders")
+
+        subprocess.run(
+            [
+                pandoc,
+                str(md),
+                "-f",
+                "markdown+fenced_divs+pipe_tables+backtick_code_blocks",
+                "-t",
+                "docx",
+                "--reference-doc",
+                str(build_reference(pandoc, work)),
+                "--toc",
+                "--toc-depth=3",
+                "--wrap=none",
+                "-o",
+                str(OUT),
+            ],
+            check=True,
+        )
+
+    with zipfile.ZipFile(OUT) as z:
+        doc = z.read("word/document.xml").decode("utf-8")
+        style_xml = z.read("word/styles.xml").decode("utf-8")
+    ok = True
+    for style, expected in ((SUMMARY_STYLE, n_sum), (PLACEHOLDER_STYLE, n_fig * 2)):
+        used = doc.count(f'w:val="{style}"')
+        good = style in style_xml and used == expected
+        ok &= good
+        print(f"  {'ok ' if good else 'BAD'} {style}: defined, used {used}x (expected {expected})")
+
+    print(f"\nwrote {OUT} ({OUT.stat().st_size / 1024:.0f} KB)")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

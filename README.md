@@ -222,8 +222,13 @@ pytest -q
 **Five checks gate every commit. All five must pass:**
 
 ```bash
-ruff check src tests tools && ruff format --check src tests tools && mypy src && python tools/check_citations.py && pytest -q
+ruff check src tests tools && ruff format --check src tests tools && python -m mypy src && python tools/check_citations.py && python -m pytest -q
 ```
+
+⚠️ **Invoke `mypy` and `pytest` as `python -m`, not through their console-script shims.** On
+the Windows development host both `.venv\Scripts\mypy.exe` and `.venv\Scripts\pytest.exe`
+are broken and fail **silently** — exit 1 with no output, which reads as a failing gate that
+declines to say why. `ruff` is unaffected (it is a standalone binary, not a Python shim).
 
 `check_citations.py` is the mechanical half of this project's central rule: every public function
 in `source/`, `propagate/`, `bodies/` and `array/` must carry a docstring line of the form

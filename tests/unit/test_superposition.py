@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 
 from gwtb.array.beamform import QuadrupoleElement, array_factor, mismatch_loss, superpose_tt
+from gwtb.propagate.tt_projection import apply_tt
 
 N_HAT = np.array([0.0, 0.0, 1.0])
 WAVELENGTH = 1.0
@@ -60,11 +61,85 @@ def test_co_oriented_elements_reduce_to_scalar_array_factor() -> None:
     total = superpose_tt(elements, weights, WAVELENGTH, FAR)
 
     # Co-oriented: the sum factorizes into (common TT tensor) x (scalar AF).
-    from gwtb.propagate.tt_projection import apply_tt
-
     af = array_factor(positions, weights, WAVELENGTH, N_HAT)
     expected = apply_tt(q, N_HAT) * af
     np.testing.assert_allclose(total, expected, rtol=1e-9, atol=1e-15)
+
+
+#: The nine orientations ADR-0003's SPIKE-4.4 prototype checked.
+_ADR0003_PSI_DEG = (0.0, 15.0, 22.5, 30.0, 45.0, 60.0, 90.0, 135.0, 180.0)
+
+
+def _analytic_tt_of_linear_oscillator(psi: float) -> np.ndarray:
+    """ADR-0003's hand-derived closed form for a linear oscillator observed along z.
+
+        h^TT = 1/2 [[ cos2psi,  sin2psi, 0],
+                    [ sin2psi, -cos2psi, 0],
+                    [       0,        0, 0]]
+
+    Derivable in four lines from the trace-free quadrupole of u = (cos psi,
+    sin psi, 0) under the TT projector (EQ-004, [FH] eq. 4.22): the transverse
+    part has trace 1/3, so removing half of it on the diagonal turns
+    cos^2 psi - 1/3 into cos^2 psi - 1/2 = cos(2 psi)/2. The doubled angle is
+    the spin-2 signature, and it is why the period below is pi and not 2 pi.
+    """
+    two = 2.0 * psi
+    h = np.zeros((3, 3))
+    h[0, 0], h[1, 1] = np.cos(two) / 2.0, -np.cos(two) / 2.0
+    h[0, 1] = h[1, 0] = np.sin(two) / 2.0
+    return h
+
+
+@pytest.mark.parametrize("psi_deg", _ADR0003_PSI_DEG)
+def test_tt_projection_matches_the_analytic_closed_form(psi_deg: float) -> None:
+    """ADR-0003's absolute-value check, which lived ONLY in the scratch prototype.
+
+    The ADR reports the prototype reproducing the closed form "to 1e-14 across
+    nine orientation angles", and the paper draft prints that figure -- but until
+    2026-08-03 no committed test pinned an absolute analytic value at all. The
+    suite verified structure (symmetry, tracelessness, transversality) and
+    relative behaviour only, so the headline number was not reproducible from
+    this repository. This test closes that gap and asserts the ADR's own figure.
+
+    Measured worst error is 1.1e-16, so the 1e-14 asserted here carries ~100x
+    margin; ADR-0003 was CONSERVATIVE on this claim, unlike the alignment
+    tolerance in the same document. The looser documented figure is asserted
+    deliberately -- it is the number the ADR and the manuscript print, and this
+    test exists to back that number rather than to restate a tighter one.
+    """
+    psi = np.radians(psi_deg)
+    got = apply_tt(_linear_quadrupole(psi), N_HAT)
+    np.testing.assert_allclose(got, _analytic_tt_of_linear_oscillator(psi), atol=1e-14)
+
+
+@pytest.mark.parametrize("psi_deg", _ADR0003_PSI_DEG)
+def test_superposition_reproduces_the_analytic_form_through_the_production_path(
+    psi_deg: float,
+) -> None:
+    """The same pin, but through `superpose_tt` rather than `apply_tt` directly.
+
+    Without this, the analytic check would constrain the projector alone and a
+    defect in the superposition wrapper could not be caught by it.
+    """
+    psi = np.radians(psi_deg)
+    element = QuadrupoleElement(position=np.zeros(3), quadrupole=_linear_quadrupole(psi))
+    got = superpose_tt([element], [1.0], WAVELENGTH, FAR)
+    np.testing.assert_allclose(got, _analytic_tt_of_linear_oscillator(psi), atol=1e-14)
+
+
+@pytest.mark.parametrize("psi_deg", [13.0, 37.0, 61.0])
+def test_tt_tensor_period_in_psi_is_pi_not_two_pi(psi_deg: float) -> None:
+    """The spin-2 signature at TENSOR level, not merely in `mismatch_loss`.
+
+    A spin-1 implementation has period 2 pi here and would still satisfy every
+    structural assertion in this file.
+    """
+    psi = np.radians(psi_deg)
+    base = apply_tt(_linear_quadrupole(psi), N_HAT)
+    np.testing.assert_allclose(apply_tt(_linear_quadrupole(psi + np.pi), N_HAT), base, atol=1e-14)
+    # ... and a HALF period must invert it, which is what rules out period 2 pi.
+    half = apply_tt(_linear_quadrupole(psi + np.pi / 2), N_HAT)
+    np.testing.assert_allclose(half, -base, atol=1e-14)
 
 
 def test_result_is_symmetric_traceless_and_transverse() -> None:

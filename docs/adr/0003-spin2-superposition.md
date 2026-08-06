@@ -52,6 +52,26 @@ h^TT = ½ [[ cos2ψ,  sin2ψ ],
 The prototype reproduced this **to 1e-14** across ψ ∈ {0°, 15°, 22.5°, 30°, 45°, 60°, 90°, 135°,
 180°}, and confirmed the period in ψ is **180°, not 360°**.
 
+> ✅ **Now committed, 2026-08-03.** Until this date the 1e-14 figure existed **only in the
+> scratch prototype** — the suite verified symmetry, tracelessness, transversality and
+> *relative* behaviour, but **no committed test pinned an absolute analytic value**, so the
+> number quoted here and in the paper draft was not reproducible from this repository. Closed
+> by `test_tt_projection_matches_the_analytic_closed_form` and
+> `test_superposition_reproduces_the_analytic_form_through_the_production_path` (both
+> parametrized over the nine ψ above), plus `test_tt_tensor_period_in_psi_is_pi_not_two_pi`,
+> which asserts the half-period **inversion** `h(ψ+π/2) = −h(ψ)` — the clause that actually
+> rules out period 2π rather than merely being consistent with period π.
+>
+> **This claim was *conservative*, not overstated.** Measured worst error is **1.1e-16**,
+> ~100× better than the 1e-14 printed here. The tests assert 1e-14 deliberately, because
+> that is the figure this ADR and the manuscript publish and the tests exist to back it.
+> Note the contrast with the alignment tolerance in §3 below, where the stated precision
+> was optimistic — the two errors ran in opposite directions, which is why neither could be
+> assumed and both had to be measured.
+>
+> Mutation-checked: a spin-1 implementation (angle ψ where the closed form needs 2ψ) is
+> rejected by ~1e-1, twelve orders outside the tolerance.
+
 Two co-phased elements, the second rotated by `Δψ`:
 
 | Δψ | measured gain | `2 + 2cos(2Δψ)` | EM would predict | outcome |

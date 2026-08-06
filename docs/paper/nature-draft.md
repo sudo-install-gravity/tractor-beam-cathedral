@@ -1479,11 +1479,16 @@ mistakes* would actually read it.
    statistics. It is unconfirmed and is a **spin-1** source, so it could at most promote the
    generic `(1−μ²)/N` structure — never the `4σ²` spin-2 prefactor, which stays Category B.
    A `researcher` pass is owed before submission.
-   ⚠️ **(b) Still open.** ADR-0003's 1 × 10⁻¹⁴ analytic-TT agreement, quoted in the Main,
-   exists **only in the scratch prototype** — no committed test pins an absolute analytic
-   value, so as printed it is not reproducible from the repository. **This is now the
-   manuscript's most serious outstanding provenance gap**, and it is the same class of
-   defect as (a): a precision quoted from a prototype rather than from the suite.
+   ✅ **(b) RESOLVED 2026-08-03.** ADR-0003's 1 × 10⁻¹⁴ analytic-TT agreement, quoted in the
+   Main, existed **only in the scratch prototype** — the suite checked structure and relative
+   behaviour but pinned no absolute analytic value, so the printed figure was not reproducible
+   from the repository. Closed by three parametrized tests: the hand-derived closed form
+   h^TT = ½[[cos2ψ, sin2ψ],[sin2ψ, −cos2ψ]] through the projector and again through the
+   production superposition path, over the nine ψ of the original spike, plus the half-period
+   inversion h(ψ+π/2) = −h(ψ) that rules out period 2π. **This claim proved *conservative*:**
+   measured worst error 1.1 × 10⁻¹⁶ against the 10⁻¹⁴ printed. The two ADR-0003 precision
+   errors ran in opposite directions — (a) optimistic, (b) pessimistic — which is why neither
+   could be assumed and both had to be measured.
    ⚠️ **(c) Still open.** `octupole_moment` claims a cross-check against ref. 4 eq. 302a
    that no test executes.
 5. **EQ-040 must go through `researcher` before submission.** It cites ref. 5 eq. 4.22 for

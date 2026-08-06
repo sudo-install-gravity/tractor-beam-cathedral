@@ -34,28 +34,62 @@ comes from a test that already runs, not from a result we're hoping for.
 
 ## Author list
 
-*Placeholder — to be completed before submission.*
+Paul Day<sup>1</sup>
 
-Author 1<sup>1</sup>, …
-
-<sup>1</sup>Affiliation.
+<sup>1</sup>Independent researcher.
 
 Correspondence: dpaulday@protonmail.com
 
-*Note for the author list:* the repository's contributor model is a long-horizon
-("cathedral") one in which authorship will accrue across cohorts. A CRediT-style
-contribution table plus a machine-readable `CITATION.cff` should be added to the
-repository before submission so that the author list and the code's own provenance
-record cannot drift apart. This is currently **not** in place and is a submission
-blocker, not an editorial nicety.
+**ORCID: to be registered before submission.** A project intended to outlive its authors
+needs a durable identifier that survives an email address and a code-hosting handle; a
+GitHub username is not one.
 
-***Non-expert summary:*** We haven't finished the author list. This project is designed
-to outlive the people who started it, so contributors will keep joining for years, and we
-need a formal, machine-readable record of who did what — kept in the code itself, so it
-can't drift out of sync with the paper. That file doesn't exist yet, and we're calling
-that a genuine blocker rather than paperwork, because a paper whose whole argument is
-"track where everything came from" would look ridiculous if it couldn't track its own
-authors.
+***Non-expert summary:*** Who wrote this, and how to reach them. One outstanding item: a
+permanent researcher ID number, which matters more here than usual because the project is
+meant to continue long after the people who started it have stopped.
+
+---
+
+## Author contributions
+
+**P.D.** conceived the project, set its scope and governance rules, made every scoping and
+acceptance decision, and is accountable for all claims herein. CRediT: conceptualization,
+methodology, software, validation, formal analysis, investigation, data curation,
+writing — original draft, writing — review and editing, supervision, project administration.
+
+**AI assistance, disclosed.** This work was produced with extensive assistance from
+Anthropic's Claude, used for implementation, derivation, literature verification, review and
+drafting. As of commit `93f215c` (2026-08-06), 55 of 61 commits carry a `Co-Authored-By`
+trailer naming the model — 35 Claude Opus 5, 20 Claude Sonnet 5 — and those trailers, not
+this paragraph, are the authoritative record.
+
+**The models are not authors and are not eligible to be.** Nature, Science and all
+Springer-Nature journals hold that Large Language Models do not satisfy authorship
+criteria, because authorship carries accountability that cannot be assigned to a
+tool<sup>26</sup>. Disclosure is required; authorship is prohibited. Accountability for
+every claim here rests with the human author.
+
+We report this in unusual detail because the project's own README states a falsifiable
+hypothesis about whether AI tooling lets an educated amateur produce work consistent with
+the literature — and because the honest answer includes the failures. Over the development
+period the framework's own audit machinery found **seven defects in its own records**,
+including a citation that pointed at the wrong equation for the manuscript's central claim
+(EQ-040), an alignment-precision figure quoted more tightly than any test enforced, and an
+architecture description contradicted by the import graph. Each is logged with a date and a
+reason in `docs/CLAIMS.md` rather than silently corrected. A case study that reported only
+the successes would be measuring the wrong thing.
+
+***Non-expert summary:*** Who did what, and an unusually detailed account of how much of
+this was done with AI help. The short version: a lot — roughly nine commits in ten involved
+it. The AI is deliberately **not** listed as an author, because every major scientific
+publisher forbids it: being an author means being answerable for the work, and a tool
+cannot be answerable. So the human is accountable for all of it, and the AI use is
+disclosed instead. We give the numbers rather than a vague acknowledgement because this
+project has publicly bet that this way of working can produce sound results — and a bet
+you report selectively isn't a bet. That includes listing the seven mistakes the project
+caught in its own paperwork.
+
+---
 
 ---
 
@@ -650,19 +684,6 @@ One honest correction fell out of this. Our own README said the shortfall was "r
 orders of magnitude." The actual measured worst case is about 29. Still absurd, but we had
 been overstating our own hopelessness by eleven orders of magnitude, and the number is now
 what the ledger says rather than what we remembered.
-
-***Non-expert summary:*** This is the section that says how badly the idea fails, on
-purpose and in detail. Three walls stand in the way. **Focus:** to concentrate the beam
-onto a 1 km target at the distance of Pluto, your transmitter must be about six billion
-wavelengths across — and cranking the frequency up doesn't rescue you, it just changes
-what that means in metres, from absurd to merely impossible. **Grip:** a gravitational
-wave stretches and squeezes things, it doesn't *push* them; to push, the asteroid would
-have to absorb the wave, and it barely absorbs any. **Strength:** we're roughly forty
-orders of magnitude short on raw power. For scale, NASA's DART mission actually shifted an
-asteroid in 2022 by flying a spacecraft into it, and even that delivered about a thousand
-times less push than the job needs. The rule we've written into the project: **if a code
-change ever makes one of these walls vanish, we assume the change is broken, not that we
-solved it.**
 
 ### R6 — Cross-channel comparison at the target
 
@@ -1403,6 +1424,11 @@ volume/page verification against the published record.)*
     finite-N random-phasor combining loss; its eq. 6 is the N → ∞ limit it attributes to
     Ruze. A **spin-1** source: it supports the N-dependence skeleton only, never the spin-2
     prefactor.)*
+26. *Nature* editorial policy on artificial intelligence: Large Language Models do not
+    satisfy authorship criteria, since authorship carries accountability that cannot be
+    assigned to an AI tool; their use must instead be documented. Springer Nature and
+    Science apply the same prohibition. https://www.nature.com/nature-portfolio/editorial-policies/ai
+    *(Verified 2026-08-06.)*
 
 ***Non-expert summary:*** The sources we rely on. Two entries are unusual and worth
 noticing. **Ref. 15** is cited deliberately *without* an equation number, because the paper
@@ -1415,21 +1441,35 @@ and the note says so where anyone would see it.
 
 ## Acknowledgements
 
-*Placeholder.*
+The author thanks the maintainers of the open-access sources this framework is built on —
+in particular Blanchet's *Living Reviews* article, whose numbered equations made the
+project's citation discipline enforceable at all. A framework that requires every formula
+to name a checkable equation can only exist where such sources are freely available.
+
+*Institutional and individual acknowledgements to be added.* Per the README's stated
+intent, any assistance received from people or institutions with more formal training than
+the author will be logged explicitly rather than absorbed into a general thank-you — the
+degree of expert intervention required is itself one of this work's reported quantities.
 
 ## Author contributions
 
-*Placeholder — use CRediT taxonomy. Must be reconciled with the repository's commit
-provenance and `CITATION.cff` before submission.*
+See **Author contributions** following the author list, which states the CRediT roles and
+the AI-assistance disclosure in full.
 
 ## Competing interests
 
-The authors declare no competing interests. *(Confirm before submission; note the
-Apache-2.0 patent grant in Code availability.)*
+The author declares no competing financial interests. Two non-financial disclosures are
+made in the interest of completeness: the software is released under Apache-2.0 with an
+**explicit patent grant** (see Code availability), which is a deliberate choice to let
+outside groups develop hardware against the framework without exposure; and the work was
+produced with extensive commercial AI assistance, disclosed with per-model commit counts
+under Author contributions.
 
-***Non-expert summary:*** Standard journal declarations, not yet filled in. The last one
-states that nobody stands to profit in a way that might bias the results — flagged for
-confirmation before submission, given the patent grant mentioned above.
+***Non-expert summary:*** The standard end-of-paper declarations. Nobody stands to profit
+in a way that could bias the results. Two things are disclosed anyway because they could
+reasonably be asked about: the software licence deliberately gives away patent rights so
+that others can build hardware freely, and the work leaned heavily on commercial AI tools,
+which we quantify rather than gesture at.
 
 ---
 
@@ -1789,8 +1829,12 @@ mistakes* would actually read it.
 
 1. **The repository is not public.** Code availability cannot be satisfied. This is
    tracked in the backlog and is the project's sole remaining externally-blocked item.
-2. **No `CITATION.cff`, no author list, no CRediT table.** A manuscript about provenance
-   discipline that cannot state its own authorship provenance is self-refuting.
+2. ~~No `CITATION.cff`, no author list, no CRediT table.~~ ✅ **Done 2026-08-06.** Author
+   list, CRediT statement and a schema-validated `CITATION.cff` are in place, with the
+   AI-assistance disclosure carrying per-model commit counts (35 Opus 5, 20 Sonnet 5, of 61
+   commits) and pointing at the git trailers as the authoritative record. **One item
+   remains: an ORCID**, which is free to register and is the only durable identifier for a
+   project meant to outlive its authors.
 3. ~~The Results campaign has not been run.~~ ✅ **Run 2026-08-03.** R2–R6 confirmed,
    R5 with a flagged finding. Reproduce with `python tools/run_campaign.py`. Two items
    follow from it: **(a)** the figures are draft-quality — legible and correct, but the
@@ -1853,10 +1897,23 @@ mistakes* would actually read it.
    **against** Ruze — the finite-N form is D'Addario<sup>25</sup> eq. 5, whose own eq. 6 is
    the N → ∞ reduction it attributes to Ruze. EQ-054 stays Category B: D'Addario is a
    scalar/spin-1 source and supports only the N-dependence skeleton.
-6. **Reference 8** (DART) and any other `[complete]` marker need volume/page verification
-   against the published record, not against memory.
+6. ~~Reference 8 (DART) needs volume/page verification.~~ ✅ **Verified 2026-08-03**
+   against Crossref (doi:10.1038/s41586-023-05810-5; British "defence" as published).
+7. ⚠️ **Ten references are listed but never cited in the text**: refs 13, 14, 15, 16, 17,
+   18, 19, 20, 21, 22 (Hinderer; Cheng, Lee & Peale; Thorne 1980; Orfanidis; MTW; Born &
+   Wolf; Zel'dovich & Polnarev; Braginsky & Thorne; Dolph; Taylor). They are carried over
+   from the *codebase's* equation registry, where they are genuinely used, rather than
+   cited by this manuscript — the body mentions "Braginsky–Thorne" only inside
+   "Braginsky–Thorne/Favata", which resolves to ref 12. **An uncited reference list is
+   padding, and this project should not ship it.** Each needs either a real citation in
+   Methods where its result is used, or removal to `docs/INDEX.md`, where it already lives.
+   This is a decision about what the manuscript claims to rest on, so it is flagged rather
+   than resolved automatically.
+8. **Figures are draft-quality.** Legible, correct, and regenerable
+   (`tools/run_campaign.py`, `tools/render_mermaid.py`), but the author intends to redraw
+   them for submission.
 
-***Non-expert summary:*** Six things that must be fixed before this can be submitted
+***Non-expert summary:*** Eight things that must be fixed before this can be submitted
 anywhere. **One of the two substantive ones has since been fixed** — see item 4(a). The
 paper had quoted a precision figure for the alignment requirement that was better than our
 own automated tests actually checked. Chasing it down produced a genuinely useful surprise:

@@ -171,6 +171,7 @@ arithmetic.
 | [`docs/adr/`](docs/adr/) | Architecture decision records (7) |
 | [`docs/paper/`](docs/paper/) | Manuscript drafts *(work in progress)* |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
+| [`CITATION.cff`](CITATION.cff) | How to cite this work — and the AI-assistance disclosure, with per-model commit counts |
 
 **If you read only one thing beyond this file**, read `docs/INDEX.md` §3, the assumption ledger.
 Several approximations here hold across most of the parameter space and fail at its edges — and
@@ -272,6 +273,25 @@ rules matter more than the rest:
    Unstamped, it does not look like a bug — it looks like a breakthrough.
 3. **Published sources contain errors.** See [`docs/ERRATA.md`](docs/ERRATA.md) for two we
    verified numerically. Never "fix" correct code to match a printed typo.
+
+## Citing this work
+
+See [`CITATION.cff`](CITATION.cff) — machine-readable, schema-valid, and rendered
+automatically by GitHub's "Cite this repository" button.
+
+It also carries the project's **AI-assistance disclosure**. This work was produced with
+extensive help from Anthropic's Claude: as of commit `93f215c`, 55 of 61 commits carry a
+`Co-Authored-By` trailer naming the model. The models are deliberately **not** listed as
+authors — Nature, Science and all Springer-Nature journals hold that Large Language Models
+cannot satisfy authorship criteria, because authorship carries accountability that cannot
+be assigned to a tool. Disclosure is required; authorship is prohibited. Accountability for
+every claim in this repository rests with the human author.
+
+The counts are a snapshot. The authoritative record is the git history itself:
+
+```bash
+git log --format='%b' | grep -i '^Co-Authored-By:' | sort | uniq -c
+```
 
 ## License
 

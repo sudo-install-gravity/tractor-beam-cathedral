@@ -1,0 +1,158 @@
+# Citation metadata for the Tractor Beam Cathedral project.
+# Format: https://citation-file-format.github.io/  (CFF 1.2.0)
+#
+# ---------------------------------------------------------------------------
+# AI ASSISTANCE DISCLOSURE
+# ---------------------------------------------------------------------------
+# This project was developed with extensive AI assistance, and says so here
+# because the disclosure is part of the work rather than a footnote to it: the
+# README states an explicit, falsifiable hypothesis about whether AI tooling can
+# let an educated amateur produce results consistent with the literature, and
+# the intended paper is partly a case study in how much expert help that takes.
+# A project claiming that cannot leave its own provenance vague.
+#
+# As of commit 93f215c (2026-08-06), 61 commits since 2026-07-26:
+#
+#     Claude Opus 5     35 commits    Co-Authored-By trailer
+#     Claude Sonnet 5   20 commits    Co-Authored-By trailer
+#     ------------------------------------------------------
+#     with AI trailer   55 of 61      (6 commits human-only)
+#
+# Those counts are a SNAPSHOT, not a live figure. The authoritative record is
+# the `Co-Authored-By:` trailers in the git history itself:
+#
+#     git log --format='%b' | grep -i '^Co-Authored-By:' | sort | uniq -c
+#
+# The models are NOT listed as authors, and must not be. Nature, Science and
+# all Springer-Nature journals hold that Large Language Models do not satisfy
+# authorship criteria, because authorship carries accountability that cannot be
+# assigned to a tool. Disclosure is required; authorship is prohibited. That is
+# an industry-wide consensus, not a Nature idiosyncrasy.
+#
+# Accountability for every claim in this repository rests with the human author
+# below -- including the seven documentation-versus-code defects the project
+# found in its own records, which are logged in docs/CLAIMS.md rather than
+# quietly corrected.
+# ---------------------------------------------------------------------------
+
+cff-version: 1.2.0
+message: >-
+  If you use this software or its results, please cite it using the metadata
+  below. Note the feasibility ledger: this framework quantifies its own distance
+  from the application that motivates it, and any citation of its results should
+  carry that distance with them.
+
+title: "Tractor Beam Cathedral (gwtb): a spin-2 phased-array framework for engineered gravitational radiation"
+abstract: >-
+  A modeling and simulation framework for a theoretical asteroid-deflection
+  concept: arrays of massive spheres undergoing controlled finite maneuvers,
+  phased so their gravitational radiation constructively interferes at a target
+  at 40 AU. Its transferable contribution is the extension of phased-array
+  theory from spin-1 (electromagnetic) to spin-2 (gravitational) fields --
+  element mismatch is cos(2*dpsi) rather than cos(dpsi), elements 90 degrees
+  apart cancel completely where electromagnetic intuition predicts a doubling of
+  power, and the orientation tolerance for 1% gain loss is exactly twice as
+  tight. Because no external reference implementation exists to check such
+  results against, the framework enforces its own auditability: every physics
+  function carries a machine-checked citation to a numbered equation in an
+  open-access source, claims are registered as established, derived or
+  conjectural, every approximation records the regime in which it fails, and
+  results computed from momentum-non-conserving sources are inseparable from an
+  UNPHYSICAL provenance stamp. A feasibility ledger is emitted on every run
+  stating the quantitative gap between the modeled configuration and an actual
+  deflection.
+
+type: software
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-08-06"
+repository-code: "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
+url: "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
+
+authors:
+  - given-names: Paul
+    family-names: Day
+    alias: sudo-install-gravity
+    email: dpaulday@protonmail.com
+    # TODO before submission: register at https://orcid.org (free, a few
+    # minutes) and paste the identifier here. A project intended to outlive its
+    # authors needs a durable identifier that survives an email address; a
+    # GitHub handle is not one.
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+
+contact:
+  - given-names: Paul
+    family-names: Day
+    email: dpaulday@protonmail.com
+
+keywords:
+  - gravitational waves
+  - linearized gravity
+  - spin-2 fields
+  - phased arrays
+  - asteroid deflection
+  - planetary defence
+  - research software engineering
+  - computational reproducibility
+  - scientific provenance
+
+# The three sources the framework's spine rests on. The complete registry --
+# 54 equations, each mapped to a source, an implementation and a test -- is in
+# docs/INDEX.md section 1, and docs/ERRATA.md records verified errors found in
+# the published literature.
+references:
+  - type: article
+    title: >-
+      Gravitational radiation from post-Newtonian sources and inspiralling
+      compact binaries
+    authors:
+      - given-names: Luc
+        family-names: Blanchet
+    journal: "Living Reviews in Relativity"
+    volume: 17
+    year: 2014
+    doi: "10.12942/lrr-2014-2"
+    notes: >-
+      Primary source for the quadrupole formalism (eqs. 1-4) and the
+      polarization decomposition (eqs. 69a-69b).
+
+  - type: article
+    title: "The basics of gravitational wave theory"
+    authors:
+      - given-names: Éanna É.
+        family-names: Flanagan
+      - given-names: Scott A.
+        family-names: Hughes
+    journal: "New Journal of Physics"
+    volume: 7
+    year: 2005
+    doi: "10.1088/1367-2630/7/1/204"
+    notes: >-
+      Transverse-traceless projector (eq. 4.22) and geodesic deviation
+      (eq. 3.11). Two verified typographical errors in this paper's worked
+      binary example are recorded in docs/ERRATA.md.
+
+  - type: article
+    title: "Properties and patterns of polarized gravitational waves"
+    authors:
+      - given-names: Bahram
+        family-names: Mashhoon
+      - given-names: Sohrab
+        family-names: Rahvar
+    journal: "Universe"
+    volume: 9
+    year: 2023
+    doi: "10.3390/universe9010006"
+    notes: >-
+      Eq. 4, the e^(2i psi) polarization rotation law. Verified 2026-08-03 and
+      adopted after the previously cited equation was found to be the TT
+      projector rather than the rotation law.
+
+# ---------------------------------------------------------------------------
+# preferred-citation is deliberately absent.
+#
+# A manuscript exists (docs/paper/nature-draft.md) but is unpublished, and
+# pointing `preferred-citation` at an unpublished draft would invite citations
+# to something with no DOI, no peer review and a Results section whose figures
+# are still draft-quality. Add it when the paper lands, not before.
+# ---------------------------------------------------------------------------

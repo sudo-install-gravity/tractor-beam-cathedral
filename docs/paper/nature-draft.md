@@ -66,7 +66,7 @@ this paragraph, are the authoritative record.
 **The models are not authors and are not eligible to be.** Nature, Science and all
 Springer-Nature journals hold that Large Language Models do not satisfy authorship
 criteria, because authorship carries accountability that cannot be assigned to a
-tool<sup>26</sup>. Disclosure is required; authorship is prohibited. Accountability for
+tool<sup>23</sup>. Disclosure is required; authorship is prohibited. Accountability for
 every claim here rests with the human author.
 
 We report this in unusual detail because the project's own README states a falsifiable
@@ -240,7 +240,7 @@ this software does.
 propagation direction, gravitational-wave polarization transforms as e^(2iψ), not
 e^(iψ); h₊ and h× are separated by 45°, not 90°; and superposition acts on the
 TT-projected tensor h_ij, never on scalar amplitudes. Every open-source array-synthesis
-library implements the spin-1 case. Code adapted from antenna, radar or acoustics
+library implements the spin-1 case<sup>16</sup>. Code adapted from antenna, radar or acoustics
 references will run, produce plausible numbers, and be wrong. We treated this as the
 project's highest-risk failure class and attacked it with a dedicated design spike four
 development sprints before anything depended on its output.
@@ -523,7 +523,7 @@ claim, and it survived every way we set out in advance to break it.
 its total mass, and by how much?
 
 **Run.** Fixed-mass sweeps over radius across ≥ 2 orders of magnitude, for the rigid,
-elastic (Love-number) and finite-size-retardation models; materials spanning
+elastic (Love-number<sup>13,14</sup>) and finite-size-retardation models; materials spanning
 steel/tungsten/osmium rigidities.
 
 **Report.** Fig. 5: radiated quadrupole amplitude vs. radius at fixed mass, one trace
@@ -631,7 +631,8 @@ reproduces the framework's independent scoping figures exactly: an aperture of
 1.23 × 10⁷ AU at 1 Hz, 1.23 × 10⁴ AU at 1 kHz, and **12.3 AU at 1 MHz**, matching
 Methods' 6 × 10⁹ wavelengths at any frequency. Against that, the 12.4 km reference
 aperture achieves D/λ = 41.3, a shortfall of **8.16 decades**, and the smallest spot it
-can place at 40 AU is 1.5 × 10¹¹ m against a 1 km target.
+can place at 40 AU is 1.5 × 10¹¹ m against a 1 km target — the −3 dB extent of a
+uniformly illuminated circular aperture<sup>17</sup>.
 
 **The finding, which the pre-registered falsifier caught and which we report rather than
 suppress: the emission wall does not bind everywhere.** Reporting the gap *across the
@@ -643,7 +644,7 @@ scoping configuration set*, as pre-registered, rather than for a single configur
 | 10⁹ kg, 1 km, 1 kHz | 7.5 × 10⁻² W | +11.25 decades |
 | 10⁹ kg, 1 km, 1 MHz | 7.5 × 10¹⁶ W | **−6.75 decades** |
 
-At 1 MHz the radiated momentum flux (~2.5 × 10⁸ N) **exceeds** the ~43 N requirement by
+At 1 MHz the radiated momentum flux (~2.5 × 10⁸ N) **exceeds** the ~43 N requirement — the sustained force needed to impart 0.01 m s⁻¹ to a 1 km asteroid over a decade, against which the DART impactor's demonstrated ~1.2 × 10⁷ N·s is the only flown calibration<sup>8</sup> — by
 nearly seven orders of magnitude. That is not a defect: it is what the ω⁶ scaling means,
 and it is PHYSICS.md's own tabulated value. **It does not imply feasibility, for three
 reasons that Fig. 7 states on its face.** (i) Coupling still binds — and binds hardest:
@@ -795,7 +796,7 @@ l = 2 finite-size form factor (Methods) illustrates the epistemic machinery work
 designed. A literature search for a citable numbered equation **failed**, and that
 failure is recorded as the decision rather than papered over: the result is admitted as
 our derivation, justified by three independent numerical routes agreeing to
-1.7 × 10⁻¹², with the likely primary source cited *without* an equation number because a
+1.7 × 10⁻¹², with the likely primary source<sup>15</sup> cited *without* an equation number because a
 guessed number is worse than none. In the process, both form factors originally proposed
 for the task were shown to be the wrong multipole order — one of them being spin-1
 antenna machinery that was within one commit of entering the codebase as gravitational
@@ -1082,7 +1083,7 @@ is *volume-filling*, δρ uniform on [0, R]. A body that acquires its quadrupole
 deforming its **surface** has δρ ∝ δ(r − R) and a different answer,
 F₂^surface(kR) = 15 j₂(kR)/(kR)² = 1 − (kR)²/14 — **40% larger**. Both are "the uniform
 sphere"; the phrase does not determine the answer. The correction must therefore **not**
-be applied to the tidal Love-number or Maclaurin-oblateness quadrupoles, which are
+be applied to the tidal Love-number or Maclaurin-oblateness<sup>20</sup> quadrupoles, which are
 incompressible-body surface deformations, without re-deriving. A future source quoting
 1/14 is *not* a confirmation of this result — it confirms the other one.
 
@@ -1300,7 +1301,7 @@ a different reference and *wrote that down prominently*, rather than swapping it
 and letting the paper imply a comparison we never made.
 
 Two cross-validations are worth naming because they were predicted before the code
-existed. Linear memory computed from the Braginsky–Thorne/Favata formula<sup>12</sup>
+existed. Linear memory computed from the Braginsky–Thorne/Favata formula<sup>18,19,12</sup>
 reproduces the settled post-maneuver value of the independent quadrupole route
 **bit-for-bit on-axis** (difference exactly 0.0), and to 1 ULP for oblique observation
 directions — the discrepancy being arithmetic, not physical, since the quadrupole route
@@ -1401,30 +1402,25 @@ volume/page verification against the published record.)*
     number is worse than none.)*
 16. Orfanidis, S. J. *Electromagnetic Waves and Antennas* ch. 19 (Rutgers Univ., open
     access). *(Spin-1 reference by construction; cited only for the scalar baseline.)*
-17. Misner, C. W., Thorne, K. S. & Wheeler, J. A. *Gravitation* (Freeman, 1973).
-18. Born, M. & Wolf, E. *Principles of Optics* §8.5.2 (Cambridge Univ. Press, 1999).
-19. Zel'dovich, Ya. B. & Polnarev, A. G. Radiation of gravitational waves by a cluster of
+17. Born, M. & Wolf, E. *Principles of Optics* §8.5.2 (Cambridge Univ. Press, 1999).
+18. Zel'dovich, Ya. B. & Polnarev, A. G. Radiation of gravitational waves by a cluster of
     superdense stars. *Sov. Astron.* **18**, 17 (1974).
-20. Braginsky, V. B. & Thorne, K. S. Gravitational-wave bursts with memory and experimental
+19. Braginsky, V. B. & Thorne, K. S. Gravitational-wave bursts with memory and experimental
     prospects. *Nature* **327**, 123–125 (1987). *(Historical provenance only — a Letter
     with no numbered equations; ref. 12 is cited for the implemented form.)*
-21. Dolph, C. L. A current distribution for broadside arrays. *Proc. IRE* **34**, 335–348
-    (1946). *(In-paper equation numbers unconfirmed; implemented via `scipy.signal.windows`.)*
-22. Taylor, T. T. Design of line-source antennas for narrow beamwidth and low side lobes.
-    *IRE Trans. Antennas Propag.* **3**, 16–28 (1955). *(As ref. 21.)*
-23. Fitzpatrick, R. *Newtonian Dynamics* and *Theoretical Fluid Mechanics* (Univ. Texas,
+20. Fitzpatrick, R. *Newtonian Dynamics* and *Theoretical Fluid Mechanics* (Univ. Texas,
     open-access lecture notes).
-24. Mashhoon, B. & Rahvar, S. Properties and patterns of polarized gravitational waves.
+21. Mashhoon, B. & Rahvar, S. Properties and patterns of polarized gravitational waves.
     *Universe* **9**, 6 (2023). arXiv:2211.01691. *(Open access, CC BY 4.0. Eq. 4 is the
     e^(2iψ) polarization rotation law — the Abstract's central assertion. Verified
     2026-08-03; it replaces a citation to ref. 5 eq. 4.22, which is the TT projector.)*
-25. D'Addario, L. R. *Combining Loss of a Transmitting Array due to Phase Errors*. IPN
+22. D'Addario, L. R. *Combining Loss of a Transmitting Array due to Phase Errors*. IPN
     Progress Report 42-175 (Jet Propulsion Laboratory, 2008).
     https://ipnpr.jpl.nasa.gov/progress_report/42-175/175G.pdf *(Open access. Eq. 5 is the
     finite-N random-phasor combining loss; its eq. 6 is the N → ∞ limit it attributes to
     Ruze. A **spin-1** source: it supports the N-dependence skeleton only, never the spin-2
     prefactor.)*
-26. *Nature* editorial policy on artificial intelligence: Large Language Models do not
+23. *Nature* editorial policy on artificial intelligence: Large Language Models do not
     satisfy authorship criteria, since authorship carries accountability that cannot be
     assigned to an AI tool; their use must instead be documented. Springer Nature and
     Science apply the same prohibition. https://www.nature.com/nature-portfolio/editorial-policies/ai
@@ -1885,7 +1881,7 @@ mistakes* would actually read it.
    the e^(2iψ) rotation law. **Ref. 5 eq. 4.22 is the transverse-traceless projector** — the
    same equation EQ-004 cites, correctly — and the rotation law appears **nowhere in that
    paper**; it shows the 45° relationship only qualitatively, in its Figure 1, with no
-   equation. Now cited to **Mashhoon & Rahvar<sup>24</sup> eq. 4**, which matches the
+   equation. Now cited to **Mashhoon & Rahvar<sup>21</sup> eq. 4**, which matches the
    implementation term for term and is open access. Ref. 17 (MTW) was simultaneously found to
    be carrying this claim in the claims registry as a **chapter** reference, which this
    project's own citation rule rejects; it now has the same numbered source. **No physics
@@ -1894,21 +1890,22 @@ mistakes* would actually read it.
    *Two adjacent findings from the same pass:* ref. 5 eq. 2.22 defines the **scalars**
    h₊/h_× from TT metric components, not the **basis tensors** the framework attributes to
    it (EQ-035 re-flagged); and the Ruze precedent question from blocker 4(a) resolved
-   **against** Ruze — the finite-N form is D'Addario<sup>25</sup> eq. 5, whose own eq. 6 is
+   **against** Ruze — the finite-N form is D'Addario<sup>22</sup> eq. 5, whose own eq. 6 is
    the N → ∞ reduction it attributes to Ruze. EQ-054 stays Category B: D'Addario is a
    scalar/spin-1 source and supports only the N-dependence skeleton.
 6. ~~Reference 8 (DART) needs volume/page verification.~~ ✅ **Verified 2026-08-03**
    against Crossref (doi:10.1038/s41586-023-05810-5; British "defence" as published).
-7. ⚠️ **Ten references are listed but never cited in the text**: refs 13, 14, 15, 16, 17,
-   18, 19, 20, 21, 22 (Hinderer; Cheng, Lee & Peale; Thorne 1980; Orfanidis; MTW; Born &
-   Wolf; Zel'dovich & Polnarev; Braginsky & Thorne; Dolph; Taylor). They are carried over
-   from the *codebase's* equation registry, where they are genuinely used, rather than
-   cited by this manuscript — the body mentions "Braginsky–Thorne" only inside
-   "Braginsky–Thorne/Favata", which resolves to ref 12. **An uncited reference list is
-   padding, and this project should not ship it.** Each needs either a real citation in
-   Methods where its result is used, or removal to `docs/INDEX.md`, where it already lives.
-   This is a decision about what the manuscript claims to rest on, so it is flagged rather
-   than resolved automatically.
+7. ~~Ten references are listed but never cited in the text.~~ ✅ **Resolved 2026-08-06.**
+   Seven were genuinely relied upon and are now cited where the manuscript uses them:
+   Hinderer and Cheng *et al.* at R3's Love-number model, Thorne 1980 at the Discussion's
+   "likely primary source", Orfanidis where the spin-1 baseline is named, Born & Wolf at
+   R5's Airy-limited spot size, Zel'dovich & Polnarev and Braginsky & Thorne alongside
+   Favata for linear memory, DART at the ~43 N requirement it calibrates, and Fitzpatrick
+   at the Maclaurin-oblateness mechanism. **Three were removed** — MTW (superseded as the
+   e^(2iψ) source by ref. 21), Dolph and Taylor (amplitude tapering, which the manuscript
+   never discusses) — because they belong to the *codebase's* equation registry in
+   `docs/INDEX.md`, not to this reference list. The list renumbered 26 → 23, and every
+   reference is now cited exactly where its result is used.
 8. **Figures are draft-quality.** Legible, correct, and regenerable
    (`tools/run_campaign.py`, `tools/render_mermaid.py`), but the author intends to redraw
    them for submission.

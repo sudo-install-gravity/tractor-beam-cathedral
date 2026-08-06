@@ -894,7 +894,13 @@ algebraic answer to sixteen decimal places.
 
 ### Software architecture
 
-Nine packages under `src/gwtb/`, in dependency order:
+Nine packages under `src/gwtb/`, listed by dependency depth. ⚠️ **The order is not strict:**
+`propagate.retarded` imports `source.quadrupole` while three `source` modules import
+`propagate.tt_projection`, so those two packages form a cycle at package granularity — though
+the *module* graph beneath them is a clean DAG with no circular import. Fig. 1 is generated
+from the import statements rather than from this table, so the two cannot drift apart again.
+Note also that `ledger` is **upstream** of `target` (`target.coupling` imports it), not a final
+reporting stage, and that `viz` imports nothing from `gwtb` at all.
 
 | Layer | Responsibility |
 |---|---|
@@ -1490,13 +1496,142 @@ unflattering comparison is exactly how an honest analysis turns into a sales pit
 
 ### Figure legends
 
-**Fig. 1 | Framework architecture.** Nine-layer dependency graph with the two
-governance-motivated layers (`ledger`, conservation stamping within `source`) highlighted,
-annotated with the equation IDs each layer implements. *To be drawn.*
+**Fig. 1 | Framework architecture, as it actually is.** Package dependency graph extracted
+from the import statements (not from the documentation), annotated with the equation IDs each
+package implements. Governance-motivated components are shaded. ⚠️ **`source` and `propagate`
+import each other**, so the layering is not strict — see the note below the diagram.
 
-**Fig. 2 | The provenance apparatus.** How citation CI, the claims registry, the assumption
-ledger, the errata file and the unphysicality stamp interlock, and which failure mode each
-was added in response to. *To be drawn.*
+```mermaid
+flowchart BT
+    subgraph d0[" depth 0 — imports no other package "]
+        core["<b>core</b><br/>constants · validation · units · backend<br/>EQ-025, 030, 031"]
+        viz["<b>viz</b><br/>patterns · slices · volume · export_vtk<br/>no equations, no gwtb imports"]
+    end
+    subgraph d1[" depth 1 "]
+        bodies["<b>bodies</b><br/>sphere · multipole · elastic<br/>EQ-001…003, 008…012, 027, 028, 034, 044"]
+        kinematics["<b>kinematics</b><br/>profiles · oscillators<br/>EQ-021"]
+    end
+    subgraph d2[" depth 2 "]
+        source["<b>source</b><br/>quadrupole · memory · multipole_rad<br/>+ <b>conservation</b>: the UNPHYSICAL stamp<br/>EQ-005, 006, 022, 026, 041…043"]
+    end
+    subgraph d3[" depth 3 "]
+        propagate["<b>propagate</b><br/>tt_projection · retarded · polarization<br/>EQ-004, 020, 024, 035…040"]
+        ledger["<b>ledger</b><br/>GapMetric · GapReport · RunManifest<br/>the feasibility gap — no equations"]
+    end
+    subgraph d4[" depth 4 "]
+        array["<b>array</b><br/>geometry · grating · beamform · focus<br/>EQ-013…019, 029, 032, 033, 046…054"]
+        target["<b>target</b><br/>geodesic · coupling · deflection<br/>EQ-023, EQ-045"]
+    end
+
+    bodies --> source
+    kinematics --> source
+    kinematics --> array
+    source --> ledger
+    propagate --> array
+    ledger --> target
+    source <-.->|"NOT strictly layered<br/>they import each other"| propagate
+
+    classDef gov fill:#fff3cd,stroke:#b8860b,stroke-width:2.5px
+    classDef base fill:#eef3fa,stroke:#4a7ebb
+    classDef lvl fill:#fafafa,stroke:#d0d0d0
+    class ledger,source gov
+    class core,viz base
+    class d0,d1,d2,d3,d4 lvl
+```
+
+*Edges from `core` are omitted: **every** package except `viz` imports it, and drawing all
+seven obscures the structure. `viz` imports nothing from `gwtb` at all — it takes callables
+and arrays from the caller, which is why it sits at depth 0 beside `core` rather than at the
+top.*
+
+**Two things this diagram corrects.** First, the Methods text describes "nine packages in
+dependency order" and lists `ledger` after `target`; the imports run the other way —
+`target.coupling` imports `ledger.gap_report`, so the ledger is *upstream* of the target
+layer, not a final reporting stage. Second, and more substantively, **the layering is not
+strict**: `propagate.retarded` imports `source.quadrupole` while `source.quadrupole`,
+`source.memory` and `source.multipole_rad` all import `propagate.tt_projection` (dotted
+edges). At *module* granularity the graph is a clean DAG with no circular import; the cycle
+exists only at *package* granularity. It is therefore a description defect rather than a
+runtime one — but "strict dependency order" is not what the code does, and this figure is
+generated from the imports precisely so that claim cannot drift again.
+
+***Non-expert summary:*** The floor plan of the software, drawn from the code itself rather
+than from our description of it — and the two disagree. We had written that the nine layers
+stack cleanly, each resting only on the ones below. They very nearly do, but two of them lean
+on each other: the part that generates waves and the part that propagates them each use
+something from the other. It causes no malfunction, and the individual files are still
+properly ordered — it is the tidy summary that was wrong, not the program. We are showing the
+real shape rather than the one we meant to build.
+
+**Fig. 2 | The provenance apparatus.** The five mechanisms, the point in a claim's life at
+which each intervenes, and the specific realized or near-miss failure that produced it. Every
+one was added in response to something that went wrong, not designed in advance.
+
+```mermaid
+flowchart TB
+    subgraph life["a claim's life"]
+        direction TB
+        Q["a physics claim<br/>is proposed"]
+        RES["<b>RESEARCH gate</b><br/>verify the equation<br/>against a primary source"]
+        SPIKE["design spike<br/><i>decision record,<br/>no production code</i>"]
+        IMPL["IMPLEMENT<br/>code + tests together"]
+        RUN["a computed result"]
+        OUT["publishable number"]
+    end
+
+    CI["<b>1 · Citation CI</b><br/>every public physics function must carry<br/><code>Source: ref, eq. N</code> — the build fails without it"]
+    REG["<b>2 · Claims registry</b><br/>A established / B derived / C conjecture<br/>we may not promote our own work to A"]
+    ASSUM["<b>3 · Assumption ledger</b><br/>30 approximations, each with the regime<br/>in which it FAILS, not just where it holds"]
+    ERR["<b>4 · Errata file</b><br/>verified errors in the cited literature"]
+    STAMP["<b>5 · UNPHYSICAL stamp</b><br/>contagious, no unstamp method,<br/>coercion to a bare array raises"]
+
+    F1["<i>failure:</i> 'Blanchet ch. 3' is not checkable.<br/>EQ-040 cited the wrong equation for<br/>the abstract's central claim"]
+    F2["<i>failure:</i> a claim quietly hardening<br/>from guess to fact with no one deciding"]
+    F3["<i>failure:</i> an approximation used<br/>outside its regime — and this project's<br/>interesting cases live at those edges"]
+    F4["<i>failure:</i> a contributor 'fixes' correct<br/>code to match a typo in a published paper"]
+    F5["<i>failure:</i> the mass-dipole artifact —<br/>10^10x too large — reaching a headline.<br/>It does not look like a bug"]
+
+    Q --> RES
+    RES -->|UNVERIFIED| SPIKE
+    SPIKE --> RES
+    RES -->|verified| IMPL
+    IMPL --> RUN
+    RUN --> OUT
+
+    CI -.->|gates| RES
+    REG -.->|classifies| IMPL
+    ASSUM -.->|bounds| RUN
+    ERR -.->|protects| RES
+    STAMP -.->|blocks| OUT
+
+    F1 --- CI
+    F2 --- REG
+    F3 --- ASSUM
+    F4 --- ERR
+    F5 --- STAMP
+
+    classDef mech fill:#fff3cd,stroke:#b8860b,stroke-width:2px
+    classDef fail fill:#fdecea,stroke:#c0392b,color:#7b241c
+    classDef flow fill:#eef3fa,stroke:#4a7ebb
+    class CI,REG,ASSUM,ERR,STAMP mech
+    class F1,F2,F3,F4,F5 fail
+    class Q,RES,SPIKE,IMPL,RUN,OUT flow
+```
+
+The gate that matters most is the leftward one: **a research pass returning UNVERIFIED blocks
+the task** and converts it into a design spike whose only output is a written decision. Three
+of this project's Architecture Decision Records exist because that gate fired, and one of them
+(ADR-0007) records a citation search that *failed* — the result was admitted on numerical
+evidence instead, with the likely primary source deliberately cited without an equation number.
+
+***Non-expert summary:*** The five safeguards, and what each is guarding against. The
+important feature is that none was designed in advance out of tidiness — each exists because
+something went wrong or nearly did, and the red boxes name the specific incident. Read the
+flow left to right: a proposed claim has to clear a source check before anyone may write code,
+and if the source cannot be verified the work stops and becomes a research question instead. On
+three occasions that gate fired and produced a written decision rather than a program. Once,
+the honest outcome was "no published source for this exists" — which we recorded as the answer
+rather than quietly picking a plausible-looking reference.
 
 **Fig. 3 | Element mismatch is a function of 2Δψ, at every N.** Array gain/N² versus relative
 element orientation for N = 2–1000 (markers), against the spin-2 prediction cos²Δψ (solid) and

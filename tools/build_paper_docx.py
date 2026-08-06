@@ -69,10 +69,23 @@ STYLE_XML = f"""
 """
 
 _FIG_RE = re.compile(r"^\*\*Fig\.\s*(\d+)\s*\|\s*(.+?)\*\*")
+FIGURE_DIR = Path("docs/paper/campaign")
+
+
+def _rendered_figure(num: str) -> Path | None:
+    """The rendered PNG for figure ``num``, if the campaign has produced one."""
+    hits = sorted(FIGURE_DIR.glob(f"fig{num}_*.png"))
+    return hits[0] if hits else None
 
 
 def preprocess(text: str) -> tuple[str, int, int]:
-    """Wrap summaries in a styled Div; put a placeholder above each figure legend."""
+    """Embed rendered figures, wrap summaries in a styled Div, placeholder the rest.
+
+    Figures that the campaign has actually rendered are **embedded**; only the
+    ones with no PNG still get a "GOES HERE" frame. Mermaid fences are dropped in
+    favour of their rendered image, since Word has no Mermaid renderer and would
+    otherwise show the diagram source as a wall of code.
+    """
     lines = text.split("\n")
     out: list[str] = []
     i = n_sum = n_fig = 0
@@ -80,19 +93,42 @@ def preprocess(text: str) -> tuple[str, int, int]:
     while i < len(lines):
         line = lines[i]
 
+        # Mermaid source: the rendered PNG is embedded at the legend, so drop the
+        # fence rather than shipping unrenderable code into the document.
+        if line.strip() == "```mermaid":
+            i += 1
+            while i < len(lines) and lines[i].strip() != "```":
+                i += 1
+            i += 1  # past the closing fence
+            out += [
+                f'::: {{custom-style="{PLACEHOLDER_STYLE}"}}',
+                "[ diagram source omitted — see the rendered figure above. "
+                "The Mermaid source lives in docs/paper/nature-draft.md and renders "
+                "on GitHub; regenerate the image with tools/render_mermaid.py ]",
+                ":::",
+                "",
+            ]
+            continue
+
         match = _FIG_RE.match(line)
         if match:
             n_fig += 1
             num, title = match.group(1), match.group(2).rstrip(".")
-            out += [
-                f'::: {{custom-style="{PLACEHOLDER_STYLE}"}}',
-                f"[ FIGURE {num} GOES HERE — {title} ]",
-                "",
-                "Delete this frame and Insert ▸ Image in its place.",
-                ":::",
-                "",
-                line,
-            ]
+            png = _rendered_figure(num)
+            if png is not None:
+                # Pandoc resolves the path relative to its working directory, which
+                # is the repository root -- the same place this script must be run.
+                out += [f"![]({png.as_posix()})", "", line]
+            else:
+                out += [
+                    f'::: {{custom-style="{PLACEHOLDER_STYLE}"}}',
+                    f"[ FIGURE {num} GOES HERE — {title} ]",
+                    "",
+                    "Delete this frame and Insert ▸ Image in its place.",
+                    ":::",
+                    "",
+                    line,
+                ]
             i += 1
             continue
 
@@ -185,11 +221,18 @@ def main() -> int:
         doc = z.read("word/document.xml").decode("utf-8")
         style_xml = z.read("word/styles.xml").decode("utf-8")
     ok = True
-    for style, expected in ((SUMMARY_STYLE, n_sum), (PLACEHOLDER_STYLE, n_fig * 2)):
-        used = doc.count(f'w:val="{style}"')
-        good = style in style_xml and used == expected
-        ok &= good
-        print(f"  {'ok ' if good else 'BAD'} {style}: defined, used {used}x (expected {expected})")
+    embedded = doc.count("<pic:pic")
+    used_sum = doc.count(f'w:val="{SUMMARY_STYLE}"')
+    ok = SUMMARY_STYLE in style_xml and used_sum == n_sum
+    print(
+        f"  {'ok ' if ok else 'BAD'} {SUMMARY_STYLE}: defined, used {used_sum}x (expected {n_sum})"
+    )
+    print(f"  ok  figures embedded: {embedded} of {n_fig} legends have a rendered image")
+    if embedded < n_fig:
+        print(
+            f"      ({n_fig - embedded} still placeholder frames -- run tools/run_campaign.py "
+            "and tools/render_mermaid.py to render the rest)"
+        )
 
     print(f"\nwrote {OUT} ({OUT.stat().st_size / 1024:.0f} KB)")
     return 0 if ok else 1

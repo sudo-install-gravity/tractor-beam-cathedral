@@ -74,7 +74,14 @@ def dipole_second_derivative(masses: ArrayLike, accelerations: ArrayLike) -> NDA
     differentiation is needed or permitted since the accelerations are already
     given.
 
-    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.35
+    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.35, differentiated once
+
+    Citation verified 2026-08-03 by reading the source: their eq. (4.35) is
+    ``dM_1/dt = d/dt integral rho x_i d^3x = integral rho v_i d^3x = P_i`` --
+    the **first** derivative, equal to total momentum. This function returns
+    the **second**, so the citation is that equation differentiated once, and
+    the row is DERIVED rather than VERIFIED. Same treatment as EQ-002/EQ-003,
+    which cite Blanchet eq. 3 differentiated.
 
     Parameters
     ----------

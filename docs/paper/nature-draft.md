@@ -1499,8 +1499,12 @@ mistakes* would actually read it.
    measured worst error 1.1 × 10⁻¹⁶ against the 10⁻¹⁴ printed. The two ADR-0003 precision
    errors ran in opposite directions — (a) optimistic, (b) pessimistic — which is why neither
    could be assumed and both had to be measured.
-   ⚠️ **(c) Still open.** `octupole_moment` claims a cross-check against ref. 4 eq. 302a
-   that no test executes.
+   ✅ **(c) RESOLVED 2026-08-03.** `octupole_moment` claimed a cross-check against ref. 4
+   eq. 302a that no test executed; it now runs across five mass ratios at rtol 10⁻¹², and is
+   mutation-checked against the STF trace coefficient. The citation sweep also established
+   that ref. 4 eq. 302a is the **2.5PN circular-orbit** octupole and eq. 123a is Theorem 6's
+   general **post-Newtonian** multipole — neither is the Newtonian point-mass expression the
+   registry had implied, so both citations are now scoped and reclassified DERIVED.
 5. ✅ **RESOLVED 2026-08-03 — and the citation was wrong.** EQ-040 cited ref. 5 eq. 4.22 for
    the e^(2iψ) rotation law. **Ref. 5 eq. 4.22 is the transverse-traceless projector** — the
    same equation EQ-004 cites, correctly — and the rotation law appears **nowhere in that

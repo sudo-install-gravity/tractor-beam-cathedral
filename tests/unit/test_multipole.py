@@ -251,6 +251,83 @@ def test_octupole_moment_zero_for_symmetric_pair() -> None:
     np.testing.assert_allclose(Q, np.zeros((3, 3, 3)), atol=1e-12)
 
 
+def _stf3(x: np.ndarray) -> np.ndarray:
+    """STF (symmetric trace-free) part of ``x_i x_j x_k`` for a single vector.
+
+    Written from the STF *definition* -- remove the traces so that
+    ``delta_ij Q_ijk = 0`` -- not copied from the implementation under test.
+    That is what makes the comparison below able to catch a wrong coefficient
+    rather than moving with it; verified by mutation, see the test docstring.
+    """
+    r2 = float(x @ x)
+    d = np.eye(3)
+    triple = np.einsum("i,j,k->ijk", x, x, x)
+    corr = (
+        np.einsum("ij,k->ijk", d, x) + np.einsum("jk,i->ijk", d, x) + np.einsum("ki,j->ijk", d, x)
+    )
+    return triple - (r2 / 5.0) * corr
+
+
+def _blanchet_302a_newtonian(m1: float, m2: float, x: np.ndarray) -> np.ndarray:
+    """Blanchet eq. (302a) at Newtonian order: ``I_ijk = -nu m Delta x_<ijk>``.
+
+    Eq. (302a) as printed is the **2.5PN** circular-orbit mass octupole. Its
+    leading term, with the post-Newtonian corrections (``gamma``, ``1/c^2``)
+    switched off, is the Newtonian two-body octupole reproduced here.
+    """
+    m = m1 + m2
+    nu = m1 * m2 / m**2
+    delta = (m1 - m2) / m
+    return -nu * m * delta * _stf3(x)
+
+
+@pytest.mark.parametrize("mass_ratio", [1.5, 3.0, 10.0, 0.25, 1.01])
+def test_octupole_reproduces_blanchet_two_body_newtonian_octupole(mass_ratio: float) -> None:
+    """EQ-044's external anchor, which until 2026-08-03 ran nowhere.
+
+    ``bodies/multipole.py`` claimed in prose to be "cross-checked against
+    Blanchet's explicit two-body Newtonian octupole (eq. 302a)". No test
+    performed that comparison -- the octupole's tests asserted symmetry,
+    tracelessness and dtype only, i.e. *structure* with no external value.
+    Same defect class as ADR-0003's analytic-TT figure: a claim made in a
+    docstring and executed nowhere.
+
+    Placing the two bodies at ``y1 = (m2/m) x``, ``y2 = -(m1/m) x`` (the
+    centre-of-mass frame) reduces the point-mass sum to ``-nu m Delta x_<ijk>``
+    algebraically, so this is a genuine external check on the mass weighting
+    and the absolute normalisation, not a restatement.
+
+    **Mutation-checked:** perturbing the implementation's STF trace coefficient
+    from ``/5`` to ``/3``, ``/7`` or even ``/5.05`` is caught here (relative
+    deviations 1.4, 0.61 and 2.1e-2 against an rtol of 1e-12). The reference
+    above fixes ``/5`` from the STF definition rather than from the code, which
+    is what gives the comparison that power.
+    """
+    m2 = 4.0e5
+    m1 = mass_ratio * m2
+    x = np.array([2.0, -1.0, 4.0])
+    m = m1 + m2
+
+    got = octupole_moment([m1, m2], [(m2 / m) * x, -(m1 / m) * x])
+    np.testing.assert_allclose(got, _blanchet_302a_newtonian(m1, m2, x), rtol=1e-12, atol=0.0)
+
+
+def test_octupole_vanishes_at_equal_mass_because_delta_is_zero() -> None:
+    """The 302a form makes the equal-mass null a *physics* statement.
+
+    ``test_octupole_moment_zero_for_symmetric_pair`` already asserts this from
+    odd-moment symmetry. This asserts the same zero for the reason Blanchet's
+    expression gives -- the mass asymmetry ``Delta = (m1-m2)/m`` prefactor --
+    so the two tests fail for different causes rather than duplicating.
+    """
+    m1 = m2 = 4.0e5
+    x = np.array([2.0, -1.0, 4.0])
+    m = m1 + m2
+    assert (m1 - m2) / m == 0.0
+    got = octupole_moment([m1, m2], [(m2 / m) * x, -(m1 / m) * x])
+    np.testing.assert_allclose(got, np.zeros((3, 3, 3)), atol=1e-9)
+
+
 def test_octupole_moment_rejects_shape_mismatch() -> None:
     with pytest.raises(ValueError):
         octupole_moment([1.0, 2.0, 3.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])

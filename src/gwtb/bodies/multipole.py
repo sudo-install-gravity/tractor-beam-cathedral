@@ -218,7 +218,18 @@ def octupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float
     ``ki``) by construction, mirroring the quadrupole's trace-free property
     (ADR-0002 §6) one multipole order up.
 
-    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 123a
+    Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 123a, Newtonian point-mass limit
+
+    .. note::
+       **Citation scope, verified 2026-08-03 by reading the source.** Eq. (123a)
+       is Theorem 6: the general STF source multipole ``I_L(u)`` of a
+       *post-Newtonian* source, a finite-part-regularized integral carrying
+       ``1/c^2`` and ``1/c^4`` correction terms. It states considerably more
+       than this function implements, which is its **Newtonian, point-mass
+       limit**. The citation is therefore scoped, and the row is DERIVED rather
+       than VERIFIED -- the framework is cited, the specialization is ours.
+       This is the same treatment EQ-034 gets, where DLMF supplies the input
+       series and the uniform-ball specialization stays ours.
 
     Blanchet's Theorem 6 (eq. 123a) gives the general STF source multipole
     ``I_L`` for all ``l >= 2``; eq. (126) states explicitly that this reduces

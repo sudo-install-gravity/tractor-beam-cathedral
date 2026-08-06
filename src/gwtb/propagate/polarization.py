@@ -273,8 +273,22 @@ def rotate_polarization(h_plus: float, h_cross: float, psi: float) -> tuple[floa
     ``h_cross`` (up to sign) rather than leaving it unchanged, which is
     exactly the 45-degree-not-90-degree fact CLAUDE.md rule 4 names.
 
-    Source: Flanagan & Hughes, New J. Phys. 7:204 (2005), eq. 4.22 (the
-    ``e^(2i psi)`` transformation law underlying the TT projector's structure)
+    Source: Mashhoon, B. & Rahvar, S., "Properties and Patterns of Polarized
+    Gravitational Waves," Universe 9:6 (2023), arXiv:2211.01691, eq. 4 --
+    ``h'_11 = h_11 cos(2t) + h_12 sin(2t)``, ``h'_12 = -h_11 sin(2t) +
+    h_12 cos(2t)`` for a rotation by ``t`` about the propagation direction,
+    matching the two lines above term for term (their ``h_11, h_12`` are
+    ``h_plus, h_cross``). Open access, CC BY 4.0.
+
+    .. note::
+       **Corrected 2026-08-03.** This previously cited Flanagan & Hughes
+       eq. 4.22. That equation is the **transverse-traceless projector**
+       ``h^TT_ij = hbar_kl P_ik P_jl - (1/2) P_ij P_kl hbar_kl`` -- the same
+       equation EQ-004 cites, correctly, for ``tt_projection``. Two distinct
+       claims cannot rest on one equation number, and the rotation law is not
+       stated anywhere in that paper: it shows the 45-degree relationship only
+       qualitatively, in its Figure 1, with no equation. The physics here was
+       never in doubt; the citation pointed at the wrong result.
 
     Parameters
     ----------

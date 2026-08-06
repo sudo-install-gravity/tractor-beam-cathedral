@@ -31,10 +31,18 @@ def delta_v(force: float, duration: float, asteroid_mass: float) -> float:
     **Cross-check.** DART (NASA's Double Asteroid Redirection Test) delivered
     an impulse of ``force * duration ~ 1.16e7`` N s to Dimorphos
     (``asteroid_mass = 4.3e9`` kg), producing ``delta_v ~ 2.7`` mm/s — the
-    published order of the DART mission's measured deflection (Daly et al.,
-    "Successful kinetic impact into an asteroid for planetary defense,"
-    *Nature* 616, 443 (2023)). ``tests/unit/test_deflection.py`` reproduces
-    this to rtol 1e-2.
+    published order of the DART mission's measured deflection (Daly, R. T.
+    et al., "Successful kinetic impact into an asteroid for planetary
+    defence," *Nature* **616**, 443-447 (2023), doi:10.1038/s41586-023-05810-5).
+    ``tests/unit/test_deflection.py`` reproduces this to rtol 1e-2.
+
+    .. note::
+       Spelling verified against Crossref 2026-08-03: Nature published this
+       with British "defence". The arXiv preprint (arXiv:2303.02248) uses
+       American "defense", so an exact-title search on the preprint will not
+       match the journal record -- same paper, house-style difference. This
+       docstring previously had the preprint spelling and a truncated page
+       number.
 
     Parameters
     ----------

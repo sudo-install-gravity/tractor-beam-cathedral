@@ -1248,6 +1248,16 @@ volume/page verification against the published record.)*
     *IRE Trans. Antennas Propag.* **3**, 16–28 (1955). *(As ref. 21.)*
 23. Fitzpatrick, R. *Newtonian Dynamics* and *Theoretical Fluid Mechanics* (Univ. Texas,
     open-access lecture notes).
+24. Mashhoon, B. & Rahvar, S. Properties and patterns of polarized gravitational waves.
+    *Universe* **9**, 6 (2023). arXiv:2211.01691. *(Open access, CC BY 4.0. Eq. 4 is the
+    e^(2iψ) polarization rotation law — the Abstract's central assertion. Verified
+    2026-08-03; it replaces a citation to ref. 5 eq. 4.22, which is the TT projector.)*
+25. D'Addario, L. R. *Combining Loss of a Transmitting Array due to Phase Errors*. IPN
+    Progress Report 42-175 (Jet Propulsion Laboratory, 2008).
+    https://ipnpr.jpl.nasa.gov/progress_report/42-175/175G.pdf *(Open access. Eq. 5 is the
+    finite-N random-phasor combining loss; its eq. 6 is the N → ∞ limit it attributes to
+    Ruze. A **spin-1** source: it supports the N-dependence skeleton only, never the spin-2
+    prefactor.)*
 
 ***Non-expert summary:*** The sources we rely on. Two entries are unusual and worth
 noticing. **Ref. 15** is cited deliberately *without* an equation number, because the paper
@@ -1491,10 +1501,22 @@ mistakes* would actually read it.
    could be assumed and both had to be measured.
    ⚠️ **(c) Still open.** `octupole_moment` claims a cross-check against ref. 4 eq. 302a
    that no test executes.
-5. **EQ-040 must go through `researcher` before submission.** It cites ref. 5 eq. 4.22 for
-   the e^(2iψ) rotation law — the same equation number EQ-004 cites for the TT projector —
-   while its docstring self-labels the result as established physics. **The e^(2iψ)
-   transformation is the Abstract's central assertion; its citation must be sound.**
+5. ✅ **RESOLVED 2026-08-03 — and the citation was wrong.** EQ-040 cited ref. 5 eq. 4.22 for
+   the e^(2iψ) rotation law. **Ref. 5 eq. 4.22 is the transverse-traceless projector** — the
+   same equation EQ-004 cites, correctly — and the rotation law appears **nowhere in that
+   paper**; it shows the 45° relationship only qualitatively, in its Figure 1, with no
+   equation. Now cited to **Mashhoon & Rahvar<sup>24</sup> eq. 4**, which matches the
+   implementation term for term and is open access. Ref. 17 (MTW) was simultaneously found to
+   be carrying this claim in the claims registry as a **chapter** reference, which this
+   project's own citation rule rejects; it now has the same numbered source. **No physics
+   changed** — e^(2iψ) was never in doubt. What was broken was the provenance of the
+   Abstract's opening assertion, and only reading the source caught it.
+   *Two adjacent findings from the same pass:* ref. 5 eq. 2.22 defines the **scalars**
+   h₊/h_× from TT metric components, not the **basis tensors** the framework attributes to
+   it (EQ-035 re-flagged); and the Ruze precedent question from blocker 4(a) resolved
+   **against** Ruze — the finite-N form is D'Addario<sup>25</sup> eq. 5, whose own eq. 6 is
+   the N → ∞ reduction it attributes to Ruze. EQ-054 stays Category B: D'Addario is a
+   scalar/spin-1 source and supports only the N-dependence skeleton.
 6. **Reference 8** (DART) and any other `[complete]` marker need volume/page verification
    against the published record, not against memory.
 

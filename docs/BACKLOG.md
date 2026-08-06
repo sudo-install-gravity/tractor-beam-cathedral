@@ -313,11 +313,23 @@ unless `allow_trivial=True`.
 
 **T-2.5 · Mass octupole moment · 3 pts · `sonnet-low` · deps T-1.3** ✅
 `src/gwtb/bodies/multipole.py` — `octupole_moment(masses, positions) -> np.ndarray` (3,3,3).
-*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 2` applied to the
-quadrupole of eq. 3 ✅ — **derived**, category B. Both patterns cross-checked against the
-already-validated `quadrupole_second_derivative` + `apply_tt` path; residuals fall as 1/N^2 in
-orbital-phase sampling, confirming exactness. Maggiore dropped (unverifiable equation number).
-*AC:* fully symmetric; traceless on all index pairs to atol 1e-12.
+*Citation:* `Source: Blanchet, Living Rev. Relativ. 17:2 (2014), eq. 123a, Newtonian
+point-mass limit` — **derived**, category B (EQ-044). Verified at source 2026-08-03: eq. 123a
+is Theorem 6's general *post-Newtonian* multipole, so the citation is scoped to its Newtonian
+limit. Cross-checked against eq. 302a's leading term `I_ijk = −νm∆x⟨ijk⟩`.
+*AC:* fully symmetric; traceless on all index pairs to atol 1e-12; reproduces eq. 302a's
+Newtonian term across five mass ratios to rtol 1e-12.
+
+> ⚠️ **Two corrections to this entry, 2026-08-03.** (1) Its *Citation* line previously read
+> "eq. 2 applied to the quadrupole of eq. 3", which disagrees with the implementation's own
+> `Source:` line (eq. 123a) — the backlog and the code cited different equations for the same
+> function. (2) Its verification note ("Both patterns cross-checked … residuals fall as 1/N^2
+> in orbital-phase sampling") was **pasted in from T-5.4's element-pattern task** and describes
+> work that has nothing to do with the octupole. Recorded rather than silently overwritten.
+>
+> **Scope decision, 2026-08-03:** `octupole_moment` has no caller and none is planned. It is
+> retained and marked speculative in its docstring; **no `l = 3` radiative path is to be built
+> to justify it.** Establish the need first.
 
 **T-2.6 · Ledger metric schema · 3 pts · `opus` · deps T-1.8** ✅ 🔒 **freeze**
 `src/gwtb/ledger/gap_report.py` — `@dataclass GapMetric(name, achieved, required, units,

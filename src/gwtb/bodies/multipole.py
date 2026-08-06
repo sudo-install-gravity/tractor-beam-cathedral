@@ -205,6 +205,36 @@ def quadrupole_third_derivative(
 def octupole_moment(masses: ArrayLike, positions: ArrayLike) -> NDArray[np.float64]:
     """Trace-free mass octupole moment ``Q_ijk`` of a system of point masses.
 
+    .. warning::
+       **Deliberately retained, and deliberately unused. Decided 2026-08-03.**
+
+       Nothing in ``src/gwtb/`` calls this, and nothing is planned to: T-2.5 is
+       the only mention of an octupole in the 118-task backlog. It is kept
+       because it is correct, tested, and externally anchored (against Blanchet
+       eq. 302a's Newtonian term), which is banked work in a project meant to
+       outlive its authors — not because a consumer is coming.
+
+       **What it is not.** This is a mass *moment*, not a radiation channel.
+       **The framework has no ``l = 3`` radiative path at all.** Octupole
+       radiation is not ``strain_tt`` with a bigger tensor: it needs the
+       radiative ``l = 3`` formula, its own prefactor, a third time derivative,
+       and an ``l = 3`` projection — none of which exist here. Feeding this
+       into the quadrupole path fails loudly rather than silently
+       (``strain_tt`` raises on a ``(3, 3, 3)`` input; asserted by
+       ``test_octupole_cannot_be_fed_to_the_quadrupole_radiation_path``), but
+       the conceptual trap is worth naming as well as guarding.
+
+       **Why it ended up unused.** Higher multipoles were on the radar for one
+       reason — ``docs/PHYSICS.md`` §3, the breakdown of the long-wavelength
+       expansion once ``R/lambda`` is not small. That question was answered a
+       different way, by the finite-size form factor
+       :func:`finite_size_correction` (EQ-034, ADR-0007), which arrived after
+       this function did. So this is a road not taken, not a missing feature.
+
+       **Before giving it a caller**, establish the need first. Building
+       ``l = 3`` radiation to justify an existing unused function would be
+       reasoning backwards.
+
     The ``l=3`` symmetric trace-free (STF) mass multipole. For a point-mass
     distribution, the STF projection of ``sum_A m_A x_i x_j x_k`` is
 

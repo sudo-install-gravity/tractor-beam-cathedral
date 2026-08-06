@@ -328,6 +328,31 @@ def test_octupole_vanishes_at_equal_mass_because_delta_is_zero() -> None:
     np.testing.assert_allclose(got, np.zeros((3, 3, 3)), atol=1e-9)
 
 
+def test_octupole_cannot_be_fed_to_the_quadrupole_radiation_path() -> None:
+    """The framework has NO ``l = 3`` radiative path, and this pins that.
+
+    ``octupole_moment`` has no caller anywhere in ``src/`` and none is planned
+    (decision recorded 2026-08-03 in its docstring). The risk that creates is
+    not the dead code — it is that the function's *existence* implies a
+    capability the framework does not have. Octupole radiation is not
+    ``strain_tt`` with a bigger tensor: it needs the radiative ``l = 3``
+    formula, its own prefactor, and an ``l = 3`` projection, none of which
+    exist here.
+
+    So the natural wrong move — compute the octupole, hand it to the quadrupole
+    radiation function — must fail loudly. It does, on the shape contract. This
+    test exists so that guard is verified rather than assumed, and so that
+    anyone who later relaxes ``strain_tt``'s validation is told why they must
+    not.
+    """
+    from gwtb.source.quadrupole import strain_tt
+
+    Q = octupole_moment([1.0, 2.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    assert Q.shape == (3, 3, 3)
+    with pytest.raises(ValueError, match=r"shape \(3, 3\)"):
+        strain_tt(Q, 1.0e12, np.array([0.0, 0.0, 1.0]))
+
+
 def test_octupole_moment_rejects_shape_mismatch() -> None:
     with pytest.raises(ValueError):
         octupole_moment([1.0, 2.0, 3.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])

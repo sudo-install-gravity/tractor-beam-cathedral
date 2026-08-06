@@ -894,32 +894,49 @@ algebraic answer to sixteen decimal places.
 
 ### Software architecture
 
-Nine packages under `src/gwtb/`, listed by dependency depth. ⚠️ **The order is not strict:**
-`propagate.retarded` imports `source.quadrupole` while three `source` modules import
-`propagate.tt_projection`, so those two packages form a cycle at package granularity — though
-the *module* graph beneath them is a clean DAG with no circular import. Fig. 1 is generated
-from the import statements rather than from this table, so the two cannot drift apart again.
-Note also that `ledger` is **upstream** of `target` (`target.coupling` imports it), not a final
-reporting stage, and that `viz` imports nothing from `gwtb` at all.
+Nine packages under `src/gwtb/`. **Depth and the `imports` column below are extracted from
+the import statements, not asserted** — as is Fig. 1, so the table and the code cannot drift
+apart. Depth 0 imports no other `gwtb` package; depth *n* imports something at depth *n*−1.
 
-| Layer | Responsibility |
-|---|---|
-| `core` | Physical constants with sources; `StrainScale` scaled-strain representation; ADR-0002 shape/dtype/unit-vector validation guards; array-API backend shim (NumPy / Numba), field-grid kernel, split-phase arithmetic |
-| `bodies` | `Sphere` (mass, inertia, self-quadrupole, oblateness); Love-number elastic deformation; multipole moments and their analytic derivatives; finite-size form factor with an out-of-regime warning |
-| `kinematics` | Finite acceleration profiles (bang-bang, S-curve, quintic, raised-cosine) behind one abstract base; prime-frequency multi-tone drive synthesis; spectral analysis |
-| `source` | Quadrupole strain and luminosity; maneuver waveforms; linear memory; the flagged dipole path; conservation audit and `UNPHYSICAL` stamping |
-| `propagate` | Transverse-traceless projection; per-source retarded evaluation and batched propagation; spin-2 polarization basis, decomposition and rotation |
-| `array` | Element geometry (linear, planar, sparse); grating-lobe bounds; scalar array factor (**explicitly the spin-1 baseline**); spin-2 tensor superposition and mismatch loss; focal phases, focused field, spot size, trade surfaces |
-| `target` | Geodesic deviation; three coupling channels compared side by side; Δv and miss-distance propagation |
-| `ledger` | Frozen `GapMetric` schema, `GapReport`, run manifests, per-epic row builders |
-| `viz` | Beam patterns (polar and 3-D), polarization ellipses, field slices, volumetric export |
+| Depth | Package | Imports | Responsibility |
+|---|---|---|---|
+| 0 | `core` | — | Physical constants with sources; `StrainScale` scaled-strain representation; ADR-0002 shape/dtype/unit-vector validation guards; array-API backend shim (NumPy / Numba), field-grid kernel, split-phase arithmetic |
+| 0 | `viz` | — | Beam patterns (polar and 3-D), polarization ellipses, field slices, volumetric export. **Imports nothing from `gwtb`**: it takes callables and arrays from the caller, which is why it sits beside `core` rather than atop the stack |
+| 1 | `bodies` | `core` | `Sphere` (mass, inertia, self-quadrupole, oblateness); Love-number elastic deformation; multipole moments and their analytic derivatives; finite-size form factor with an out-of-regime warning |
+| 1 | `kinematics` | `core` | Finite acceleration profiles (bang-bang, S-curve, quintic, raised-cosine) behind one abstract base; prime-frequency multi-tone drive synthesis; spectral analysis |
+| 2 | **`source` ⇄ `propagate`** | `bodies`, `core`, `kinematics` | ⚠️ **Mutually dependent — one tier, not two.** `source`: quadrupole strain and luminosity; maneuver waveforms; linear memory; the flagged dipole path; conservation audit and `UNPHYSICAL` stamping. `propagate`: transverse-traceless projection; per-source retarded evaluation and batched propagation; spin-2 polarization basis, decomposition and rotation |
+| 3 | `array` | `core`, `kinematics`, `propagate` | Element geometry (linear, planar, sparse); grating-lobe bounds; scalar array factor (**explicitly the spin-1 baseline**); spin-2 tensor superposition and mismatch loss; focal phases, focused field, spot size, trade surfaces |
+| 3 | `ledger` | `core`, `source` | Frozen `GapMetric` schema, `GapReport`, run manifests, per-epic row builders |
+| 4 | `target` | `core`, `ledger` | Geodesic deviation; three coupling channels compared side by side; Δv and miss-distance propagation |
 
-***Non-expert summary:*** The table above is the floor plan, one row per layer, listing
-what each is responsible for. Note the entry for the `array` layer: it deliberately
-contains **both** the old radio-style calculation and the new gravitational one, with the
-old one explicitly labelled so nobody mistakes it for physics. Keeping a known-good wrong
-answer around on purpose, clearly marked, is how we prove the new answer is a careful
-extension rather than an unchecked replacement.
+⚠️ **The stack is not strictly layered, and this table previously said it was.** Three
+corrections, all found by extracting the graph rather than re-reading the prose:
+
+1. **`source` and `propagate` form a cycle.** `propagate.retarded` imports
+   `source.quadrupole`, while `source.quadrupole`, `source.memory` and
+   `source.multipole_rad` all import `propagate.tt_projection`. They are a single
+   strongly-connected component and are shown here as one tier. **At *module* granularity
+   the graph is a clean DAG with no circular import** — verified separately — so this is a
+   description defect, not a runtime one.
+2. **`ledger` is upstream of `target`, not a final reporting stage.** `target.coupling`
+   imports `ledger.gap_report`. The previous listing placed `ledger` second-to-last,
+   implying results flow into it at the end. They do not.
+3. **`viz` is at depth 0, not the top.** It imports nothing from `gwtb` at all.
+
+***Non-expert summary:*** The floor plan, with an important caveat now attached. We had
+described the software as nine layers stacked cleanly, each resting only on those beneath.
+Reading the code instead of our own description, that is not quite true: two layers — the one
+that generates waves and the one that carries them outward — each use something from the
+other, so neither sits below its neighbour. Nothing malfunctions, and the individual files are
+still properly ordered; it was the tidy summary that was wrong. Two smaller corrections came
+from the same check: the scorecard component is used *earlier* than we said, and the graphics
+component depends on nothing at all. The table is now generated from the code, so it cannot
+quietly drift again.
+
+Note the `array` row: it deliberately contains **both** the old radio-style calculation and
+the new gravitational one, with the old one explicitly labelled so nobody mistakes it for
+physics. Keeping a known-good wrong answer around on purpose, clearly marked, is how we prove
+the new answer is a careful extension rather than an unchecked replacement.
 
 At the time of writing: **7,117 lines of source, 8,801 lines of test, 870 tests** (867
 passing; 3 skipped for optional GPU/rendering dependencies), 53 registered equations,
@@ -1503,7 +1520,7 @@ import each other**, so the layering is not strict — see the note below the di
 
 ```mermaid
 flowchart BT
-    subgraph d0[" depth 0 — imports no other package "]
+    subgraph d0[" depth 0 — imports no other gwtb package "]
         core["<b>core</b><br/>constants · validation · units · backend<br/>EQ-025, 030, 031"]
         viz["<b>viz</b><br/>patterns · slices · volume · export_vtk<br/>no equations, no gwtb imports"]
     end
@@ -1511,15 +1528,15 @@ flowchart BT
         bodies["<b>bodies</b><br/>sphere · multipole · elastic<br/>EQ-001…003, 008…012, 027, 028, 034, 044"]
         kinematics["<b>kinematics</b><br/>profiles · oscillators<br/>EQ-021"]
     end
-    subgraph d2[" depth 2 "]
+    subgraph d2[" depth 2 — ONE tier: these import each other "]
         source["<b>source</b><br/>quadrupole · memory · multipole_rad<br/>+ <b>conservation</b>: the UNPHYSICAL stamp<br/>EQ-005, 006, 022, 026, 041…043"]
+        propagate["<b>propagate</b><br/>tt_projection · retarded · polarization<br/>EQ-004, 020, 024, 035…040"]
     end
     subgraph d3[" depth 3 "]
-        propagate["<b>propagate</b><br/>tt_projection · retarded · polarization<br/>EQ-004, 020, 024, 035…040"]
+        array["<b>array</b><br/>geometry · grating · beamform · focus<br/>EQ-013…019, 029, 032, 033, 046…054"]
         ledger["<b>ledger</b><br/>GapMetric · GapReport · RunManifest<br/>the feasibility gap — no equations"]
     end
     subgraph d4[" depth 4 "]
-        array["<b>array</b><br/>geometry · grating · beamform · focus<br/>EQ-013…019, 029, 032, 033, 046…054"]
         target["<b>target</b><br/>geodesic · coupling · deflection<br/>EQ-023, EQ-045"]
     end
 
@@ -1529,14 +1546,16 @@ flowchart BT
     source --> ledger
     propagate --> array
     ledger --> target
-    source <-.->|"NOT strictly layered<br/>they import each other"| propagate
+    source <-.->|"a cycle:<br/>propagate.retarded imports source.quadrupole,<br/>source imports propagate.tt_projection"| propagate
 
     classDef gov fill:#fff3cd,stroke:#b8860b,stroke-width:2.5px
     classDef base fill:#eef3fa,stroke:#4a7ebb
     classDef lvl fill:#fafafa,stroke:#d0d0d0
+    classDef cyc fill:#fdecea,stroke:#c0392b,stroke-width:2px
     class ledger,source gov
     class core,viz base
-    class d0,d1,d2,d3,d4 lvl
+    class d0,d1,d3,d4 lvl
+    class d2 cyc
 ```
 
 *Edges from `core` are omitted: **every** package except `viz` imports it, and drawing all

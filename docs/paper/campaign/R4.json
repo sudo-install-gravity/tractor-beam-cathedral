@@ -1,0 +1,48 @@
+{
+  "question": "Does incommensurate driving give peak N*A against a random-phase background, with peak/background scaling as sqrt(N)?",
+  "falsifier": "ratio not scaling as sqrt(N); or peak failing to reach N*A at broadside",
+  "traps_honoured": {
+    "trap1_D_over_lambda_gt_1": {
+      "16": 17.68990752562263,
+      "64": 41.27645089311947,
+      "100": 53.06972257686789
+    },
+    "trap1_any_sub_wavelength": [],
+    "trap4_background_reference": "sqrt(N*pi)/2, not sqrt(N) -- both reported per N",
+    "drive_frequency_Hz": 1000000.0
+  },
+  "per_N": {
+    "16": {
+      "D_over_lambda": 17.68990752562263,
+      "peak": 16.0,
+      "background_mean": 3.5762175748544722,
+      "peak_to_background": 4.474000718664633,
+      "sqrt_N": 4.0,
+      "rayleigh_sqrt_N_pi_over_2": 3.5449077018110318
+    },
+    "64": {
+      "D_over_lambda": 41.27645089311947,
+      "peak": 64.0,
+      "background_mean": 7.107233050236348,
+      "peak_to_background": 9.004910848937437,
+      "sqrt_N": 8.0,
+      "rayleigh_sqrt_N_pi_over_2": 7.0898154036220635
+    },
+    "100": {
+      "D_over_lambda": 53.06972257686789,
+      "peak": 100.0,
+      "background_mean": 9.143586136383954,
+      "peak_to_background": 10.936627982546392,
+      "sqrt_N": 10.0,
+      "rayleigh_sqrt_N_pi_over_2": 8.86226925452758
+    }
+  },
+  "log_log_slope_vs_sqrtN": 0.9834960828395602,
+  "ratio_vs_naive_sqrtN_max_rel_dev": 0.12561385611717957,
+  "ratio_vs_rayleigh_prediction_max_rel_dev": 0.03076658082073121,
+  "rayleigh_prediction_note": "peak/background = N/(sqrt(N*pi)/2) = 2 sqrt(N)/sqrt(pi) = 1.128 sqrt(N). The measured ratio sits ABOVE the naive sqrt(N) line for exactly this reason -- ADR-0006 trap 4.",
+  "figures": [
+    "fig6_focus.png"
+  ],
+  "verdict": "CONFIRMED"
+}

@@ -1,0 +1,30 @@
+{
+  "question": "Under what conditions do radius and density stop being degenerate with M?",
+  "falsifier": "ANY radius dependence in the rigid model -- it must sit at the numerical floor; a leaked R-dependent term as small as 1e-14 trips it",
+  "fixed_mass_kg": 1000000000000000.0,
+  "radii_m": [
+    10.0,
+    17.78279410038923,
+    31.622776601683793,
+    56.23413251903491,
+    100.0,
+    177.82794100389228,
+    316.22776601683796,
+    562.341325190349,
+    1000.0
+  ],
+  "rigid_max_abs": 0.0,
+  "elastic_variation_factor": {
+    "steel": 211600.37024119284,
+    "tungsten": 104274.90291917937,
+    "osmium": 75650.48369288565
+  },
+  "finite_size_departure_at_1kHz": {
+    "min": 2.241105301337143e-09,
+    "max": 2.241105283695699e-05
+  },
+  "figures": [
+    "fig5_degeneracy.png"
+  ],
+  "verdict": "CONFIRMED"
+}

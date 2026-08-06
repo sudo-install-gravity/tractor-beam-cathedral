@@ -1,0 +1,99 @@
+{
+  "question": "What is the magnitude of each barrier, and in what order must they be attacked?",
+  "falsifier": "ANY wall that disappears -- under rule 5 a vanishing wall means the change is presumed defective until proven otherwise",
+  "ledger_rows": [
+    {
+      "name": "aperture",
+      "achieved": 41.27645089311947,
+      "required": 5983914828.0,
+      "units": "D/lambda",
+      "gap_decades": 8.161283055447266,
+      "source_module": "gwtb.array.focus",
+      "provenance": null,
+      "meets_requirement": false
+    },
+    {
+      "name": "emission magnitude",
+      "achieved": 7.5e-20,
+      "required": 13299789629.122622,
+      "units": "W",
+      "gap_decades": 29.24878350812924,
+      "source_module": "gwtb.source.quadrupole",
+      "provenance": null,
+      "meets_requirement": false
+    },
+    {
+      "name": "impulse",
+      "achieved": 7.894861717968903e-20,
+      "required": 14000000000.0,
+      "units": "N s",
+      "gap_decades": 29.24878350812924,
+      "source_module": "gwtb.target.deflection",
+      "provenance": null,
+      "meets_requirement": false
+    },
+    {
+      "name": "body quadrupole",
+      "achieved": 210491.1185305047,
+      "required": 1e+30,
+      "units": "kg m^2",
+      "gap_decades": 24.676766224078037,
+      "source_module": "gwtb.bodies.elastic",
+      "provenance": null,
+      "meets_requirement": false
+    }
+  ],
+  "emission_across_scoping_set": {
+    "10 t rod, 10 m, 1 kHz": {
+      "luminosity_W": 7.5e-20,
+      "gap_decades": 29.24878350812924,
+      "impulse_gap_decades": 29.24878350812924
+    },
+    "1e9 kg, 1 km, 1 kHz": {
+      "luminosity_W": 0.075,
+      "gap_decades": 11.248783508129238,
+      "impulse_gap_decades": 11.248783508129238
+    },
+    "1e9 kg, 1 km, 1 MHz": {
+      "luminosity_W": 7.5e+16,
+      "gap_decades": -6.751216491870762,
+      "impulse_gap_decades": -6.751216491870762
+    }
+  },
+  "emission_headline_config": "10 t rod, 10 m, 1 kHz",
+  "emission_gap_range_decades": [
+    -6.751216491870762,
+    29.24878350812924
+  ],
+  "diffraction_restated": {
+    "spot_size_achievable_m_at_1MHz": 149174944588.21616,
+    "target_spot_m": 1000.0,
+    "aperture_required_m": {
+      "1 Hz": 1.8459457607754644e+18,
+      "1 kHz": 1845945760775464.8,
+      "1 MHz": 1845945760775.4646
+    },
+    "aperture_required_AU": {
+      "1 Hz": 12339385.260885699,
+      "1 kHz": 12339.3852608857,
+      "1 MHz": 12.339385260885699
+    }
+  },
+  "walls_that_vanished": [
+    "emission (1e9 kg, 1 km, 1 MHz)"
+  ],
+  "investigation": {
+    "finding": "The emission gap goes NEGATIVE (-6.75 decades) for the 1e9 kg / 1 km / 1 MHz configuration: radiated momentum flux P/c ~ 2.5e8 N against a ~43 N requirement.",
+    "is_this_a_defect": "No -- it is PHYSICS.md section 8's own tabulated value, and it is what the omega^6 scaling means: ~36 decades between 1 Hz and 1 MHz operation. The emission row is simply not the binding constraint at high frequency.",
+    "why_it_does_not_imply_feasibility": [
+      "COUPLING still binds, and it is the wall that kills this: radiated momentum flux is not delivered force. The asteroid must ABSORB the wave, and R6 measures that channel 32 decades short.",
+      "DIFFRACTION still binds at 8.16 decades -- the flux cannot be put on a 1 km target at 40 AU.",
+      "The TRANSDUCER problem is out of scope by charter (conjecture C-1): nothing can make a 1e9 kg, 1 km body oscillate at 1 MHz."
+    ],
+    "consequence_for_the_manuscript": "Report the emission gap as a RANGE over the scoping set, never as a single number, and never quote the 1 MHz row without the three caveats above."
+  },
+  "figures": [
+    "fig7_walls.png"
+  ],
+  "verdict": "CONFIRMED WITH FLAGGED FINDING"
+}

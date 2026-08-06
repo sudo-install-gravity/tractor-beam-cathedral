@@ -1,0 +1,27 @@
+{
+  "git_sha": "657b7f1073c437951e7a0ab14a6adb57b21b58b3",
+  "package_version": "0.1.0",
+  "parameters": {
+    "array": "8x8 planar, 1250.0 m spacing",
+    "campaigns": [
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+    ],
+    "frequency_Hz": 1000000.0,
+    "range_m": 5983914828000.0,
+    "verdicts": {
+      "R2": "CONFIRMED",
+      "R3": "CONFIRMED",
+      "R4": "CONFIRMED",
+      "R5": "CONFIRMED WITH FLAGGED FINDING",
+      "R6": "CONFIRMED"
+    },
+    "wavelength_m": 299.792458
+  },
+  "seeds": {
+    "campaign": 20260803
+  }
+}

@@ -13,13 +13,15 @@ Methods unlimited; ≤ 50 references; ≤ 6 display items in the main text; Exte
 > manuscript claims — but the disagreement is a bug worth chasing, because it usually
 > means the paragraph is unclear rather than that the summary is wrong.
 
-> **Status of this draft.** The Main, Discussion and Methods are written. **The Results
-> section is a pre-registered stub** (§Results below): every subsection states the
-> quantity to be reported, the run that produces it, the tolerance that would falsify
-> it, and the display item it lands in — but no numbers from campaign runs are entered
-> yet. Numbers that appear anywhere in this draft are **already-committed test and
-> benchmark outputs** from the repository, not campaign results, and each is traceable
-> to a named test. See §"Numbers in this draft" for the distinction and the audit rule.
+> **Status of this draft.** Main, Discussion, Methods **and Results** are written. The
+> Results section was drafted as a pre-registration and the campaign has since been run
+> (2026-08-03); its questions and falsifiers are unchanged from before the run. Five
+> figures and both data tables are populated from `docs/paper/campaign/`. Numbers here are
+> either committed test/benchmark outputs or campaign outputs, and each is traceable to a
+> named test or a campaign JSON — see §"Numbers in this draft".
+>
+> **Outstanding:** figures are draft-quality and are the author's to refine; the repository
+> is not yet public; and there is no author list or `CITATION.cff`. See §Submission notes.
 
 ***Non-expert summary:*** This paper is half-written on purpose. The parts explaining
 *what we built* and *how it works* are done. The part reporting *what we found when we
@@ -371,22 +373,33 @@ we chose to write up the near-miss rather than quietly patch it and look compete
 
 ## Results
 
-> ### ⚠ STUB — pre-registered structure, no campaign numbers entered
+> ### ✅ Campaign run 2026-08-03 — pre-registration honoured
 >
-> This section is deliberately written **before** the parameter-space campaign is run,
-> in the pre-registration style, so that the analysis plan cannot be adjusted after
-> seeing the outcome. Each subsection below states:
+> This section was written **before** the parameter-space campaign was run, in the
+> pre-registration style, so that the analysis plan could not be adjusted after seeing
+> the outcome. **It has now been run and the questions, runs and falsifiers below are
+> exactly as they stood beforehand** — only the `Status` paragraphs were added.
+>
+> Verdicts: **R1 partially available · R2 CONFIRMED · R3 CONFIRMED · R4 CONFIRMED ·
+> R5 CONFIRMED WITH A FLAGGED FINDING · R6 CONFIRMED · R7 available.**
+>
+> Reproduce with `python tools/run_campaign.py`; outputs, figures and the run manifest
+> are in `docs/paper/campaign/`. The runner evaluates each falsifier itself and returns a
+> verdict, so a campaign that failed would say so rather than requiring interpretation.
+>
+> Each subsection states:
 >
 > - **Q** — the question,
 > - **Run** — the exact entry point and configuration that answers it,
 > - **Report** — the quantity and display item,
 > - **Falsifier** — the outcome that would contradict the framework's stated claim, and
-> - **Status** — `AWAITING RUN`.
+> - **Status** — the verdict, added only after the run.
 >
-> **Filling rule.** A subsection may only be completed from a committed run whose
-> manifest hash appears in the Source Data. Any number entered here must be
-> reproducible by `pytest` or by a committed script in `scratchpad/`. Prose may not be
-> written before the number it describes.
+> **Filling rule, as applied.** A subsection may only be completed from a committed run
+> whose manifest appears in the Source Data. Every number below is reproducible by
+> `python tools/run_campaign.py` and traceable to a `campaign/R<n>.json`. Prose was
+> written only after the number it describes existed — including, in R5, a result we
+> would not have chosen.
 
 ***Non-expert summary:*** This whole section is an empty form, filled in ahead of time on
 purpose. For each experiment we've written down the question, exactly which command
@@ -445,14 +458,30 @@ overplotted); Fig. 4 (gain fraction vs. σ against exp(−4σ²) and exp(−σ²
 90° cancellation failing to be complete; or the measured tolerance curve agreeing better
 with exp(−σ²) than exp(−4σ²).
 
-**Status.** `AWAITING RUN`. The two-element case is already committed (Table 1) and
-agrees exactly; the N-element generalization is the new content.
+**Status.** ✅ **CONFIRMED** (`campaign/R2.json`; Fig. 3, Fig. 4).
 
-***Non-expert summary:*** We proved the new rotation rules using just two emitters. Do
-they still hold with sixteen, a hundred, a thousand? That's this experiment. We've stated
-in advance exactly what would prove us wrong: if the 90° pair fails to cancel completely,
-or if the alignment-tolerance curve turns out to match the ordinary radio formula better
-than our gravitational one, then our central claim is broken and we say so.
+The mismatch law is not merely reproduced at N elements — it is **exact and
+N-independent**. For an array split evenly between two orientations, gain/N² follows
+cos²(Δψ) with a maximum absolute deviation of **4.5 × 10⁻¹⁴** across
+N ∈ {2, 16, 64, 100, 1000}; the residual grows only mildly with N, consistent with
+floating-point accumulation and nothing else (Fig. 3, lower panel). **The 90° cancellation
+is complete at every N**, measured at 3.75 × 10⁻³³ — machine zero — where spin-1 reasoning
+predicts 0.5. The two-element result of Table 1 is therefore not a special case; it is the
+law.
+
+The alignment tolerance is equally decisive. Against the finite-N form
+exp(−4σ²) + (1 − exp(−4σ²))/N, the worst deviation over σ ∈ [0°, 20°] at N = 200 is
+**1.3 × 10⁻³**; against the spin-1 law exp(−σ²) it is **2.7 × 10⁻¹**. The spin-2 law fits
+**201× better**, and the discrimination is visible by eye (Fig. 4). σ ≤ 2.87° for 1% loss
+stands.
+
+***Non-expert summary:*** We had proved the new rotation rules using only two emitters.
+They hold for sixteen, a hundred, a thousand — and better than we expected: the law turns
+out not to depend on the number of emitters at all. The 90° cancellation is exact at every
+size, giving zero to thirty-three decimal places where radio theory promises half the
+power. And when we compare our gravitational alignment formula against the radio one
+across real data, ours fits **two hundred times better**. This is the paper's central
+claim, and it survived every way we set out in advance to break it.
 
 ### R3 — Body-parameter sensitivity and the degeneracy-breaking mechanisms
 
@@ -470,19 +499,28 @@ per model. Extended Data Table 2: measured degeneracy-breaking factor per mechan
 radiated amplitude must sit at the numerical floor, and a leaked R-dependent term as
 small as 10⁻¹⁴ is designed to trip the floor check.
 
-**Status.** `AWAITING RUN` for the campaign sweep; the committed unit-scale study
-already shows rigid-model radiation at a measured floor of 10⁻¹⁵ against elastic-model
-variation of ~7.6 × 10⁴ – 1.0 × 10⁵ ×, which the campaign should extend rather than
-merely repeat.
+**Status.** ✅ **CONFIRMED** (`campaign/R3.json`; Fig. 5).
 
-***Non-expert summary:*** If you're building emitters, you'd like to know whether it
+Nine radii spanning exactly two decades (10 m – 1 km) at fixed M = 10¹⁵ kg. **The rigid
+model is not merely at a floor — it is identically 0.0 at every radius**, so the falsifier
+could not have been closer to firing and did not. The elastic model varies by
+**7.6 × 10⁴ ×** (osmium), **1.0 × 10⁵ ×** (tungsten) and **2.1 × 10⁵ ×** (steel) across
+the same sweep — five orders of magnitude of dependence on a parameter the rigid model
+says is irrelevant. The finite-size mechanism, which is geometric and cannot depend on
+density, contributes a departure from unity of 2.2 × 10⁻⁹ to 2.2 × 10⁻⁵ over the same
+range at 1 kHz.
+
+Because the rigid result is an exact null rather than a small number, Fig. 5 plots it on a
+**linear** axis: a clamped line on the logarithmic panel would have been an invented
+y-value reading as a measurement.
+
+***Non-expert summary:*** If you're building emitters, you'd want to know whether it
 matters that your masses are big and light versus small and dense. For a perfectly rigid
-ball the surprising answer is **no** — only the total weight matters, and size and density
-cancel out entirely. But real objects aren't perfectly rigid: they flex. Once you allow
-flexing, size and density matter enormously — we measure a difference of up to about
-100,000× across steel, tungsten and osmium. This experiment maps that out, and includes a
-trap for ourselves: if the *rigid* model ever shows any size dependence at all, even at
-the fourteenth decimal place, something has leaked and the code is wrong.
+ball the answer is a clean **no** — only total weight matters, and our measurement of that
+is not "very small" but *exactly zero*, at all nine sizes. Real objects flex, though, and
+once you allow flexing, size and density matter enormously: up to 210,000× across the
+sweep, differing by material. So the choice of what your emitter is made of stops being
+cosmetic and becomes one of the few levers that actually exists.
 
 ### R4 — Spatiotemporal focusing with incommensurate drive frequencies
 
@@ -498,28 +536,44 @@ background estimated over randomized phase realizations.
 **Falsifier.** Ratio not scaling as √N; or the peak failing to reach N·A at broadside to
 rtol 10⁻⁶.
 
-**Status.** `AWAITING RUN`. **Four traps must be honoured in the analysis and stated in
-the caption**, each of which produces a test that passes while asserting nothing:
+**Status.** ✅ **CONFIRMED** (`campaign/R4.json`; Fig. 6).
+
+Run at 1 MHz, where the reference aperture spans D/λ = 17.7, 41.3 and 53.1 for
+N = 16, 64, 100 — **every configuration super-wavelength**, so trap (i) is honoured by
+construction and recorded in the output rather than asserted. Peak-to-background measures
+4.47, 9.01 and 10.94, a log–log slope against √N of **0.983**.
+
+The most informative result is the residual. Against a naive √N the measured ratios sit
+uniformly **12.6% high**; against the Rayleigh-corrected prediction
+N/(√(Nπ)/2) = 2√N/√π = 1.128√N they agree to **3.1%**. ADR-0006 had warned in advance that
+"an implementer chasing the 12% discrepancy would be chasing correct behaviour" — the
+campaign reproduces that 12% independently, and it is the signature of trap (iv) rather
+than a defect. Fig. 6 plots both reference lines so the distinction is visible, not
+merely footnoted.
+
+**Four traps must be honoured in the analysis and stated in the caption**, each of which
+produces a measurement that looks successful while asserting nothing:
 (i) at the project's nominal 1 kHz drive the 12.4 km reference aperture spans D/λ = 0.041
 — it is a point source, not an array, and *every* weighting including uniform w = 1
 returns exactly N, so any measurement at that frequency is vacuous; (ii) the sign
 convention exp(+iφ) is undetermined within a few beamwidths of broadside and must be
 pinned tens of beamwidths off-axis; (iii) peak gain is N only near broadside, falling to
 ≈ 45 at 50 beamwidths for N = 64; (iv) the random-phase background mean is the Rayleigh
-value √(Nπ)/2 ≈ 0.886√N, **not** √N, so an implementer chasing the 12% discrepancy would
-be chasing correct behaviour.
+value √(Nπ)/2 ≈ 0.886√N, **not** √N.
 
-***Non-expert summary:*** A trick borrowed from lasers: if you drive many emitters at
-frequencies that never quite line up with one another (using prime numbers, so their
-rhythms take an extremely long time to repeat), all the waves coincide at exactly **one
-point in space and time** and nowhere else — a brief, sharp spike instead of a spread-out
-beam. This experiment tests whether that works here. The important part is the four
-warnings: each describes a way of running this test that would *appear* to succeed while
-actually measuring nothing. The nastiest is the first — at the frequency we'd naturally
-pick, our array is smaller than a single wavelength, which makes it behave like one single
-emitter rather than an array. In that situation the test passes perfectly even if you
-delete the entire focusing calculation. We found these by measuring, and we're publishing
-them because they're the traps most likely to catch the next person.
+***Non-expert summary:*** A trick borrowed from lasers: drive many emitters at frequencies
+that never quite line up (prime numbers, so their rhythms take an extraordinarily long
+time to repeat), and all the waves coincide at exactly **one point in space and time** —
+a brief sharp spike instead of a spread-out beam. It works: the spike stands out from the
+background by a factor that grows as the square root of the number of emitters, as
+predicted.
+
+The most instructive part is a discrepancy we'd warned ourselves about in advance. Our
+measurements came out 12.6% higher than the simple prediction — the kind of gap that
+tempts you to go hunting for a bug. There is no bug. The simple prediction uses the wrong
+formula for the background noise level, and once you use the right one the agreement is
+3.1%. We'd written that warning down before running anything, and then reproduced the
+exact number we'd warned about, which is a satisfying way to be right about being wrong.
 
 ### R5 — The walls, quantified
 
@@ -536,15 +590,66 @@ gap in decades, source module, provenance. Fig. 7: gap in decades per wall, sort
 finding, not a bug; if a code change makes one vanish, the change is presumed defective
 until proven otherwise, and the burden of proof is on the change.
 
-**Status.** `AWAITING RUN`. The three walls to be reported are diffraction (a 1 km spot
-at 40 AU requires an aperture of ~6 × 10⁹ wavelengths **at any frequency** — raising
-frequency does not relax the ratio, it shrinks the physical size that ratio corresponds
-to, from ~1.2 × 10⁷ AU at 1 Hz to ~12 AU at 1 MHz); coupling (a gravitational wave
-produces tidal strain, not net force, and momentum transfer requires absorption against
-a negligible cross-section); and magnitude (radiated power scales as ω⁶, making
-frequency the dominant lever by ~10³⁶ between 1 Hz and 1 MHz operation, against a
-requirement of ~1.4 × 10¹⁰ N·s to impart 0.01 m s⁻¹ to a 1 km asteroid — for scale, the
-DART impactor delivered ~1.2 × 10⁷ N·s<sup>8</sup>).
+**Status.** ⚠️ **CONFIRMED, WITH A FLAGGED FINDING** (`campaign/R5.json`; Table 2, Fig. 7).
+
+**No wall vanished at the reported configuration**, and the diffraction requirement
+reproduces the framework's independent scoping figures exactly: an aperture of
+1.23 × 10⁷ AU at 1 Hz, 1.23 × 10⁴ AU at 1 kHz, and **12.3 AU at 1 MHz**, matching
+Methods' 6 × 10⁹ wavelengths at any frequency. Against that, the 12.4 km reference
+aperture achieves D/λ = 41.3, a shortfall of **8.16 decades**, and the smallest spot it
+can place at 40 AU is 1.5 × 10¹¹ m against a 1 km target.
+
+**The finding, which the pre-registered falsifier caught and which we report rather than
+suppress: the emission wall does not bind everywhere.** Reporting the gap *across the
+scoping configuration set*, as pre-registered, rather than for a single configuration:
+
+| Source configuration | Radiated power | Emission gap |
+|---|---|---|
+| 10 t rod, 10 m, 1 kHz | 7.5 × 10⁻²⁰ W | **+29.25 decades** |
+| 10⁹ kg, 1 km, 1 kHz | 7.5 × 10⁻² W | +11.25 decades |
+| 10⁹ kg, 1 km, 1 MHz | 7.5 × 10¹⁶ W | **−6.75 decades** |
+
+At 1 MHz the radiated momentum flux (~2.5 × 10⁸ N) **exceeds** the ~43 N requirement by
+nearly seven orders of magnitude. That is not a defect: it is what the ω⁶ scaling means,
+and it is PHYSICS.md's own tabulated value. **It does not imply feasibility, for three
+reasons that Fig. 7 states on its face.** (i) Coupling still binds — and binds hardest:
+evaluated *at that same best-case source*, the absorption channel is short by **14.0
+decades**, because radiated momentum flux is not delivered force (R6). (ii) Diffraction
+still binds at 8.16 decades; the flux cannot be put on the target. (iii) The transducer
+problem is out of scope by charter (conjecture C-1) — nothing can make a 10⁹ kg, 1 km body
+oscillate at 1 MHz, and its absence from Fig. 7 is a scope statement, not a zero.
+
+**A documentation correction follows from this.** README.md and Methods both state that
+"roughly 40 orders of magnitude" separate plausible engineered sources from
+deflection-relevant power. The ledger does not reproduce that figure: the worst case over
+the scoping set is **29.25 decades**, and the range is −6.75 to +29.25. The qualitative
+claim — that the gap is enormous and that frequency is the dominant lever — is unaffected;
+the specific number was overstated by roughly eleven orders of magnitude and has been
+corrected. This is the fifth stated-precision defect this project has found in its own
+records, and the first found by the ledger rather than by reading a source.
+
+***Non-expert summary:*** This is the section that says how badly the idea fails, in
+detail, on purpose — and it produced the campaign's one genuine surprise.
+
+Three walls stand in the way. **Focus:** to concentrate a beam onto a 1 km target at
+Pluto's distance your transmitter must be about twelve *astronomical units* across even at
+the most favourable frequency — roughly the orbit of Saturn. **Grip:** a gravitational wave
+stretches and squeezes things rather than pushing them, so the asteroid would have to
+absorb the wave, and it barely absorbs any. **Strength:** raw radiated power.
+
+The surprise is that the third wall *can* be beaten. At high enough frequency the physics
+says you would radiate ten million times more oomph than the job needs. We had pre-committed
+to reporting any wall that disappeared, so we report it — and then say plainly why it
+changes nothing. Beating the power wall while still failing the grip wall by fourteen
+orders of magnitude and the focus wall by eight is like building a searchlight bright
+enough to be seen from another galaxy and then discovering it cannot be aimed and that
+nothing at the far end absorbs light. Also: nobody has any idea how to make a billion-kilo,
+kilometre-wide object vibrate a million times a second, and we explicitly do not claim to.
+
+One honest correction fell out of this. Our own README said the shortfall was "roughly 40
+orders of magnitude." The actual measured worst case is about 29. Still absurd, but we had
+been overstating our own hopelessness by eleven orders of magnitude, and the number is now
+what the ledger says rather than what we remembered.
 
 ***Non-expert summary:*** This is the section that says how badly the idea fails, on
 purpose and in detail. Three walls stand in the way. **Focus:** to concentrate the beam
@@ -573,15 +678,32 @@ near-zone gravitational gradient (the gravity-tractor mechanism<sup>9,10</sup>).
 configuration would contradict the framework's stated expectation and must be
 investigated as a defect before being reported as a result.
 
-**Status.** `AWAITING RUN`.
+**Status.** ✅ **CONFIRMED** (`campaign/R6.json`; Table 3).
 
-***Non-expert summary:*** There's already a respectable, boring way to nudge an asteroid
+The three channels, same configuration, same units. The **near-zone gravity tractor
+delivers 3.32 N** against the ~43 N requirement — short by **1.11 decades**. Radiative
+absorption delivers **4.4 × 10⁻³¹ N**, short by **32.0 decades**, and the tidal channel
+produces a strain rather than a force at all, short by 31.6 decades on its own terms.
+
+**The ratio is the result: radiative coupling is 1.3 × 10⁻³¹ of the near-zone channel.**
+The falsifier — radiative exceeding near-zone anywhere — did not fire, and it was never
+close. A 2005-vintage spacecraft parked next to the rock, using nothing but Newtonian
+attraction, outperforms the entire radiative apparatus by thirty-one orders of magnitude
+and sits within a factor of thirteen of actually working.
+
+***Non-expert summary:*** There is already a respectable, boring way to nudge an asteroid
 with gravity: park a heavy spacecraft next to it and let ordinary gravitational attraction
-tow it, very slowly. That's the "gravity tractor," and it's the benchmark any exotic
-proposal has to beat. Here we put all three options side by side in the same units and let
-the reader compare. Note the built-in scepticism: if our fancy wave-based method ever
-*beats* the boring one, we treat that as a probable bug to investigate before we'd treat
-it as a discovery.
+tow it, very slowly. That's the "gravity tractor," and it is the benchmark any exotic
+proposal must beat.
+
+It is not close. The boring option delivers about 3 newtons — roughly the weight of a bag
+of sugar — against a requirement of 43, so it is short by a factor of thirteen and is
+essentially an engineering problem. Our radiative method is short by a factor of a hundred
+million trillion trillion. Stated the other way round: **the dull spacecraft beats the
+gravitational-wave apparatus by thirty-one orders of magnitude.**
+
+We include this comparison precisely because it is unflattering. A framework that reported
+only its own channel would look far more promising and would be worthless.
 
 ### R7 — Numerical-regime findings
 
@@ -1318,32 +1440,53 @@ theory promises double. At 180° the roles reverse — gravity is back to full s
 radio theory says zero. Anyone designing such an array using antenna intuition would build
 something that emits nothing and have no idea why.
 
-### Table 2 | Feasibility ledger — **STUB, awaiting R5**
+### Table 2 | Feasibility ledger
 
-| Wall | Achieved | Required | Units | Gap (decades) | Source module | Provenance |
-|---|---|---|---|---|---|---|
-| Diffraction (aperture) | *TBD* | *TBD* | wavelengths | *TBD* | `array.focus` | |
-| Coupling (impulse) | *TBD* | *TBD* | N·s | *TBD* | `target.coupling` | |
-| Magnitude (emission) | *TBD* | *TBD* | W | *TBD* | `source.quadrupole` | |
-| Body quadrupole | *TBD* | *TBD* | kg·m² | *TBD* | `bodies.multipole` | |
+Emitted by `ledger.GapReport` on the R5 campaign run; manifest in
+`campaign/manifest.json`. The emission and impulse rows carry the **worst** case over the
+scoping set, not the most favourable — see the range beneath.
 
-***Non-expert summary:*** The scorecard, currently blank pending the experiments. When
-filled in, each row will read: here's what we achieve, here's what's required, and here's
-the shortfall expressed in powers of ten. The final column records where each number came
-from, so no figure can appear without a traceable origin.
+| Wall | Achieved | Required | Units | Gap (decades) | Source module |
+|---|---|---|---|---|---|
+| Aperture (diffraction) | 4.13 × 10¹ | 5.98 × 10⁹ | D/λ | **8.16** | `array.focus` |
+| Coupling (absorption, best-case source) | 4.37 × 10⁻³¹ | 4.30 × 10¹ | N | **14.0** | `target.coupling` |
+| Body quadrupole | 2.11 × 10⁵ | 1.00 × 10³⁰ | kg·m² | **24.68** | `bodies.multipole` |
+| Emission magnitude | 7.50 × 10⁻²⁰ | 1.33 × 10¹⁰ | W | **29.25** | `source.quadrupole` |
+| Impulse | 7.90 × 10⁻² | 1.40 × 10¹⁰ | N·s | **29.25** | `target.deflection` |
 
-### Table 3 | Coupling channels compared — **STUB, awaiting R6**
+*Emission gap across the scoping set: **−6.75 to +29.25 decades**. The negative value is
+the 10⁹ kg / 1 km / 1 MHz configuration, where this wall does not bind; see R5. Quoting a
+single emission number in either direction would misrepresent the result.*
 
-| Channel | Mechanism | Magnitude | Units | Notes |
+***Non-expert summary:*** The scorecard. Each row reads: here is what we achieve, here is
+what is needed, and here is the shortfall in powers of ten. Two things to notice. The
+worst row is not the one about raw power — it is the body-quadrupole row, meaning the
+difficulty of making a lump of matter change shape hard enough. And the emission row is
+given as a *range*, because at one extreme configuration it is not a shortfall at all.
+Reporting only the flattering end, or only the damning end, would both have been
+dishonest.
+
+### Table 3 | Coupling channels compared
+
+Emitted by `target.compare_channels` on the R6 campaign run. Same configuration, same
+units, one row per channel.
+
+| Channel | Mechanism | Magnitude | Units | Gap (decades) |
 |---|---|---|---|---|
-| Tidal strain | Geodesic deviation | *TBD* | — | The honest headline number |
-| Absorption thrust | Momentum flux × cross-section | *TBD* | N | Expected negligible; reported anyway |
-| Near-zone gradient | Gravity tractor (refs 9,10) | *TBD* | N | The benchmark any proposal must beat |
+| **Near-zone gradient** | Gravity tractor (refs 9,10) | **3.32** | N | **1.11** |
+| Absorption thrust | Momentum flux × cross-section | 4.37 × 10⁻³¹ | N | 32.0 |
+| Tidal strain | Geodesic deviation | 2.50 × 10⁻³⁸ | — (strain) | 31.6 |
 
-***Non-expert summary:*** Three ways gravity could move an asteroid, to be compared
-side by side once measured. Note the middle row: we expect it to be so small as to be
-irrelevant, and we're reporting it **anyway**, because silently omitting the unflattering
-option is how honest comparisons turn into sales pitches.
+*Radiative coupling is **1.3 × 10⁻³¹** of the near-zone channel. The pre-registered
+falsifier — radiative exceeding near-zone at any configuration — did not fire, and was
+never close.*
+
+***Non-expert summary:*** Three ways gravity could move an asteroid, measured side by
+side. The result is not close and not flattering to this project: the boring option — park
+a heavy spacecraft nearby and let plain gravity pull — is within a factor of thirteen of
+working, while the exotic wave-based option is short by a factor with thirty-one zeros
+after it. We report the middle and bottom rows anyway, because quietly omitting the
+unflattering comparison is exactly how an honest analysis turns into a sales pitch.
 
 ### Figure legends
 
@@ -1355,24 +1498,39 @@ annotated with the equation IDs each layer implements. *To be drawn.*
 ledger, the errata file and the unphysicality stamp interlock, and which failure mode each
 was added in response to. *To be drawn.*
 
-**Fig. 3 | Element mismatch is cos(2Δψ), not cos(Δψ).** Measured array gain versus relative
-element orientation, with the spin-1 prediction overplotted; the complete cancellation at
-90° annotated. *Awaiting R2.*
+**Fig. 3 | Element mismatch is a function of 2Δψ, at every N.** Array gain/N² versus relative
+element orientation for N = 2–1000 (markers), against the spin-2 prediction cos²Δψ (solid) and
+the spin-1 prediction cos²(Δψ/2) (dotted). Lower panel: residual against cos²Δψ, worst
+4.5 × 10⁻¹⁴, confirming the law is exact and N-independent. The 90° cancellation is complete
+at every N (3.75 × 10⁻³³) where spin-1 reasoning predicts 0.5. Source: `campaign/R2.json`.
 
-**Fig. 4 | Spin-2 alignment tolerance is exactly twice as tight.** Gain fraction versus
-orientation jitter σ, against exp(−4σ²) and exp(−σ²); the 1% loss points at 2.87° and 5.73°
-marked. *Awaiting R2.*
+**Fig. 4 | Spin-2 alignment tolerance is exactly twice as tight.** Measured gain fraction
+versus orientation jitter σ (N = 200, 400 realizations, ±5 s.e.), against the spin-2 law with
+its finite-N bias, the spin-2 limit exp(−4σ²), and the spin-1 law exp(−σ²). The spin-2 form
+fits 201× better (1.3 × 10⁻³ versus 2.7 × 10⁻¹ worst deviation). 1% loss at σ = 2.87°.
+Source: `campaign/R2.json`.
 
-**Fig. 5 | Degeneracy breaking.** Radiated quadrupole amplitude versus radius at fixed mass
-for the rigid, elastic and finite-size models. The rigid trace should lie on the numerical
-floor. *Awaiting R3.*
+**Fig. 5 | Degeneracy breaking: only the rigid model is flat.** Quadrupole signature versus
+radius at fixed M = 10¹⁵ kg over two decades. Upper panel (log): elastic response for three
+materials, varying by 7.6 × 10⁴ – 2.1 × 10⁵ ×, and the geometric finite-size departure.
+Lower panel (**linear**): the rigid model, identically 0.0 at all nine radii. The rigid result
+is plotted linearly because zero is not representable on a logarithmic axis and a clamped line
+would read as a measurement rather than an exact null. Source: `campaign/R3.json`.
 
-**Fig. 6 | Mode-locked spatiotemporal focus.** Focal-plane amplitude map and
-peak-to-background ratio versus √N. Caption **must** state the D/λ of the geometry and that
-the background reference is √(Nπ)/2, not √N. *Awaiting R4.*
+**Fig. 6 | Mode-locking signature, against the correct background.** Peak-to-background ratio
+versus √N at 1 MHz, where the geometry gives D/λ = 17.7, 41.3 and 53.1 for N = 16, 64, 100 —
+every configuration super-wavelength (ADR-0006 trap 1). Two references are drawn: the naive √N,
+which the measurements exceed by 12.6%, and the Rayleigh-corrected 2√N/√π = 1.128√N, which they
+match to 3.1%. **The background mean is √(Nπ)/2, not √N** (trap 4); the 12.6% offset is that
+correction, not a defect. Source: `campaign/R4.json`.
 
-**Fig. 7 | The walls, in decades.** Gap between achieved and required for each ledger row,
-sorted, with the transducer problem shown as an explicitly out-of-scope bar. *Awaiting R5.*
+**Fig. 7 | The walls, in decades — and which one actually binds.** Gap between achieved and
+required per ledger row. Emission is drawn as a **range** (−6.75 to +29.25) over the scoping
+configuration set: at 10⁹ kg / 1 km / 1 MHz that wall does not bind. Coupling is evaluated at
+that same best-case source and still demands 14.0 decades, with diffraction demanding 8.16 —
+so beating the emission wall does not make the concept work. The transducer problem is out of
+scope by charter (conjecture C-1); its absence is a scope statement, not a zero.
+Source: `campaign/R5.json`, `campaign/R6.json`.
 
 ***Non-expert summary:*** The seven planned figures. Two are diagrams of how the software
 and its safety machinery are put together. Three show the new rotation rules and the
@@ -1385,7 +1543,19 @@ a bar for the problem we explicitly refuse to claim we've solved.
 **Extended Data Table 1 | Benchmark validation status.** Benchmark, quantity, reference,
 computed, deviation, equation ID, last-run commit. *Partially available.*
 
-**Extended Data Table 2 | Degeneracy-breaking factors per mechanism.** *Awaiting R3.*
+**Extended Data Table 2 | Degeneracy-breaking factors per mechanism.** Measured over nine
+radii spanning two decades (10 m – 1 km) at fixed M = 10¹⁵ kg. Source: `campaign/R3.json`.
+
+| Mechanism | Variation across the sweep | Depends on |
+|---|---|---|
+| Rigid (trajectory only) | **identically 0.0** at all nine radii | mass only — R and ρ are degenerate |
+| Elastic, steel (μ = 79.3 GPa) | **2.12 × 10⁵ ×** | R (as R⁵) and ρ (through μ̃) |
+| Elastic, tungsten (μ = 161 GPa) | 1.04 × 10⁵ × | as above |
+| Elastic, osmium (μ = 222 GPa) | 7.57 × 10⁴ × | as above |
+| Finite-size retardation (1 kHz) | 2.2 × 10⁻⁹ → 2.2 × 10⁻⁵ departure from unity | **R only** — the form factor is geometric |
+
+*The rigid row is an exact null, not a small number: `Sphere.self_quadrupole` returns 0.0 at
+every radius. The falsifier for R3 was any radius dependence at all in that row.*
 
 **Extended Data Table 3 | Silent numerical failures at astronomical scale.** Construction,
 magnitude, failure mode, remedy, verifying test. *Available.*
@@ -1410,14 +1580,17 @@ every claim sorted into established fact, our own reasoning, or acknowledged gue
 
 Every numeric value above is one of three kinds, and the distinction must survive editing:
 
-1. **Committed test/benchmark output** — reproducible today by `pytest` or a committed
-   script. All numbers in the Main, Discussion, Methods and Table 1 are of this kind.
-2. **Pre-registered target** — stated in the Results stub as what *will* be measured. No
-   value is asserted.
-3. **`TBD`** — a hole in a stub display item.
+1. **Committed test/benchmark output** — reproducible today by `pytest`. All numbers in
+   the Main, Discussion, Methods and Table 1 are of this kind.
+2. **Campaign output** — produced by `python tools/run_campaign.py`, recorded in
+   `docs/paper/campaign/R<n>.json` with a run manifest, and reported in Results, Table 2,
+   Table 3 and Figs. 3–7.
+3. **`TBD`** — a hole in a display item. **None remain.**
 
 There are no values of a fourth kind, and none may be introduced. A number that cannot be
-traced to a named test does not belong in this manuscript.
+traced to a named test or a campaign JSON does not belong in this manuscript. The campaign
+runner evaluates each pre-registered falsifier itself and returns a verdict, so "the run
+succeeded" is a machine-checkable claim rather than an editorial one.
 
 ***Non-expert summary:*** A rule for whoever edits this draft next. Every number here is
 one of exactly three things: something a computer can regenerate on demand today, a
@@ -1464,8 +1637,13 @@ mistakes* would actually read it.
    tracked in the backlog and is the project's sole remaining externally-blocked item.
 2. **No `CITATION.cff`, no author list, no CRediT table.** A manuscript about provenance
    discipline that cannot state its own authorship provenance is self-refuting.
-3. **The Results campaign has not been run.** R2–R6 are stubs by design; R1 and R7 could
-   be written today.
+3. ~~The Results campaign has not been run.~~ ✅ **Run 2026-08-03.** R2–R6 confirmed,
+   R5 with a flagged finding. Reproduce with `python tools/run_campaign.py`. Two items
+   follow from it: **(a)** the figures are draft-quality — legible and correct, but the
+   author intends to redraw them, and Figs. 1 and 2 (architecture, provenance apparatus)
+   are diagrams no code produces and remain undrawn; **(b)** the campaign contradicted the
+   project's own "roughly 40 orders of magnitude" figure, which is now corrected to a
+   −6.75 to +29.25 decade range in README.md, Methods and PHYSICS.md §8.
 4. ~~`docs/INDEX.md` §2 is stale.~~ ~~§4 Validation Status is absent.~~ **Both resolved
    2026-08-02.** §2 was rewritten against the code and §1 gained EQ-035–EQ-053; §4 then
    gained 18 rows covering the ~30 tasks it had never documented, including T-6.5/T-6.6.

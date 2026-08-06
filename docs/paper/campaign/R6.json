@@ -1,0 +1,42 @@
+{
+  "question": "How does radiative coupling compare against the one gravity-based deflection mechanism that demonstrably works?",
+  "falsifier": "radiative coupling exceeding the near-zone channel at any modelled configuration -- must be investigated as a defect before being reported as a result",
+  "configuration": {
+    "h_amplitude": 1e-40,
+    "body_radius_m": 500.0,
+    "luminosity_W": 0.075,
+    "absorption_cross_section_m2": 785398.1633974483,
+    "tractor_mass_kg": 20000.0,
+    "separation_m": 750.0,
+    "asteroid_mass_kg": 1400000000000.0,
+    "range_m": 5983914828000.0
+  },
+  "channels": [
+    {
+      "name": "gravity_tractor",
+      "achieved": 3.3223182222222216,
+      "required": 43.0,
+      "units": "N",
+      "gap_decades": 1.1120272273630076,
+      "source_module": "gwtb.target.coupling"
+    },
+    {
+      "name": "absorption",
+      "achieved": 4.366663953171117e-31,
+      "required": 43.0,
+      "units": "N",
+      "gap_decades": 31.99331868451902,
+      "source_module": "gwtb.target.coupling"
+    },
+    {
+      "name": "tidal",
+      "achieved": 2.4999999999999996e-38,
+      "required": 1e-06,
+      "units": "m",
+      "gap_decades": 31.602059991327963,
+      "source_module": "gwtb.target.coupling"
+    }
+  ],
+  "radiative_over_near_zone": 1.314342474469636e-31,
+  "verdict": "CONFIRMED"
+}

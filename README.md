@@ -45,7 +45,7 @@ a framework that hides them would be worse than useless:
 |---|---|
 | **Diffraction** | Focusing to a 1 km spot at 40 AU requires an aperture of **6×10⁹ wavelengths**, at any frequency. Raising frequency does not relax the ratio — it shrinks the physical size that ratio corresponds to (1.2×10⁷ AU at 1 Hz; ~12 AU at 1 MHz). |
 | **Coupling** | A gravitational wave produces tidal *strain*, not net force. Momentum transfer requires absorption, and an asteroid's absorption cross-section is negligible. |
-| **Magnitude** | Roughly 40 orders of magnitude separate plausible engineered sources from deflection-relevant power. Radiated power scales as f⁶, making frequency the dominant lever. |
+| **Magnitude** | **−6.8 to +29.2 orders of magnitude** separate engineered sources from deflection-relevant power, depending on configuration — measured, not estimated (`tools/run_campaign.py`, R5). Radiated power scales as f⁶, making frequency the dominant lever by ~36 decades between 1 Hz and 1 MHz. ⚠️ **At the 10⁹ kg / 1 km / 1 MHz end the gap is *negative* — this wall does not bind there.** That does not imply feasibility: coupling still demands 14 decades and diffraction 8. *This row previously read "roughly 40 orders of magnitude"; the ledger does not reproduce that figure — see the 2026-08-03 note in `docs/CLAIMS.md`.* |
 
 **A wall is a finding, not a bug.** If a change makes one disappear, the change is presumed
 defective until proven otherwise. This rule is enforced in review.
@@ -127,6 +127,18 @@ Selected, all reproducible from the test suite:
   verified by three independent numerical routes — the strongest agreeing to 1.7×10⁻¹²
   (ADR-0007). No citable numbered equation for it exists; that outcome is recorded as the
   decision, not hidden.
+
+- **The spin-2 array laws hold at scale, and are N-independent** (campaign R2): the
+  `cos(2Δψ)` mismatch law is exact to 4.5×10⁻¹⁴ from N = 2 to N = 1000, and the 90°
+  cancellation is machine-zero at every N where spin-1 reasoning predicts half the power.
+- **The dull option wins by thirty-one orders of magnitude** (campaign R6): a Newtonian
+  gravity tractor delivers 3.32 N against a ~43 N requirement — short by a factor of 13 —
+  while radiative coupling is short by a factor of 10³². We report this because a framework
+  that hid it would be worthless.
+- **One wall does not bind everywhere** (campaign R5): at 10⁹ kg / 1 km / 1 MHz the
+  *emission* gap goes **negative** by 6.75 decades. The concept still fails, on coupling
+  (14.0 decades) and diffraction (8.16) — but the honest statement is a range, not a single
+  number, and finding this forced a correction to our own README.
 
 ### Findings of independent interest
 

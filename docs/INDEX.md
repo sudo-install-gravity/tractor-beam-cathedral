@@ -192,11 +192,11 @@ This should be the next `indexer` task.
 
 | Module | Purpose | Public API | Depends on |
 |---|---|---|---|
-| `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4/5`, `TARGET_RANGE` | — |
-| `core/units.py` | Scaled strain representation | **live** — `StrainScale` | `constants` |
+| `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4`, `G_OVER_C5`, `TARGET_RANGE`. *(The shorthand `G_OVER_C4/5` stood here until 2026-08-03; both names are now written out, because a completeness check cannot match a shorthand.)* | — |
+| `core/units.py` | Scaled strain representation | **live** — `StrainScale`, `DEFAULT_REFERENCE` | `constants` |
 | `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only); `field_grid`, `_field_grid_loop` (T-11.2; Numba-JIT-compilable TT-strain superposition over a field-point grid, one already-evaluated `q_ddot` per source shared across the whole grid — see Assumption Ledger for the light-crossing-time restriction this imposes); `SplitPhase`, `split_phase` (T-11.3; FP64 reference phase + FP32-safe differential — use `.phasor()`, **not** `.recombine()`, which is irreducibly lossy at astronomical range); `field_grid_split_phase` (T-11.4; NumPy/CuPy-agnostic per-element phasor kernel for the optional GPU backend); `assert_phase_precision`, `PrecisionError` (T-11.5; guards float32 phase outside `split_phase`'s own authorized differential term); `field_grid_chunked` (T-11.7; memory-bounded chunked evaluation of `field_grid`, identical to rtol 1e-12) | `core/constants`, `core/validation` (**not** `source/quadrupole` — `q_ddots` are caller-supplied, never imported) |
 | `bodies/sphere.py` | Rigid uniform sphere; mass/inertia; rotational-oblateness quadrupole | **live** — `Sphere` (dataclass: `radius`, `density`, `.mass`, `.moment_of_inertia`, `.self_quadrupole()`), `oblateness_quadrupole` (T-4.1/4.2/4.6) | `constants` |
-| `bodies/elastic.py` | Love-number deformation; breaks R/ρ degeneracy | **live** — `love_number_k2`, `induced_quadrupole` (T-4.3). **This is where the rigid model's mass/radius/density degeneracy breaks**: `Q ∝ R⁵` explicitly and `ρ` enters through `μ̃`, so equal-mass spheres are no longer radiatively identical (asserted against T-4.2 in `test_elastic.py`) | `sphere`, `constants`, `core/validation` |
+| `bodies/elastic.py` | Love-number deformation; breaks R/ρ degeneracy | **live** — `love_number_k2`, `induced_quadrupole` (T-4.3), `Material` and the `MATERIALS` table (T-4.4; steel/tungsten/osmium plus a `degenerate_matter` placeholder that is **not** a measurement — see its docstring; used by the R3 campaign). **This is where the rigid model's mass/radius/density degeneracy breaks**: `Q ∝ R⁵` explicitly and `ρ` enters through `μ̃`, so equal-mass spheres are no longer radiatively identical (asserted against T-4.2 in `test_elastic.py`) | `sphere`, `constants`, `core/validation` |
 | `bodies/multipole.py` | Mass multipole moments and derivatives; finite-size correction | **live** — `quadrupole_moment`, `quadrupole_second_derivative`, `quadrupole_third_derivative` (T-1.3–1.5 — ⚠️ the previous version of this row named these `_second_derivative`/`_third_derivative`, which have **never** been the actual names); `octupole_moment` (T-2.5, EQ-044 — ⚠️ **no caller anywhere in `src/`, and none planned. Decided 2026-08-03: retained deliberately, marked speculative, no caller to be built.** It is a mass *moment*, not a radiation channel; **the framework has no `l = 3` radiative path**. Higher multipoles were on the radar only for the long-wavelength breakdown of `PHYSICS.md` §3, and that question was answered instead by `finite_size_correction` (EQ-034/ADR-0007) — so this is a road not taken, not a missing feature. Guarded executably: `strain_tt` rejects a `(3,3,3)` input, asserted by `test_octupole_cannot_be_fed_to_the_quadrupole_radiation_path`); `finite_size_correction`, `LongWavelengthAssumptionWarning` (T-4.5/T-4.7, EQ-034, see [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md)) | `bodies/sphere`, `core/validation` (**not** `core/constants`) |
 | `kinematics/profiles.py` | Finite-maneuver acceleration profiles | **live** — `AccelerationProfile` (base, T-3.1), `BangBangProfile` (T-3.2), `SCurveProfile` (T-3.3), `QuinticProfile` (T-3.4), `RaisedCosineProfile` (T-3.5), `spectrum` (T-3.6, frequency-domain view); helpers `_finish`, `_prepare_time` | `core/validation` |
 | `kinematics/oscillators.py` | Prime-frequency multi-tone drive synthesis | **live** — `first_n_primes`, `prime_frequencies`, `recurrence_period`, `PrimeOscillatorDrive` (T-9.1–9.4; DSP/kinematic module, exempt from citation-CI) | `profiles`, `core/validation` |
@@ -214,12 +214,12 @@ This should be the next `indexer` task.
 | `target/geodesic.py` | Geodesic deviation at the target | **live** — `deviation_acceleration` (T-8.1, EQ-045). This is the mechanism every `target/coupling.py` channel acts through: a GW produces **tidal strain, not net force** | `core/validation` |
 | `target/coupling.py` | All three coupling channels, reported side by side | **live** — `tidal_strain`/`channel_tidal` (T-8.2/8.3), `channel_absorption` (T-8.4), `channel_gravity_tractor` (T-8.5, EQ-023), `CouplingResult` (T-8.3), `channel_gravity_tractor_result`/`compare_channels` (T-8.6). **All three channels from the module's original scope are now live** — the previous version of this row said the other two were unimplemented. Reporting them side by side rather than assuming radiated power converts to thrust is the module's whole point | `core/constants`, `ledger/gap_report` |
 | `target/deflection.py` | Impulse → Δv → miss distance | **live** — `delta_v` (T-8.7), `miss_distance` (T-8.8). **Deliberately uncited**: both are elementary Newtonian mechanics (impulse-momentum; linearized orbital displacement), not GW physics, so rule 1's numbered-equation requirement does not apply — the module docstring says so explicitly. Where a *number* is checked it is cited: `delta_v` reproduces DART's measured Dimorphos deflection (1.16e7 N·s on 4.3e9 kg → 2.7 mm/s) to **rtol 1e-2**, cited to Daly et al. 2023 | `core/constants` (**not** `target/coupling`) |
-| `ledger/gap_report.py` | Feasibility ledger | **live** — `GapMetric`, `GapReport`, `GapMetric.from_stamped` (T-2.6), plus row-builder wrappers `emission_gap` (T-2.7), `aperture_gap` (T-5.9), `impulse_gap` (T-8.9), `focusing_gap` (T-10.8), `body_quadrupole_gap` (T-4.9). **Schema is FROZEN**: `name, achieved, required, units, source_module, provenance` is a contract every epic writes to; `test_gap_report.py` pins the field set *and order* so a breaking change fails loudly. **Use `from_stamped()`** for any value originating as a `StampedResult` — the plain constructor would compile while discarding the stamp | `source/conservation` (for `UNPHYSICAL_STAMP`, `StampedResult`) |
+| `ledger/gap_report.py` | Feasibility ledger | **live** — `GapMetric`, `GapReport`, `GapMetric.from_stamped` (T-2.6), plus row-builder wrappers `emission_gap` (T-2.7), `aperture_gap` (T-5.9), `impulse_gap` (T-8.9), `focusing_gap` (T-10.8), `body_quadrupole_gap` (T-4.9); plus `RunManifest` and `run_manifest`, which pin code version, parameters and seeds for a campaign run and are what the manuscript's Data-availability statement promises. **Schema is FROZEN**: `name, achieved, required, units, source_module, provenance` is a contract every epic writes to; `test_gap_report.py` pins the field set *and order* so a breaking change fails loudly. **Use `from_stamped()`** for any value originating as a `StampedResult` — the plain constructor would compile while discarding the stamp | `source/conservation` (for `UNPHYSICAL_STAMP`, `StampedResult`) |
 | `viz/patterns.py` | Beam-pattern visualization (polar + 3D) | **live** — `plot_pattern_polar`, `plot_pattern_3d` (T-7.4/7.5; headless `Agg` backend; reimplements array-factor math vectorized for full-grid rendering rather than calling `beamform.array_factor` per point — kept numerically consistent by shared test coverage, not by a shared code path); `plot_polarization_ellipse` (T-7.6); `plot_trade_surface` (T-10.7, renders `array/focus.py:trade_surface`) | `array/beamform` (mathematically, not by import) |
 | `viz/slices.py` | 2D strain-field slice extraction, heatmaps, propagation animation | **live** — `FieldSlice`, `extract_slice`, `plot_strain_slice` (T-7.1/7.2), `animate_propagation` (T-7.3); headless `Agg` backend as in `patterns.py` | — (the caller supplies the `field` callable, e.g. `propagate/retarded.field_at`; no direct import) |
 | `viz/volume.py` | 3D volumetric field rendering | **live** — `render_volume` (T-7.7). Optional `pyvista` dependency: **returns `None` with a message** when absent, does not raise | optional: `pyvista` |
 | `viz/export_vtk.py` | ParaView/VTK `.vti` export | **live** — `export_field` (T-7.8). Optional `pyvista` dependency: **raises `RuntimeError`** when absent — note this deliberately differs from `render_volume`'s degrade-quietly path | optional: `pyvista` |
-| `core/validation.py` | ADR-0002 shape/dtype/unit-vector guards | **live** — `as_masses`, `as_body_array`, `as_tensor_3x3`, `as_unit_vector`, `as_float64` | — |
+| `core/validation.py` | ADR-0002 shape/dtype/unit-vector guards | **live** — `as_masses`, `as_body_array`, `as_tensor_3x3`, `as_unit_vector`, `as_float64`, `UNIT_TOL` (the ADR-0002 §3 unit-vector tolerance, 1e-12) | — |
 
 ✅ **Resolved 2026-07-31.** The note that previously stood here flagged `superpose_tt` (T-6.5)
 as a forward reference to unbuilt code. **T-6.5 and T-6.6 have since landed** — `superpose_tt`
@@ -448,6 +448,39 @@ expression — only its leading term is what we reproduce, and EQ-044 now says s
 | OQ-4 | Is a sparse (non-filled) array viable given the 6×10⁹-wavelength aperture requirement? | Sparse arrays relax element count but raise sidelobes — directly opposed to requirement 6's single-point focus. `array/geometry.py:sparse_array` (this batch) supplies a reproducible layout to test against, but does not itself resolve the question — no sidelobe/viability analysis has been run on it yet |
 | OQ-5 | Does the near-zone gradient channel (Lu & Love) scale to anything useful at 40 AU? | If not, conjecture C-4 has no candidate mechanism. `target/coupling.py:channel_gravity_tractor` (this batch) implements the comparison channel itself but does not resolve OQ-5's point-mass-approximation caveat — see Assumption Ledger |
 | ~~OQ-6~~ | **RESOLVED 2026-08-02** — see BACKLOG.md T-12.2. Kowalska et al., A&A 527:A70 (2011), arXiv:1010.0511, eq. (1)/(3) supplies a checkable, open-access equation for the eccentric-orbit decay coefficients; the original Peters (1964) equation numbers remain unverified and are not cited directly. | |
+
+---
+
+## Automated enforcement — added 2026-08-03
+
+The rules below were policy enforced by nobody, and both drifted. They are now
+**tested**: `tests/unit/test_index_integrity.py` (38 assertions) and
+`tests/unit/test_architecture.py` (12) derive from the code what these sections
+assert, and fail if the two disagree.
+
+**The two directions fail for different reasons, and only one of them was broken.**
+
+| Direction | What it checks | State when the tests were written |
+|---|---|---|
+| **reference → code** | Does everything §1, §2 and §3 point at still exist? Every `path.py:Symbol`, every `tests/…::test_name`, every ADR link, every bare module mention | **Already healthy** — all resolved. Deleting a function tends to break something visible, so this drift gets noticed |
+| **code → reference** | Is everything that exists documented? Every module has a §2 row; every public symbol is named in it | **Eight defects.** `Material`, `MATERIALS`, `DEFAULT_REFERENCE`, `UNIT_TOL`, `G_OVER_C4`, `G_OVER_C5`, and — worst — `RunManifest` and `run_manifest`, which `tools/run_campaign.py` uses and the manuscript's Data-availability statement promises |
+
+That asymmetry is structural rather than accidental: **adding** a public symbol
+breaks nothing and announces nothing, so the map falls behind silently. It is the
+same failure class as rule 8, applied to this document.
+
+Two consequences worth knowing before editing:
+
+- **A shorthand no longer satisfies the check.** `core/constants.py`'s row wrote
+  `G_OVER_C4/5` for two names; both are now spelled out, because a completeness
+  test cannot match an abbreviation.
+- `test_architecture.py` additionally asserts that the **`source` ⇄ `propagate`
+  cycle is the only package cycle**, and that the *module* graph stays acyclic.
+  A second cycle fails loudly and names itself.
+
+All four guards were mutation-tested rather than assumed: an undocumented new
+symbol, a row pointing at a deleted function, a citation naming a renamed test,
+and an undocumented new module are each caught.
 
 ---
 

@@ -77,6 +77,42 @@ SEED = 20260803
 Q_LINEAR = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 0.0]])
 FAR = np.array([0.0, 0.0, 1.0e6])
 
+# --- shared figure style ------------------------------------------------------
+# Okabe-Ito, the standard colourblind-safe qualitative palette. Chosen over
+# matplotlib's default cycle because three of these figures are read primarily by
+# colour (materials in Fig. 5, reference laws in Figs. 3, 4 and 6) and the default
+# cycle's red/green pair is the one that fails most often.
+C_DATA = "#0072B2"  # blue        measured data
+C_PRED = "#000000"  # black       the spin-2 / correct prediction
+C_WRONG = "#D55E00"  # vermillion  the spin-1 / naive prediction, i.e. the wrong one
+C_ALT = "#009E73"  # green       secondary reference
+C_MUTED = "#666666"  # grey        guides, floors, annotations
+C_SERIES = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9"]
+
+#: In-figure prose lives in the manuscript's figure legends instead. Each figure
+#: keeps only feature labels — a rule line, an axis marker — so that a reader who
+#: meets the figure without its caption is not misled, but is not lectured either.
+plt.rcParams.update(
+    {
+        "figure.dpi": 110,
+        "savefig.dpi": 200,
+        "savefig.bbox": "tight",
+        "font.size": 10,
+        "axes.titlesize": 11.5,
+        "axes.labelsize": 10.5,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "grid.linewidth": 0.6,
+        "legend.frameon": False,
+        "legend.fontsize": 9,
+        "xtick.labelsize": 9.5,
+        "ytick.labelsize": 9.5,
+        "lines.linewidth": 1.8,
+    }
+)
+
 
 def _pol(h: np.ndarray) -> np.ndarray:
     """(h_plus, h_cross) for observation along z."""
@@ -154,90 +190,88 @@ def campaign_r2(outdir: Path) -> dict[str, Any]:
     err1 = float(np.abs(np.array(measured) - law1).max())
 
     # --- figures
-    # Two panels. The five measured curves lie exactly on the analytic one, which
-    # IS the result (the law is N-independent) but renders as a single line and
+    # Fig 3. The five measured curves lie exactly on the analytic one, which IS
+    # the result (the law is N-independent) but renders as a single line and
     # reads as four traces failing to plot. Subsampled markers make each N
     # visible; the residual panel turns "they agree" into a number.
     fig, (ax, axr) = plt.subplots(
-        2, 1, figsize=(7, 6), sharex=True, gridspec_kw={"height_ratios": [3, 1]}
+        2, 1, figsize=(7.2, 6.2), sharex=True, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.12}
     )
-    ax.plot(deg, predicted, "k-", lw=2.2, zorder=1, label=r"spin-2 prediction: $\cos^2\Delta\psi$")
-    ax.plot(deg, spin1, "r:", lw=2.2, zorder=1, label=r"spin-1 prediction: $\cos^2(\Delta\psi/2)$")
-    marks = ["o", "s", "^", "D", "v"]
+    ax.plot(
+        deg, predicted, "-", color=C_PRED, lw=2.4, zorder=1, label=r"spin-2:  $\cos^2\Delta\psi$"
+    )
+    ax.plot(
+        deg, spin1, "--", color=C_WRONG, lw=2.2, zorder=1, label=r"spin-1:  $\cos^2(\Delta\psi/2)$"
+    )
     for k, n in enumerate(ns):
-        sl = slice(k, None, 6)  # stagger so overlapping markers stay distinguishable
         ax.plot(
-            deg[sl],
-            np.array(sweep[str(n)])[sl],
-            marks[k],
-            ms=5,
+            deg[k::6],
+            np.array(sweep[str(n)])[k::6],
+            ["o", "s", "^", "D", "v"][k],
+            ms=5.5,
             mfc="none",
-            mew=1.3,
+            mew=1.4,
+            color=C_SERIES[k],
             zorder=2,
-            label=f"measured, N = {n}",
+            label=f"$N$ = {n}",
         )
-    ax.axvline(90, color="0.6", lw=0.8)
-    ax.annotate(
-        "complete cancellation\nspin-1 predicts 0.5",
-        xy=(90, 0.0),
-        xytext=(99, 0.30),
-        fontsize=8.5,
-        arrowprops={"arrowstyle": "->", "color": "0.4"},
-    )
+    ax.axvline(90, color=C_MUTED, lw=0.9, ls=":", zorder=0)
+    ax.plot([90], [0], "o", ms=9, mfc="none", mec=C_PRED, mew=2, zorder=3)
     ax.set_ylabel(r"array gain / $N^2$")
-    ax.set_title(r"Fig. 3 | Element mismatch is a function of $2\Delta\psi$, at every $N$")
-    ax.set_ylim(-0.05, 1.08)
-    ax.legend(fontsize=8, ncol=2, loc="upper center")
+    ax.set_title(r"Element mismatch is a function of $2\Delta\psi$, at every $N$")
+    ax.set_ylim(-0.06, 1.1)
+    ax.legend(ncol=4, loc="upper center", columnspacing=1.1, handletextpad=0.5)
 
-    for _k, n in enumerate(ns):
+    for k, n in enumerate(ns):
         axr.semilogy(
-            deg, np.abs(np.array(sweep[str(n)]) - predicted) + 1e-18, lw=1.0, label=f"N = {n}"
+            deg,
+            np.abs(np.array(sweep[str(n)]) - predicted) + 1e-18,
+            lw=1.1,
+            color=C_SERIES[k],
+            label=f"$N$ = {n}",
         )
-    axr.axhline(max_dev, color="0.5", ls="--", lw=0.9)
-    axr.text(2, max_dev * 1.6, f"worst {max_dev:.1e}", fontsize=8, color="0.35")
+    axr.axhline(max_dev, color=C_MUTED, ls="--", lw=0.9)
     axr.set_xlabel(r"relative element orientation $\Delta\psi$ (degrees)")
     axr.set_ylabel("residual")
     axr.set_xlim(0, 180)
     axr.set_xticks(np.arange(0, 181, 30))
     axr.set_ylim(1e-18, 1e-10)
-    axr.grid(alpha=0.3, which="both")
-    fig.tight_layout()
-    fig.savefig(outdir / "fig3_mismatch.png", dpi=200)
+    fig.savefig(outdir / "fig3_mismatch.png")
     plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    # Fig 4. The spin-1 / spin-2 separation is the whole content, so the two laws
+    # get the strongest contrast and the measured points sit on top of them.
+    fig, ax = plt.subplots(figsize=(7.2, 4.8))
+    ax.plot(
+        sigmas,
+        law2_finite,
+        "-",
+        color=C_PRED,
+        lw=2.4,
+        label=r"spin-2, finite $N$:  $e^{-4\sigma^2}+(1-e^{-4\sigma^2})/N$",
+    )
+    ax.plot(sigmas, law2, ":", color=C_MUTED, lw=1.6, label=r"spin-2 limit:  $e^{-4\sigma^2}$")
+    ax.plot(sigmas, law1, "--", color=C_WRONG, lw=2.2, label=r"spin-1:  $e^{-\sigma^2}$")
     ax.errorbar(
         sigmas,
         measured,
         yerr=np.array(sem) * 5,
         fmt="o",
-        ms=5,
+        ms=6,
+        color=C_DATA,
         capsize=3,
-        label=f"measured (N = {n_jit}, {reals} realizations, $\\pm5$ s.e.)",
+        lw=1.2,
+        zorder=4,
+        label=r"measured ($N$ = 200, 400 realizations, $\pm5$ s.e.)",
     )
-    ax.plot(
-        sigmas,
-        law2_finite,
-        "k-",
-        lw=2,
-        label=r"spin-2 with finite-$N$ bias: $e^{-4\sigma^2}+(1-e^{-4\sigma^2})/N$",
-    )
-    ax.plot(sigmas, law2, "k--", lw=1.2, label=r"spin-2 limit: $e^{-4\sigma^2}$")
-    ax.plot(sigmas, law1, "r:", lw=2, label=r"spin-1: $e^{-\sigma^2}$")
-    ax.axvline(2.87, color="0.6", lw=0.8)
-    ax.annotate(
-        r"1% loss at $\sigma=2.87°$",
-        xy=(2.87, 0.99),
-        xytext=(5.2, 0.93),
-        fontsize=8,
-        arrowprops={"arrowstyle": "->", "color": "0.4"},
-    )
+    ax.axvline(2.87, color=C_MUTED, lw=0.9, ls=":")
+    ax.text(2.87, 0.6, "  2.87°", fontsize=9, color=C_MUTED, rotation=90, va="bottom")
     ax.set_xlabel(r"orientation jitter $\sigma$ (degrees)")
-    ax.set_ylabel(r"gain fraction  gain/$N^2$")
-    ax.set_title("Fig. 4 | Spin-2 alignment tolerance is exactly twice as tight")
-    ax.legend(fontsize=8)
-    fig.tight_layout()
-    fig.savefig(outdir / "fig4_alignment.png", dpi=200)
+    ax.set_ylabel(r"gain fraction,  gain / $N^2$")
+    ax.set_title("Spin-2 alignment tolerance is exactly twice as tight")
+    ax.set_xlim(-0.6, 21)
+    ax.legend(loc="lower left")
+    fig.savefig(outdir / "fig4_alignment.png")
     plt.close(fig)
 
     falsified = (max_dev > 1e-9) or any(v > 1e-9 for v in cancel.values()) or (err1 < err2)
@@ -297,48 +331,31 @@ def campaign_r3(outdir: Path) -> dict[str, Any]:
     span = {k: (max(v) / min(v) if min(v) > 0 else float("inf")) for k, v in elastic.items()}
     rigid_floor = max(rigid)
 
-    # The rigid model is IDENTICALLY zero, not small. Drawing it on a log axis
-    # requires inventing a y-value, and a clamped line reads as a measurement.
-    # So the two models get separate panels: log for what varies, linear for the
-    # one that does not, where zero is representable and the flatness is the point.
+    # Fig 5. The rigid model is IDENTICALLY zero, not small. Drawing it on a log
+    # axis requires inventing a y-value, and a clamped line reads as a
+    # measurement -- so it gets its own linear panel, where zero is representable.
     fig, (ax, axr) = plt.subplots(
-        2, 1, figsize=(7, 6), sharex=True, gridspec_kw={"height_ratios": [2.4, 1]}
+        2,
+        1,
+        figsize=(7.2, 6.0),
+        sharex=True,
+        gridspec_kw={"height_ratios": [2.6, 1], "hspace": 0.12},
     )
-    for name, vals in elastic.items():
-        ax.loglog(radii, vals, "o-", ms=4.5, label=f"elastic ({name})")
+    for k, (name, vals) in enumerate(elastic.items()):
+        ax.loglog(radii, vals, "o-", ms=5, color=C_SERIES[k], label=f"elastic, {name}")
     ax.loglog(
-        radii, finite, "^:", color="C3", lw=1.6, label=r"finite-size departure $1-F_2$ (1 kHz)"
+        radii, finite, "^--", ms=5, color=C_WRONG, label=r"finite-size departure $1-F_2$ (1 kHz)"
     )
     ax.set_ylabel("quadrupole signature (SI)")
-    ax.set_title("Fig. 5 | Degeneracy breaking: only the rigid model is flat")
-    ax.legend(fontsize=8, loc="lower right")
-    ax.grid(alpha=0.3, which="both")
-    ax.annotate(
-        f"elastic varies by {min(span.values()):.1e}-{max(span.values()):.1e}$\\times$\n"
-        "across two decades of $R$ at fixed $M$",
-        xy=(0.03, 0.72),
-        xycoords="axes fraction",
-        fontsize=8.5,
-        bbox={"boxstyle": "round", "fc": "white", "ec": "0.7"},
-    )
+    ax.set_title("Degeneracy breaking: only the rigid model is flat")
+    ax.legend(loc="lower right", ncol=2, columnspacing=1.2)
 
-    axr.semilogx(radii, rigid, "s-", color="0.25", ms=5)
-    axr.axhline(0.0, color="0.7", lw=0.8, ls=":")
+    axr.semilogx(radii, rigid, "s-", ms=5, color=C_PRED)
+    axr.axhline(0.0, color=C_MUTED, lw=0.8, ls=":")
     axr.set_ylim(-1.0, 1.0)
-    axr.set_ylabel("rigid model")
-    axr.set_xlabel("sphere radius $R$ (m), at fixed $M = 10^{15}$ kg")
-    axr.annotate(
-        f"rigid: identically 0.0 at all {len(radii)} radii (max {rigid_floor:.1e}).\n"
-        "Plotted on a LINEAR axis because zero is not representable on a log one —\n"
-        "a clamped line here would read as a measurement rather than an exact null.",
-        xy=(0.03, 0.58),
-        xycoords="axes fraction",
-        fontsize=8,
-        bbox={"boxstyle": "round", "fc": "#f4f4f4", "ec": "0.7"},
-    )
-    axr.grid(alpha=0.3, axis="x", which="both")
-    fig.tight_layout()
-    fig.savefig(outdir / "fig5_degeneracy.png", dpi=200)
+    axr.set_ylabel("rigid model" + "\n" + "(exactly 0)")
+    axr.set_xlabel(r"sphere radius $R$ (m), at fixed $M = 10^{15}$ kg")
+    fig.savefig(outdir / "fig5_degeneracy.png")
     plt.close(fig)
 
     return {
@@ -395,51 +412,36 @@ def campaign_r4(outdir: Path) -> dict[str, Any]:
             "rayleigh_sqrt_N_pi_over_2": math.sqrt(n_act * math.pi) / 2.0,
         }
 
-    # ADR-0006 trap 4 made visible rather than merely mentioned. The random-phase
-    # background is Rayleigh-distributed with mean sqrt(N*pi)/2 = 0.886 sqrt(N),
-    # NOT sqrt(N). With peak = N, the predicted RATIO is therefore
-    # N / (0.886 sqrt(N)) = 2 sqrt(N)/sqrt(pi) = 1.128 sqrt(N) -- which is why the
-    # measured points sit consistently above the naive sqrt(N) line.
+    # Fig 6. ADR-0006 trap 4 made visible rather than merely mentioned: the
+    # random-phase background is Rayleigh with mean sqrt(N*pi)/2, NOT sqrt(N), so
+    # the predicted RATIO is N/(0.886 sqrt(N)) = 1.128 sqrt(N). Both references
+    # are drawn; the caption explains which is right.
     rayleigh_pred = [2.0 * s / math.sqrt(math.pi) for s in sqrtns]
     dev_naive = max(abs(r - s) / s for r, s in zip(ratios, sqrtns, strict=True))
     dev_rayleigh = max(abs(r - p) / p for r, p in zip(ratios, rayleigh_pred, strict=True))
 
-    fig, ax = plt.subplots(figsize=(7, 4.6))
-    lim = np.array([min(sqrtns) * 0.88, max(sqrtns) * 1.08])
-    ax.plot(lim, lim, "k--", lw=1.5, label=r"naive $\sqrt{N}$  (background taken as $\sqrt{N}$)")
+    fig, ax = plt.subplots(figsize=(7.2, 4.8))
+    lim = np.array([min(sqrtns) * 0.86, max(sqrtns) * 1.1])
     ax.plot(
         lim,
         2 * lim / math.sqrt(math.pi),
         "-",
-        color="C2",
-        lw=2,
-        label=r"Rayleigh background: $2\sqrt{N}/\sqrt{\pi}=1.128\sqrt{N}$",
+        color=C_PRED,
+        lw=2.4,
+        label=r"Rayleigh background:  $2\sqrt{N}/\sqrt{\pi}=1.128\sqrt{N}$",
     )
-    ax.plot(sqrtns, ratios, "o", ms=9, color="C0", label="measured peak / background")
+    ax.plot(lim, lim, "--", color=C_WRONG, lw=2.2, label=r"naive:  background taken as $\sqrt{N}$")
+    ax.plot(sqrtns, ratios, "o", ms=9, color=C_DATA, zorder=4, label="measured peak / background")
     for n, sq, r in zip(ns, sqrtns, ratios, strict=True):
+        label = f"$N$={n}" + "\n" + rf"$D/\lambda$={d_over_lambda[str(n)]:.0f}"
         ax.annotate(
-            f"N={n}\nD/$\\lambda$={d_over_lambda[str(n)]:.1f}",
-            (sq, r),
-            textcoords="offset points",
-            xytext=(8, -20),
-            fontsize=8,
+            label, (sq, r), textcoords="offset points", xytext=(9, -22), fontsize=9, color=C_MUTED
         )
-    ax.annotate(
-        f"trap 4: the background mean is $\\sqrt{{N\\pi}}/2$, not $\\sqrt{{N}}$.\n"
-        f"vs naive $\\sqrt{{N}}$: {dev_naive * 100:.0f}% high    "
-        f"vs Rayleigh: {dev_rayleigh * 100:.1f}%",
-        xy=(0.03, 0.80),
-        xycoords="axes fraction",
-        fontsize=8.5,
-        bbox={"boxstyle": "round", "fc": "white", "ec": "0.7"},
-    )
     ax.set_xlabel(r"$\sqrt{N}$")
     ax.set_ylabel("peak-to-background ratio")
-    ax.set_title(r"Fig. 6 | Mode-locking signature, against the correct background")
-    ax.legend(fontsize=8, loc="lower right")
-    ax.grid(alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(outdir / "fig6_focus.png", dpi=200)
+    ax.set_title("Mode-locking signature, against the correct background")
+    ax.legend(loc="upper left")
+    fig.savefig(outdir / "fig6_focus.png")
     plt.close(fig)
 
     sub_wavelength = [k for k, v in d_over_lambda.items() if v <= 1.0]
@@ -541,66 +543,37 @@ def campaign_r5(outdir: Path) -> dict[str, Any]:
     lo_em = min(v["gap_decades"] for v in emission_by_config.values())
     hi_em = max(v["gap_decades"] for v in emission_by_config.values())
 
-    em_label = "emission magnitude\n(range over scoping set)"
+    nl = "\n"
+    em_label = "emission magnitude" + nl + "(range over scoping set)"
+    coupling_label = "coupling / absorption" + nl + "(at the best-case 1 MHz source)"
+    aperture_label = "aperture" + nl + "(diffraction)"
     bars = [
-        (
-            "coupling / absorption\n(at the BEST-case 1 MHz source)",
-            coupling_gap,
-            coupling_gap,
-            "C3",
-        ),
-        (em_label, lo_em, hi_em, "C1"),
-        ("body quadrupole", rows[3]["gap_decades"], rows[3]["gap_decades"], "C3"),
-        ("aperture\n(diffraction)", rows[0]["gap_decades"], rows[0]["gap_decades"], "C3"),
+        (coupling_label, coupling_gap, coupling_gap, C_WRONG),
+        (em_label, lo_em, hi_em, "#E69F00"),
+        ("body quadrupole", rows[3]["gap_decades"], rows[3]["gap_decades"], C_WRONG),
+        (aperture_label, rows[0]["gap_decades"], rows[0]["gap_decades"], C_WRONG),
     ]
     bars.sort(key=lambda b: b[2], reverse=True)
 
-    fig, ax = plt.subplots(figsize=(8.4, 5.4))
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
     ys = np.arange(len(bars))
     for y, (_lab, lo, hi, col) in zip(ys, bars, strict=True):
         if lo == hi:
-            ax.barh(y, hi, color=col, alpha=0.85, height=0.55)
-            ax.text(hi + 0.5, y, f"{hi:.1f}", va="center", fontsize=9.5, fontweight="bold")
+            ax.barh(y, hi, color=col, alpha=0.9, height=0.5)
+            ax.text(hi + 0.6, y, f"{hi:.1f}", va="center", fontsize=10, fontweight="bold")
         else:
-            ax.barh(y, hi - lo, left=lo, color=col, alpha=0.75, height=0.55)
+            ax.barh(y, hi - lo, left=lo, color=col, alpha=0.9, height=0.5)
             ax.text(
-                hi + 0.5, y, f"{lo:+.1f} … {hi:+.1f}", va="center", fontsize=9.5, fontweight="bold"
+                hi + 0.6, y, f"{lo:+.1f} to {hi:+.1f}", va="center", fontsize=10, fontweight="bold"
             )
-    ax.axvline(0, color="k", lw=1.4)
+    ax.axvline(0, color=C_PRED, lw=1.4)
     ax.set_yticks(ys)
-    ax.set_yticklabels([b[0] for b in bars], fontsize=8.5)
-    ax.set_xlim(-12, 46)
-    ax.set_ylim(-0.9, len(bars) - 0.15)
+    ax.set_yticklabels([b[0] for b in bars], fontsize=9.5)
+    ax.set_xlim(-11, 42)
+    ax.grid(axis="y", visible=False)
     ax.set_xlabel("gap between achieved and required (orders of magnitude)")
-    ax.set_title("Fig. 7 | The walls, in decades — and which one actually binds", pad=14)
-
-    em_y = int(np.where(np.array([b[0] for b in bars]) == em_label)[0][0])
-    ax.annotate(
-        "emission goes NEGATIVE at 1 MHz —\nthat wall does not bind there.",
-        xy=(lo_em, em_y),
-        xytext=(-11.5, em_y + 0.72),
-        fontsize=8,
-        color="0.2",
-        arrowprops={"arrowstyle": "->", "color": "0.45"},
-    )
-    ax.text(
-        0.985,
-        0.965,
-        "Read the aperture and coupling bars together: at the one\n"
-        "configuration where emission stops binding, coupling still\n"
-        "demands 14 more decades and diffraction 8. Beating the\n"
-        "emission wall does not make the concept work.\n\n"
-        "TRANSDUCER: out of scope by charter (conjecture C-1). No\n"
-        "mechanism is proposed, so no gap can be quoted — its absence\n"
-        "here is a scope statement, not a zero.",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=8,
-        bbox={"boxstyle": "round", "fc": "#fff6e5", "ec": "0.6"},
-    )
-    fig.tight_layout()
-    fig.savefig(outdir / "fig7_walls.png", dpi=200)
+    ax.set_title("The walls, in decades — and which one actually binds")
+    fig.savefig(outdir / "fig7_walls.png")
     plt.close(fig)
     (outdir / "R5_ledger.md").write_text(report.to_markdown(), encoding="utf-8")
 

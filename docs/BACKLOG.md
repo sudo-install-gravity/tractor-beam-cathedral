@@ -984,7 +984,14 @@ of a pipeline, and the paper cannot carry it as written.
 | Repository is a fork (Actions off by default) | **eliminated** | `fork: false` |
 | Repository archived or disabled | **eliminated** | `archived: false`, `disabled: false` |
 | Job names cannot satisfy T-2.9's AC | **eliminated** | job id `test`, matrix `["3.10","3.11","3.12"]` → `test (3.10)` etc., exactly as required |
-| **Actions disabled in repository or account settings** | **NOT TESTED — the leading hypothesis** | `actions/permissions` returns **403**: it requires repo admin, and the only available token authenticates as `Thanatos7777`, not the owner `sudo-install-gravity` |
+| **Actions disabled in repository or account settings** | **NOT TESTED — the leading hypothesis** | `actions/permissions` returns **403**: it requires repo admin, and the `gh` CLI is signed in as `Thanatos7777`, which has `push: false` — read-only — on this repository |
+
+> **`git push` is not affected and needs no change.** The two authenticate separately:
+> Git Credential Manager holds the push credential and it is already correct — GitHub reports
+> `committer_login: sudo-install-gravity` and attributes every commit to that account. Only
+> the **`gh` CLI** is on the wrong identity. Signing `gh` in as the owner would let
+> `actions/permissions` be read directly and may close SPIKE-13.1 without a settings hunt;
+> it is not otherwise required for the project to function.
 
 **SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ⚠️ **owner-only**
 `docs/adr/0008-ci-never-ran.md`. Cannot be delegated to an agent: every remaining hypothesis

@@ -87,9 +87,22 @@ correct trigger, not a fork, not archived, job names correct), so the spike star
 one hypothesis that survived rather than re-deriving the rest.
 
 ⚠️ **SPIKE-13.1 is owner-only and cannot be delegated to an agent.** Every remaining
-hypothesis needs repository-**admin** access. The available token authenticates as
-`Thanatos7777`, not the owner `sudo-install-gravity`, which is why `actions/permissions`
-returns 403. Check **Settings → Actions → General** first.
+hypothesis needs repository-**admin** access, and `actions/permissions` returns 403 because
+the `gh` CLI is signed in as `Thanatos7777`, which holds `push: false` on this repository.
+Check **Settings → Actions → General** first.
+
+**Do not "fix" git while fixing this — git is already right.** The two authenticate through
+different paths, and only one is wrong:
+
+| | Identity | State |
+|---|---|---|
+| `git push` (Git Credential Manager) | `sudo-install-gravity` | ✅ correct — GitHub reports `committer_login: sudo-install-gravity`, and commits attribute to that account |
+| `gh` CLI (API calls) | `Thanatos7777` | ❌ wrong — read-only here, hence every 403 |
+| commit metadata (`user.name`/`user.email`) | `sudo-install-gravity` / `dpaulday@protonmail.com` | ✅ correct, set in `.git/config` |
+
+Signing `gh` in as the owner is worth doing — it may close SPIKE-13.1 outright by making
+`actions/permissions` readable — but **clearing the stored git credential would break working
+pushes to fix a problem that is not in git.**
 
 Order matters for T-2.9: **make CI run, confirm a green run, then set branch protection.**
 You cannot require a status check that has never reported, so doing it the other way round

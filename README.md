@@ -79,7 +79,13 @@ own gap would be indistinguishable from the literature above. See [`docs/CLAIMS.
 
 ## Status
 
-**Pre-alpha, v0.1.0, unreleased.** The repository is not yet public.
+**Pre-alpha, v0.1.0, unreleased.** The repository is **public** as of 2026-08-06.
+
+⚠️ **CI has never run.** `.github/workflows/ci.yml` is present and correct, but GitHub
+Actions reports zero workflow runs across the repository's entire history. The five gates
+below are real and are enforced — locally, on every commit — but they have never executed on
+the remote. Fixing that comes before branch protection (BACKLOG T-2.9), since you cannot
+require a status check that has never reported.
 
 The planned backlog is essentially complete — but that is a statement about the *modeling
 framework*, not about the concept. Nothing here asserts that gravitational-wave asteroid

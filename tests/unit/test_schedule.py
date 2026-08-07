@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 
 # `tools` is on pythonpath via [tool.pytest.ini_options] in pyproject.toml.
-from schedule import Session, Task, load_tasks, plan
+from schedule import Session, Task, _parse_deps, load_tasks, plan
 
 # --------------------------------------------------------------------------
 # Parsing the real backlog
@@ -64,10 +64,27 @@ def test_deps_all_expands_to_earlier_sprints(tasks: dict[str, Task]) -> None:
     assert all(int(d.split("-")[1].split(".")[0]) < 12 for d in deps)
 
 
-def test_external_blocker_is_recorded_not_treated_as_ready(tasks: dict[str, Task]) -> None:
-    t = tasks["T-2.9"]
-    assert t.external_block == "repo made public"
-    assert t.deps == []
+def test_external_blocker_is_recorded_not_treated_as_ready() -> None:
+    """A non-task dependency becomes an external block, not a silent pass.
+
+    Asserted against `_parse_deps` directly rather than against whichever task
+    happens to be blocked today. This test previously read T-2.9's live
+    `external_block == "repo made public"` and broke on 2026-08-06 when the repo
+    was made public and the blocker was cleared -- nothing was wrong, the project
+    had simply moved on. That is the SIXTH time a test in this file has expired
+    by asserting live backlog state (see the note on
+    `test_batching_beats_naive_switching`). Decoupled permanently: the notation
+    is a property of the parser, and the parser is a pure function.
+    """
+    known = {"T-1.1", "T-1.2"}
+    deps, block = _parse_deps("repo made public", known, sprint=2)
+    assert deps == []
+    assert block == "repo made public"
+
+    # A real dependency list must NOT be mistaken for an external blocker.
+    deps, block = _parse_deps("T-1.1, T-1.2", known, sprint=2)
+    assert deps == ["T-1.1", "T-1.2"]
+    assert block == ""
 
 
 # --------------------------------------------------------------------------
@@ -97,9 +114,30 @@ def test_no_task_scheduled_twice(tasks: dict[str, Task]) -> None:
     assert len(ids) == len(set(ids))
 
 
-def test_blocked_tasks_are_excluded(tasks: dict[str, Task]) -> None:
-    scheduled = {t.id for s in plan(tasks) for t in s.tasks}
-    assert "T-2.9" not in scheduled
+def test_blocked_tasks_are_excluded() -> None:
+    """An externally-blocked task, and anything behind it, must not be scheduled.
+
+    Synthetic rather than live: this asserted `"T-2.9" not in scheduled` until
+    2026-08-06, when T-2.9's blocker was cleared and it became legitimately
+    schedulable. The planner behaviour never changed.
+    """
+    blocked = Task(
+        id="T-9.1",
+        title="blocked",
+        points=1,
+        tier="sonnet-low",
+        deps=[],
+        sprint=9,
+        external_block="a human must do something",
+    )
+    behind = _mk("T-9.2", "sonnet-low", ["T-9.1"])
+    free = _mk("T-9.3", "sonnet-low", [])
+    graph = {x.id: x for x in (blocked, behind, free)}
+
+    scheduled = {x.id for s in plan(graph) for x in s.tasks}
+    assert "T-9.1" not in scheduled, "an externally-blocked task was scheduled"
+    assert "T-9.2" not in scheduled, "a task stranded behind a blocker was scheduled"
+    assert "T-9.3" in scheduled, "an unrelated ready task was dropped"
 
 
 def test_completed_tasks_are_not_rescheduled(tasks: dict[str, Task]) -> None:
@@ -172,44 +210,69 @@ def test_opus_chain_runs_in_one_session() -> None:
     assert [t.id for t in sessions[0].tasks] == ["T-1.1", "T-1.2", "T-1.3"]
 
 
-def test_batching_beats_naive_switching(tasks: dict[str, Task]) -> None:
-    """On the real backlog, heavy tasks must be batched, not run one-by-one.
+def test_batching_beats_naive_switching() -> None:
+    """Heavy tasks must be batched into one session, not run one-by-one.
 
-    Sized against what is actually left. This asserted unconditionally until
-    2026-07-31, when the last `opus` task completed: there were then zero Opus
-    sessions and the test failed with `0 > 0` while nothing was wrong. It is the
-    third test in this file to expire that way, so the guard below is written to
-    keep its teeth either way — if no Opus session is planned, that must be
-    because no heavy work remains, not because the planner dropped it
-    (CLAUDE.md rule 8, make absence loud).
+    **Synthetic, and permanently so.** This assertion has now expired FOUR times
+    against the live backlog, each time because the project moved on rather than
+    because the planner broke:
+
+    * unconditional `heavy_scheduled > len(opus_sessions)` -> failed `0 > 0` on
+      2026-07-31 when the last opus task completed;
+    * guarded for the zero-session case -> failed `1 > 1` on 2026-08-06 when the
+      repo went public, unblocking exactly ONE opus task, which cannot be batched
+      with anything because there is nothing else to batch it with.
+
+    Batching is a property of the PLANNER, and a planner property is provable on
+    a graph we construct. Three independent opus tasks must land in one session,
+    not three. Sizing an assertion against however much work happens to remain is
+    what kept breaking; this cannot expire.
     """
-    sessions = plan(tasks)
+    graph = {
+        x.id: x
+        for x in [
+            _mk("T-1.1", "opus", []),
+            _mk("T-1.2", "opus", []),
+            _mk("T-1.3", "opus", []),
+        ]
+    }
+    sessions = plan(graph)
     opus_sessions = [s for s in sessions if s.model == "opus"]
     heavy_scheduled = sum(len(s.tasks) for s in opus_sessions)
 
-    # "Reachable" means every dependency is already complete. Checking only for
-    # a task's *own* external block is not enough: T-12.5 is `opus` with
-    # `deps all`, so it is transitively stranded behind T-2.9 and T-4.5 while
-    # carrying no blocker of its own.
+    assert heavy_scheduled == 3, "the planner dropped heavy work"
+    assert len(opus_sessions) == 1, (
+        f"three independent opus tasks were split across {len(opus_sessions)} "
+        "sessions; each split is a model switch the batching exists to avoid"
+    )
+
+
+def test_live_backlog_schedules_every_reachable_heavy_task(tasks: dict[str, Task]) -> None:
+    """The live-backlog half of the above: nothing reachable may be dropped.
+
+    This is the part that must stay coupled to the real backlog, because the
+    failure it guards -- the planner silently omitting reachable work -- can only
+    happen there (CLAUDE.md rule 8). It is written as a SET comparison rather
+    than a count, so it stays true no matter how much work is left, including
+    none.
+
+    "Reachable" means every dependency is complete. Checking a task's own
+    external block is not enough: a task with `deps all` is transitively stranded
+    behind any blocker while carrying none itself.
+    """
     done_ids = {t.id for t in tasks.values() if t.done}
-    reachable_heavy = [
-        t
+    reachable_heavy = {
+        t.id
         for t in tasks.values()
         if t.tier == "opus"
         and not t.done
         and not t.external_block
         and all(d in done_ids for d in t.deps)
-    ]
-
-    if not opus_sessions:
-        assert not reachable_heavy, (
-            f"planner scheduled no Opus session while {len(reachable_heavy)} heavy "
-            f"task(s) remain reachable: {[t.id for t in reachable_heavy]}"
-        )
-        return
-
-    assert heavy_scheduled > len(opus_sessions), "no batching happened at all"
-    assert len(opus_sessions) <= 4, "too many Opus boundaries"
+    }
+    scheduled_heavy = {t.id for s in plan(tasks) if s.model == "opus" for t in s.tasks}
+    assert reachable_heavy <= scheduled_heavy, (
+        f"planner dropped reachable heavy work: {sorted(reachable_heavy - scheduled_heavy)}"
+    )
 
 
 def test_render_recognises_cli_completed_tasks(tasks: dict[str, Task]) -> None:

@@ -357,12 +357,36 @@ shape-rejection and one dtype-rejection assertion.
 *Why here:* [ADR-0002](adr/0002-array-conventions.md) states these are enforced by this file, but
 no Sprint 1 task created it — an ADR promising an artifact nothing delivered.
 
-**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps repo made public**
+**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps none**
 `repo-level`. Require green CI on `main`; block force-push and deletion.
 *AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/branches/main/protection` returns a
 `required_status_checks` block listing `test (3.10)`, `test (3.11)`, `test (3.12)`.
-*Blocked by:* GitHub plan limits — private repos on the free tier cannot set branch
-protection. Unblocks the moment the repo is made public.
+*Blocked by:* ~~GitHub plan limits — private repos on the free tier cannot set branch
+protection.~~ ✅ **Unblocked 2026-08-06: the repository is public.** Verified without
+credentials — the API reports `private: false, visibility: public`, and an unauthenticated
+`git ls-remote` returns HEAD. The `deps` field is now `none` so the scheduler can see it;
+it previously read `repo made public`, which is prose the scheduler cannot evaluate and
+which therefore excluded this task even after the condition was met (HANDOVER §5).
+
+⚠️ **THE TASK IS NOT DONE, AND A LARGER FINDING BLOCKS IT.** `gh api
+.../branches/main/protection` returns **404** — no protection is configured. But the AC
+requires `required_status_checks` naming `test (3.10/3.11/3.12)`, and **those checks have
+never reported**: `actions/runs` shows **`total_count: 0`. CI has never run, in the entire
+history of this repository.**
+
+`.github/workflows/ci.yml` is present on the remote (939 bytes), correct, and was added in
+the very first commit — 63 commits ago. Job id `test`, `on: push: branches:[main]`, matrix
+`["3.10","3.11","3.12"]`, which would produce exactly the check names this AC names. So the
+workflow is not the defect. The cause could not be determined from here: reading
+`actions/permissions` returns 403 for this token.
+
+**Consequence, and it reaches the manuscript.** The paper's Methods states that "citation
+discipline is enforced in continuous integration" and that a build "fails without it". The
+*script* is real and does run — it is gate 4 of the five-gate local check, and has run on
+every commit this session. **But it has never run in CI, so the enforcement claim is true
+locally and false on the remote.** Fix the Actions configuration first, confirm a green run,
+then set branch protection — in that order, because you cannot require a status check that
+has never reported.
 
 **SPIKE-4.4 · Two-element spin-2 superposition prototype · 3 pts · `opus` · deps T-1.7, T-1.6** ✅ ⚠️
 Scratch prototype only. Superpose two quadrupole sources of differing orientation at a common

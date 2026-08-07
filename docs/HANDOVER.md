@@ -50,6 +50,48 @@ two.
 
 ---
 
+## 0a. Repository is public — 2026-08-06 — and CI has never run
+
+**T-2.9's blocker cleared.** The repository is public: verified without credentials
+(`private: false`, `visibility: public`, unauthenticated `git ls-remote` returns HEAD).
+
+Two things follow, and the second is the important one.
+
+**The scheduler could not see the unblocking until the `deps` field was changed.** T-2.9 read
+`deps repo made public` — prose, which `schedule.py` cannot evaluate, so it excluded the task
+even after the condition was met. Changed to `deps none`; the scheduler now offers **4 tasks,
+8 points** (T-2.9, T-12.1, T-12.4, T-12.6, unlocking 2 more). This is §5's "make absence
+loud" rule biting again: **a condition expressed in prose is invisible to the tool.**
+
+⚠️ **CI HAS NEVER RUN — `total_count: 0` for the entire history of this repository.**
+`.github/workflows/ci.yml` is present on the remote, correct, and was committed 63 commits
+ago; job id `test`, `on: push: branches:[main]`, matrix `["3.10","3.11","3.12"]`, which
+would produce exactly the check names T-2.9's acceptance criterion requires. So the workflow
+is not the defect. The cause could not be determined from here — reading
+`actions/permissions` returns 403 for the available token. **Check Settings → Actions.**
+
+**Clearing the blocker broke three tests — the SIXTH instance of §5's "tests coupled to
+live backlog state".** They asserted the project's *current* state rather than the
+scheduler's behaviour: that T-2.9's `external_block` reads "repo made public", that T-2.9 is
+excluded from the plan, and that heavy tasks get batched. All three were correct until the
+blocker cleared, and all three then failed while nothing was wrong. The batching one had
+already expired twice before on the same principle. **Fixed permanently, not resized:**
+parser notation is now tested through `_parse_deps` directly, exclusion and batching through
+synthetic graphs, and the one property that genuinely needs the live backlog — that the
+planner drops nothing reachable — is written as a *set comparison* rather than a count, so
+it holds no matter how much work remains, including none.
+
+Order matters for T-2.9: **make CI run, confirm a green run, then set branch protection.**
+You cannot require a status check that has never reported, so doing it the other way round
+either fails or silently protects nothing.
+
+**This reaches the manuscript.** Methods claimed citation discipline is "enforced in
+continuous integration". The check *script* is real — gate 4 of the five, run on every commit
+this session — but it has only ever run **locally**. The paper now says so explicitly rather
+than carrying the stronger claim; correct the wording or make CI run before submission.
+
+---
+
 ## 0. Where the last session stopped — 2026-08-02
 
 > **Update, later the same day (Sonnet session) — T-4.7, T-4.8, T-4.9 have

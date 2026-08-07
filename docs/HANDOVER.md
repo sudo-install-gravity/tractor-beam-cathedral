@@ -81,6 +81,16 @@ synthetic graphs, and the one property that genuinely needs the live backlog —
 planner drops nothing reachable — is written as a *set comparison* rather than a count, so
 it holds no matter how much work remains, including none.
 
+**Sprint 13 now exists for this** — 9 points, 7 tasks, `docs/BACKLOG.md`. It opens with the
+table of hypotheses already **eliminated** (workflow present, registered, `state: active`,
+correct trigger, not a fork, not archived, job names correct), so the spike starts from the
+one hypothesis that survived rather than re-deriving the rest.
+
+⚠️ **SPIKE-13.1 is owner-only and cannot be delegated to an agent.** Every remaining
+hypothesis needs repository-**admin** access. The available token authenticates as
+`Thanatos7777`, not the owner `sudo-install-gravity`, which is why `actions/permissions`
+returns 403. Check **Settings → Actions → General** first.
+
 Order matters for T-2.9: **make CI run, confirm a green run, then set branch protection.**
 You cannot require a status check that has never reported, so doing it the other way round
 either fails or silently protects nothing.

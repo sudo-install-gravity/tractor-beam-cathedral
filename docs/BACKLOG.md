@@ -357,7 +357,7 @@ shape-rejection and one dtype-rejection assertion.
 *Why here:* [ADR-0002](adr/0002-array-conventions.md) states these are enforced by this file, but
 no Sprint 1 task created it — an ADR promising an artifact nothing delivered.
 
-**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps none**
+**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps T-13.2**
 `repo-level`. Require green CI on `main`; block force-push and deletion.
 *AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/branches/main/protection` returns a
 `required_status_checks` block listing `test (3.10)`, `test (3.11)`, `test (3.12)`.
@@ -964,6 +964,102 @@ repo-level (tag, release notes, Zenodo). Tag, release notes, Zenodo DOI for cita
 | | **Total** | **299** | |
 
 **115 tasks**, all ≤3 points, all with explicit file paths.
+
+## Sprint 13 — CI enablement and the enforcement claim (9 pts)
+
+**Why this sprint exists.** The manuscript's Methods states that citation discipline is
+"enforced in continuous integration" and that the build fails without it. Verified
+2026-08-06: **`actions/runs` reports `total_count: 0` for the entire history of this
+repository.** The five gates are real and have run on every commit — *locally*. They have
+never run on the remote. Until they do, the enforcement claim is true of a script and false
+of a pipeline, and the paper cannot carry it as written.
+
+**Diagnostic ground already covered**, so SPIKE-13.1 does not re-derive it:
+
+| Hypothesis | Status | Evidence |
+|---|---|---|
+| Workflow file missing from the remote | **eliminated** | present, 939 bytes, sha `820b299` |
+| Workflow file malformed / unregistered | **eliminated** | GitHub lists it: id `325748978`, `state: active` |
+| Wrong path or wrong trigger | **eliminated** | `.github/workflows/ci.yml`; `on: push: branches:[main]`; 64 pushes to `main` |
+| Repository is a fork (Actions off by default) | **eliminated** | `fork: false` |
+| Repository archived or disabled | **eliminated** | `archived: false`, `disabled: false` |
+| Job names cannot satisfy T-2.9's AC | **eliminated** | job id `test`, matrix `["3.10","3.11","3.12"]` → `test (3.10)` etc., exactly as required |
+| **Actions disabled in repository or account settings** | **NOT TESTED — the leading hypothesis** | `actions/permissions` returns **403**: it requires repo admin, and the only available token authenticates as `Thanatos7777`, not the owner `sudo-install-gravity` |
+
+**SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ⚠️ **owner-only**
+`docs/adr/0008-ci-never-ran.md`. Cannot be delegated to an agent: every remaining hypothesis
+needs **repository-admin access**, which no available token has.
+*Procedure, in order — stop at the first that explains it:*
+1. **Settings → Actions → General.** If "Allow all actions and reusable workflows" is not
+   selected, or Actions are disabled for this repository, that is the answer.
+2. **Account settings → Actions.** A user-level policy disables Actions across all repos.
+3. **Actions tab.** A banner such as "Workflows aren't being run on this forked repository"
+   or a disabled-due-to-inactivity notice names the cause directly.
+4. **Billing → Plan.** Exhausted minutes produce *failed* runs, not zero, so this would be a
+   surprise — check last.
+*AC:* ADR-0008 records which hypothesis held, the evidence, and the setting changed. If none
+of the four explains it, the ADR says so and the spike escalates rather than guessing —
+**a plausible cause recorded without evidence is worse than an open question** (rule 1's
+reasoning, applied to infrastructure).
+
+**T-13.2 · Confirm a green CI run on `main` · 1 pts · `sonnet-low` · deps SPIKE-13.1**
+`repo-level`. Push any commit to `main` and observe the result.
+*AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/actions/runs --jq .total_count`
+returns **≥ 1**; the newest run has `conclusion == "success"` and **three** completed jobs
+named `test (3.10)`, `test (3.11)`, `test (3.12)`.
+*Trap:* a run that is merely *present* is not enough. It must be **green**, because CI runs
+`ruff`, `mypy`, `check_citations.py` and `pytest` on a clean Ubuntu box with no `.venv` — and
+3 tests skip locally for absent CuPy/PyVista, which may behave differently there. **Expect
+the first remote run to fail, and treat that as the point of the exercise.**
+
+**T-13.3 · Make the enforcement claim true in the manuscript · 1 pts · `sonnet-low` · deps T-13.2**
+`docs/paper/nature-draft.md` Methods, "Citation CI"; `README.md` Status.
+*AC:* the ⚠️ caveat added 2026-08-06 ("it has run locally, not in GitHub Actions") is removed
+**only after** T-13.2 is green, and replaced with the run URL. Removing it before then
+restores a false claim — this task's whole content is *not* doing it early.
+
+**T-13.4 · `tools/check_ci_status.py` · 2 pts · `sonnet-low` · deps T-13.2**
+`tools/check_ci_status.py` — `main() -> int`. Queries `actions/runs` for `main` and reports
+the newest run's conclusion and age.
+*AC:* exit 0 only when the newest `main` run is `success`; exit 1 with a named reason for
+`total_count == 0` ("CI has never run"), a non-success conclusion, or a run older than the
+current `HEAD`. Deliberately **not** a pytest test and **not** a sixth gate: it needs network
+and credentials, and a gate that cannot run offline would break the local five. Documented in
+`HANDOVER.md` §8 as an on-demand check.
+*Rationale:* zero runs went unnoticed for 64 commits because nothing looked. This is the same
+"derive, don't assert" fix applied to the pipeline (cf. `test_architecture.py`).
+
+**T-13.5 · De-flake the Numba performance assertion · 2 pts · `sonnet-low` · deps none**
+`tests/unit/test_backend.py::test_field_grid_numba_10x_faster_on_128_cubed_grid`.
+Measured 2026-08-06: passes 3/3 in isolation, failed once during a contended full-suite run
+at a ratio of 8.5× against its 10× threshold.
+*AC:* the test no longer fails under load. Take **best-of-3 wall-clock** rather than a single
+timing, keeping the 10× threshold; do **not** lower the threshold — that would weaken a real
+performance claim to fix a measurement problem, which is the inverse of HANDOVER §5's "fix
+the measurement, never the tolerance".
+*Trap:* this assertion will be *more* fragile on CI runners than locally — shared vCPUs,
+noisy neighbours. If it proves unfixable there, mark it `@pytest.mark.skipif` on CI with the
+reason recorded, rather than deleting a performance guard.
+
+**T-13.6 · Retarget T-2.9 behind a green pipeline · 1 pts · `sonnet-low` · deps T-13.2** ✅
+`docs/BACKLOG.md`. Change T-2.9's `deps` from `none` to `T-13.2`.
+*AC:* `schedule.py --plan` shows T-2.9 after T-13.2. **You cannot require a status check that
+has never reported**, so branch protection set before a green run either fails or silently
+protects nothing.
+
+*Done 2026-08-06, immediately rather than scheduled.* The plan was checked the moment Sprint
+13 parsed, and it put **T-2.9 first** — ahead of the green run it depends on. Leaving that
+ordering in place while a task existed to fix it later is exactly how the wrong thing gets
+done first.
+
+**T-13.7 · Trigger a fresh `researcher` pass on EQ-040's neighbours · 2 pts · `sonnet` · deps none**
+Not CI, but the last verification debt outstanding. `docs/INDEX.md` §1: EQ-041/042 ([FH] 4.30,
+4.35), EQ-044 ([B] 123a) and EQ-045 ([FH] 3.11) were read at source 2026-08-03 by this
+project rather than by an independent pass.
+*AC:* an independent `researcher` confirms or corrects each; disagreements are recorded in
+`docs/CLAIMS.md` with a date, not silently reconciled.
+
+---
 
 ### Critical path
 

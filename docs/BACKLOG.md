@@ -1036,10 +1036,14 @@ and credentials, and a gate that cannot run offline would break the local five. 
 *Rationale:* zero runs went unnoticed for 64 commits because nothing looked. This is the same
 "derive, don't assert" fix applied to the pipeline (cf. `test_architecture.py`).
 
-**T-13.5 · De-flake the Numba performance assertion · 2 pts · `sonnet-low` · deps none**
-`tests/unit/test_backend.py::test_field_grid_numba_10x_faster_on_128_cubed_grid`.
-Measured 2026-08-06: passes 3/3 in isolation, failed once during a contended full-suite run
-at a ratio of 8.5× against its 10× threshold.
+**T-13.5 · De-flake the two wall-clock assertions · 2 pts · `sonnet-low` · deps none**
+`tests/unit/test_backend.py` — **both** timing-sensitive tests, not just the first:
+`test_field_grid_numba_10x_faster_on_128_cubed_grid` (line 140) and
+`test_a_512_cubed_grid_completes_within_a_4gb_budget` (line 278).
+Measured 2026-08-06: the suite failed **2 tests** on one contended run and then passed
+**5 consecutive full runs** (956 passed each). The pair are the only wall-clock assertions in
+the suite, and they fail together under load — which is the signature of contention rather
+than regression.
 *AC:* the test no longer fails under load. Take **best-of-3 wall-clock** rather than a single
 timing, keeping the 10× threshold; do **not** lower the threshold — that would weaken a real
 performance claim to fix a measurement problem, which is the inverse of HANDOVER §5's "fix
@@ -1058,6 +1062,25 @@ protects nothing.
 13 parsed, and it put **T-2.9 first** — ahead of the green run it depends on. Leaving that
 ordering in place while a task existed to fix it later is exactly how the wrong thing gets
 done first.
+
+**T-13.8 · `tools/gates.py` — run the five gates and report honestly · 2 pts · `sonnet-low` · deps none**
+`tools/gates.py` — `main() -> int`. Runs ruff check, ruff format --check, `python -m mypy src`,
+`check_citations.py` and `pytest -q` in order, and prints a pass/fail line per gate.
+*AC:* exits non-zero if **any** gate fails; prints each gate's name and status; never masks a
+gate's exit code behind a pipe. A gate that produces no output must be reported as **failed**,
+not skipped.
+*Why this exists — two near-misses on 2026-08-06, both mine:*
+1. `.venv\Scripts\mypy.exe src` exited **1 with zero output** for an hour before anyone
+   noticed, because a broken console shim produced a silent failure indistinguishable from
+   silence (HANDOVER §8).
+2. Running the gates chained as `... && pytest -q 2>&1 | tail -1 && git commit` **masked a
+   2-test failure**: the pipe's exit code is `tail`'s, always 0, so the chain proceeded and a
+   commit was pushed unverified. The tests turned out to be the flaky pair above and the tree
+   was green — but the check had stopped checking, which is the failure whether or not it
+   happened to matter that time.
+Both are the same defect class the project keeps finding: **a verification that cannot fail
+loudly is not a verification.** A single entry point removes the chance to compose the
+commands wrongly.
 
 **T-13.7 · Trigger a fresh `researcher` pass on EQ-040's neighbours · 2 pts · `sonnet` · deps none**
 Not CI, but the last verification debt outstanding. `docs/INDEX.md` §1: EQ-041/042 ([FH] 4.30,

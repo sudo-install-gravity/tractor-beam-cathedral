@@ -17,6 +17,14 @@ the code after a **large accumulated drift** was found — see the drift note at
 landed without a registry row, and rewrote eleven §2 Module Map rows. **None of the new
 rows is marked `VERIFIED`**; the registry holds no verification record for them.
 
+**Updated 2026-08-08 (planning session — no source changed):** recorded Sprint 14
+(`docs/BACKLOG.md`, T-14.1–T-14.9, 9 tasks / 22 pts, deflection tradespace for paper
+§R8) and its literature survey `docs/paper/threat-population-survey.md`. Nothing in
+`src/` changed. See the new 2026-08-08 paragraphs in §1 (citations), §2 (planned
+modules) and §3 (pending assumption-ledger entries) — each points at the Sprint 14
+header in `docs/BACKLOG.md` as the authoritative verification record, per that
+document's own note that it wins on disagreement.
+
 ---
 
 ## 1. Equation Registry
@@ -186,6 +194,51 @@ the discharge of claim B-1, has **no row in the validation table at all.** Per �
 unvalidated benchmark is not passing; an *unlisted* one cannot even be checked for staleness.
 This should be the next `indexer` task.
 
+**Citations verified 2026-08-08 — Sprint 14 planning pass, none yet implemented.** A
+batched `researcher` pass for the planned deflection-tradespace section (paper §R8)
+checked nine sources; the authoritative per-source verification block is the Sprint 14
+header in `docs/BACKLOG.md`, not this file — cross-check there before citing, per that
+document's own note that it wins on disagreement. **No EQ-### rows are added here**:
+D-14.1–D-14.7 (that header's "Decisions fixed at planning") are fixed decisions, not
+yet code, and this registry's convention is one row per *implemented* equation. Rows
+land with T-14.2 (`required_miss_distance`), T-14.3 (`required_delta_v`) and T-14.4
+(`required_luminosity`) once those functions exist. Sources, with the abbreviations
+Sprint 14 uses:
+
+- **[I]** Izzo, "On the Deflection of Potentially Hazardous Objects," AAS 05-141
+  (2005), open ESA PDF, eqs. (1)–(3) confirmed by eye (automated extraction was
+  unreliable). The PDF's *metadata* title is stale (mentions a debris cloud —
+  template reuse); the content is the correct paper, flagged so a future verifier is
+  not spooked by it.
+- **[G12]** Greenstreet, Ngo & Gladman, *Icarus* 217:355 (2012), Fig. 10/§6 — mean
+  Earth impact speed 20.6 km/s, peak ~15 km/s, tail to ~45 km/s.
+- **[G20]** Greenstreet et al., *Icarus* 347:113792 (2020) — median required delta-v
+  for a 1 Earth-radius miss: 1.4/0.76/0.55/0.46/0.38 cm/s at 10/20/30/40/50 yr.
+- **[P13]** Popova et al., *Science* 342:1069 (2013); Brown et al., *Nature* 503:238
+  (2013) — Chelyabinsk kinematics and mass.
+- **[S19]** Scheeres et al., *Nature Astron.* 3:352 (2019) — Bennu mass 7.329e10 kg,
+  bulk density 1190 kg/m³. Not Lauretta et al., *Nature* 568:55 — wrong paper
+  for this claim, do not cite it here.
+- **[D23]** Daly et al., *Nature* 616:443 (2023) — Dimorphos D = 151 m; mass
+  4.3e9 kg is DERIVED from that diameter plus an assumed 2400 kg/m³ density, not
+  stated directly by the paper.
+- **[C23]** Cheng et al., *Nature* 616:457 (2023) — DART delta-v = 2.70 mm/s (already
+  the source of `target/deflection.py`'s existing DART cross-check, T-8.7/T-8.8).
+- **[C26]** Cheng, Scolnic, Kurlander, Chow & Fernandes, arXiv:2601.16255 — LSST
+  simulated-discovery median warning times by size.
+- **[IAU]** Prša et al., *AJ* 152:41 (2016), arXiv:1605.09788, Table 1 — IAU 2015
+  Resolution B3 nominal `GM_EARTH`, `R_EARTH_EQ`; planned for `core/constants.py`
+  (T-14.2).
+- **Gravitational focusing**, `b = R⊕√(1+v_esc²/v∞²)` — no citable
+  numbered source found (four attempts logged in the Sprint 14 header);
+  elementary-mechanics carve-out invoked, the same category as EQ-023's unnumbered
+  display equation and `target/deflection.py`'s own existing carve-out.
+
+None of the above trace to HFGW/Baker literature (epistemic firewall checked, per the
+survey file's own record). `docs/CLAIMS.md` is unchanged by this pass — the Sprint 14
+header states the tradespace inputs file as *established* and the d-cancellation as
+*our derivation* at T-14.8, not yet done.
+
 ---
 
 ## 2. Module Map
@@ -254,6 +307,20 @@ margin**, so ADR-0003's reversal condition is not triggered. See
 its backlog entry carries four measured traps that each produce a *passing but meaningless*
 test — read them before writing the tests, not after.
 
+**Planned, not yet built — Sprint 14, recorded 2026-08-08, zero source change.**
+`docs/BACKLOG.md` T-14.1 and T-14.5 specify two new modules — `src/gwtb/target/threat.py`
+and `src/gwtb/ledger/tradespace.py` (paths given in full, deliberately, so this note
+cannot be misread as a live §2 row for a file that does not exist yet — see
+`test_every_module_map_row_points_at_a_real_module` in §"Automated enforcement" below).
+Three **live** modules gain planned additions instead: `core/constants.py` gains
+`GM_EARTH`, `R_EARTH_EQ` (T-14.2, [IAU] Table 1, verified 2026-08-08 — see §1);
+`target/deflection.py` gains `required_miss_distance` (T-14.2) and `required_delta_v`
+(T-14.3); `target/coupling.py` gains `required_luminosity` (T-14.4). **None of these six
+names exists in the code yet — do not add them to the rows above until the tasks land.**
+Adding them now would satisfy nothing (the automated check reads the code, not this
+note) and would misrepresent the code to a reader of this file, which is the one
+failure mode this index exists to prevent.
+
 ---
 
 ## 3. Assumption Ledger
@@ -294,6 +361,16 @@ near those edges.
 | **The finite-size form factor assumes a *volume-filling* `l=2` radial profile** — `δρ` uniform on `[0, R]`, giving `1 − 5(kR)²/98` | `bodies/multipole.py:finite_size_correction`; [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md) eq. 3 vs eq. 5 | The body's quadrupole is distributed through its volume | **A body that acquires its quadrupole by deforming its *surface* has `δρ ∝ δ(r−R)` and `1 − (kR)²/14` instead — 40% larger.** That is exactly the incompressible tidal (`elastic.py:induced_quadrupole`, T-4.3) and rotational (`sphere.py:oblateness_quadrupole`, T-4.6) case, so this correction **must not be applied to either without re-deriving**. Both cases are legitimately "the uniform sphere"; the phrase does not determine the answer. A future source quoting `1/14` is *not* a confirmation of EQ-034 — it confirms the other one |
 | **ADR-0006's cited prototypes were never committed** — `scratchpad/spike_9_6.py`, `spike_9_6b.py` — because `scratchpad/` was untracked until 2026-08-02 | [ADR-0006](adr/0006-focused-field-far-field-regime.md) "Context" | Found while writing [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md) 2026-08-02 | **Resolved the same day.** A fresh `scratchpad/spike_9_6.py` regenerates every ADR-0006 figure (angular spread, margin, `D/λ` table, sign-convention table, Rayleigh background) from current production code and the geometry already pinned in `tests/unit/test_focused_field.py`; all reproduce, including the peak-to-background ratio of 8.75 against the naive `√N = 8.00`. Recorded rather than silently fixed, per rule 8 — absence of a reproducible prototype in an accepted ADR is itself a finding in a project that optimizes for auditability |
 | **The finite-size correction is a leading-order truncation and goes negative** at `kR = √(98/5)`, i.e. `R/λ = 0.7046` | `bodies/multipole.py:finite_size_correction`; `tests/unit/test_multipole.py::test_finite_size_correction_validity_floor_is_recorded` | `R/λ ≪ 0.1`; departure from unity is 2.0142% already at `R/λ = 0.1` | A wall, not a bug (rule 5). The series `1 − 5(kR)²/98` returns *negative* form factors past the crossing and is meaningless well before it. T-4.7 adds the structured out-of-regime warning at `R/λ > 0.1`. **Do not "fix" the sign** — the fix is to stop calling it out of regime. The exact closed form (ADR-0007 eq. 4) is *not* a remedy: it is cancellation-limited below `kR ≈ 0.05` and is less accurate than the series in the regime that matters |
+
+**Pending — Sprint 14, recorded 2026-08-08, not yet added.** `docs/BACKLOG.md` T-14.8
+schedules four new rows for this table once Sprint 14 lands: radial-closing lead time
+`t = d / v∞` (D-14.2); thrust duration equal to that lead time (D-14.4);
+encounter geometry `γ = 1` in the secular-deflection regime, optimistic by at most
+0.19 decades against the Izzo eq. (3), Table 1 range `γ ∈ [0.65, 1]` (D-14.3); and
+a geometric (not measured) absorption cross-section `σ = π(D/2)²` (D-14.5). None
+is asserted here — per this section's own rule, an approximation belongs in this
+ledger once it is in force in code, not while it is still a planning-session decision.
+Tracked so the omission is visible rather than silent (rule 8) until T-14.8 closes it.
 
 ---
 

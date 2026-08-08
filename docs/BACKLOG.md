@@ -1091,6 +1091,231 @@ project rather than by an independent pass.
 
 ---
 
+## Sprint 14 — Deflection tradespace (paper section R8) (22 pts)
+
+**Why this sprint exists.** Requested 2026-08-08: the paper needs an exploration of the
+tradespace among detection distance, closure velocity, threat-object mass, and the
+gravity-spike strength required to move an Earth-impacting trajectory to a miss within the
+lead time detection allows. Literature grounding is in
+[`docs/paper/threat-population-survey.md`](paper/threat-population-survey.md). The section
+generalizes R6's single-point "required = 43 N" into a surface, and is expected to be a
+**walls result** (rule 5): the falsifier in T-14.6 fires if any cell reports feasibility.
+
+**Citations verified 2026-08-08** (single batched `researcher` pass + one visual check):
+
+- **[I]** Izzo, D., "On the Deflection of Potentially Hazardous Objects," AAS 05-141 (2005),
+  open PDF: `https://www.esa.int/gsp/ACT/doc/MAD/pub/ACT-RPR-MAD-2005-OnTheDeflectionOfPotentiallyHazardousObjects.pdf`.
+  **Eqs. (1)–(3) confirmed by eye this session** (automated extraction was unreliable):
+  eq. (2) is the along-track drift `s = (3a/√(μR_E)) ∫ (t_s−t) v⃗·A⃗ dt`, which for an
+  impulsive tangential Δv on a near-circular orbit reduces exactly to `s = 3·Δv·t_s`
+  (correspondence to Scheeres & Schweickart shown on the paper's p. 6); eq. (3) is
+  `d_min = γ·s` with γ ∈ [0.65, 1] tabulated in its Table 1.
+  ⚠️ The PDF's *metadata* title is stale ("…density of a debris cloud" — template reuse).
+  The content is the correct paper. Recorded so a future verifier is not spooked.
+- **[G12]** Greenstreet, Ngo & Gladman, *Icarus* 217:355 (2012), Fig. 10 / §6: mean Earth
+  impact speed **20.6 km/s**, peak ~15 km/s, tail to ~45 km/s.
+- **[G20]** Greenstreet et al., *Icarus* 347:113792 (2020): median required Δv for a 1 R⊕
+  miss = **1.4 / 0.76 / 0.55 / 0.46 / 0.38 cm/s** at 10/20/30/40/50 yr before impact
+  (numbers confirmed via B612's own project page; Icarus PDF paywalled).
+- **[P13]** Popova et al., *Science* 342:1069 (2013): Chelyabinsk 19.16 ± 0.15 km/s,
+  1.3×10⁷ kg (factor-2), 19.8 ± 4.6 m. Brown et al., *Nature* 503:238 (2013): ~500 kt.
+- **[S19]** Scheeres et al., *Nature Astron.* 3:352 (2019): Bennu mass 7.329 ± 0.009×10¹⁰ kg,
+  bulk density **1190 ± 13 kg/m³**. ⚠️ Not Lauretta et al. *Nature* 568:55 — wrong paper for
+  this claim; do not cite it.
+- **[D23]** Daly et al., *Nature* 616:443 (2023): Dimorphos D = 151 ± 5 m, assumed density
+  **2400 ± 300 kg/m³**; mass 4.3×10⁹ kg is *derived* from those two (the paper states no
+  mass directly — docstrings must say "derived from [D23] diameter + density").
+- **[C23]** Cheng et al., *Nature* 616:457 (2023), abstract: DART Δv = 2.70 ± 0.10 mm/s,
+  β ∈ [2.2, 4.9].
+- **[C26]** Cheng, Scolnic, Kurlander, Chow & Fernandes, arXiv:2601.16255, abstract: LSST
+  discovers 79.7% of >140 m impactors (39.0% with >1 yr warning), 50.3% of 50–140 m
+  (median warning 106.2 d), 26.8% of 20–50 m (21.5 d), 10.5% of 10–20 m (12.4 d).
+- **Gravitational focusing** `b = R⊕√(1+v_esc²/v∞²)`: no open numbered source found
+  (4 genuine attempts logged) — **elementary-mechanics carve-out** invoked, per the
+  precedent in `target/deflection.py`'s module docstring.
+- **UNVERIFIED and not used:** the 2017 SDT report's 2.6 g/cm³ density (40 MB PDF resisted
+  fetch; only unsourced secondary mentions found). Superseded by the two *measured*
+  densities [S19] 1190 and [D23] 2400 kg/m³, which are strictly better anchors.
+- **[IAU]** Prša et al., *AJ* 152:41 (2016), arXiv:1605.09788, **Table 1** ("Nominal solar
+  and planetary conversion constants set forth by IAU 2015 Resolution B3"): Earth equatorial
+  radius (nominal) **6.3781×10⁶ m**; terrestrial mass parameter GM_E (nominal)
+  **3.986004×10¹⁴ m³ s⁻²**. Verified against the full text 2026-08-08 (plan review flagged
+  the earlier "verify at implementation" deferral as violating this file's own
+  verify-at-planning rule — it was resolved the same day rather than deferred).
+
+**Decisions fixed at planning — tasks below have zero open decisions:**
+
+- **D-14.1 Miss criterion:** deflection succeeds when the unperturbed impact parameter grows
+  by `b_req(v∞) = R⊕·√(1 + v_esc²/v∞²)` (gravitational focusing; carve-out above).
+- **D-14.2 Lead time:** `t = d / v∞` — radial closing at the hyperbolic excess speed,
+  detection distance `d` measured from Earth. Heliocentric encounter geometry is a stated
+  approximation → assumption-ledger entry (T-14.8).
+- **D-14.3 Required Δv, two published bounds, no invented interpolation:**
+  *conservative* (impulsive floor) `Δv = b_req/t`, valid as an upper bound at all leads;
+  *optimistic* (secular) `Δv = b_req/(3t)`, [I] eq. (2), valid only for `t ≥` one orbital
+  period, with γ = 1 ([I] eq. (3); real encounters γ ∈ [0.65, 1] → requirement optimistic by
+  ≤ 0.19 decades — ledger entry, negligible against ~30-decade gaps).
+- **D-14.4 Thrust profile:** the spike force is applied continuously over the entire lead
+  time (`duration = t`) — best case for the spike; ledger entry.
+- **D-14.5 Channel:** absorption thrust is the only net-force radiative channel (T-8.3's
+  finding: tidal coupling produces strain, no net force, and cannot alter a trajectory).
+  Required luminosity is sized **at engagement start**, i.e. at source–target distance `d`,
+  with geometric cross-section `σ = π(D/2)²`.
+- **D-14.6 The d-cancellation is a derived result, asserted, not discovered:** with D-14.2,
+  D-14.4, D-14.5: `F_req = m·b_req/(k t²)` and `L_req = F_req·4πd²c/σ`, and `t = d/v∞` gives
+  `L_req = 4π c · m · b_req · v∞² / (k σ)` — **detection distance cancels exactly.** For an
+  Earth-based array, detecting farther buys lower force and Δv but not lower luminosity:
+  the r² dilution eats exactly what the longer lead time buys. This is the section's
+  headline structural finding; T-14.5 and T-14.6 assert it to machine precision.
+- **D-14.7 Grid:** `d ∈ {0.1, 0.3, 1, 3, 10, 40} AU`; `v∞ ∈ {5, 10, 17.3, 30, 50, 72} km/s`
+  (17.3 = the [G12] mean impact speed 20.6 km/s stripped of focusing:
+  `√(20.6² − 11.19²)`); diameters `{20, 50, 140, 500, 1000, 10000} m`; densities
+  `{1190 [S19], 2400 [D23]} kg/m³`. Achieved luminosity: `7.5e-2 W`, the same array
+  configuration constant `campaign_r6` uses (`lum` in `tools/run_campaign.py:652`).
+
+**T-14.1 · Threat-population anchors · 2 pts · `sonnet-low` · deps none**
+`src/gwtb/target/threat.py` — frozen dataclass `ThreatAnchor(name: str, diameter_m: float,
+mass_kg: float, speed_mps: float | None, source: str)`; module constants
+`RHO_RUBBLE_PILE = 1190.0` ([S19]), `RHO_STONY = 2400.0` ([D23]);
+`ANCHORS: tuple[ThreatAnchor, ...]` = Chelyabinsk (19.8, 1.3e7, 1.916e4, [P13]),
+Dimorphos (151.0, 4.3e9, None, [D23] — "derived from diameter + density"),
+Bennu (490.0, 7.329e10, None, [S19]); `mass_from_diameter(diameter: float, density: float)
+-> float` = `density * pi * diameter**3 / 6`.
+*AC:* `mass_from_diameter(151.0, RHO_STONY)` matches the Dimorphos anchor to rtol 2e-2;
+`mass_from_diameter(490.0, RHO_RUBBLE_PILE)` matches Bennu to rtol 2e-2 (the two anchors
+close on their own sources' density/diameter — this is the test that the anchor table is
+self-consistent); every anchor's `source` is non-empty (absence-loud); raises on
+non-positive/non-finite inputs.
+
+**T-14.2 · Gravitational-focusing miss criterion · 2 pts · `sonnet-low` · deps T-8.8**
+`src/gwtb/core/constants.py` — add `GM_EARTH = 3.986004e14` and `R_EARTH_EQ = 6.3781e6`
+(source comments: [IAU] Table 1 — verified at planning, see the citation block above).
+`src/gwtb/target/deflection.py` — `required_miss_distance(v_infinity: float) -> float` =
+`R_EARTH_EQ * sqrt(1 + v_esc**2 / v_infinity**2)` with `v_esc = sqrt(2*GM_EARTH/R_EARTH_EQ)`.
+Elementary-mechanics carve-out (module-docstring precedent); docstring must state the
+derivation (energy + angular-momentum conservation, unperturbed hyperbolic encounter) and
+that no open numbered source exists (researcher, 2026-08-08, 4 attempts).
+*AC:* `required_miss_distance(sqrt(2*GM_EARTH/R_EARTH_EQ))` = `√2 · R_EARTH_EQ` rtol 1e-12;
+`required_miss_distance(1e8)` → `R_EARTH_EQ` rtol 1e-3; strictly decreasing in `v_infinity`;
+raises on `v_infinity ≤ 0` or non-finite.
+
+**T-14.3 · Required Δv, both published regimes · 3 pts · `sonnet-low` · deps T-14.2**
+`src/gwtb/target/deflection.py` — `required_delta_v(miss: float, lead_time: float,
+orbit: float, regime: str) -> float`. `regime="impulsive-floor"`: `miss/lead_time` — an
+**upper bound** on the requirement at every lead (drift is never less than impulsive);
+`regime="secular"`: `miss/(3*lead_time)` per [I] eq. (2) with γ = 1 ([I] eq. (3)); **raise**
+`ValueError` if `lead_time` < the orbital period implied by `orbit` (mirror image of
+`miss_distance`'s existing guard — secular drift needs multiple orbits to accumulate).
+Any other `regime` raises (absence-loud; no silent default).
+*AC:* `secular == impulsive/3` to rtol 1e-12 wherever both are defined; **bracketing test
+against [G20]** — for each published pair (10 yr, 1.4 cm/s), (20, 0.76), (30, 0.55),
+(40, 0.46), (50, 0.38), with `miss = R_EARTH_EQ` (matching [G20]'s stated 1 R⊕ target,
+**not** the D-14.1 focusing-corrected value) and `orbit = AU`:
+`required_delta_v(..., "secular") ≤ published ≤ required_delta_v(..., "impulsive-floor")`.
+All five bracket — verified at planning: impulsive gives 2.02/1.01/0.67/0.51/0.40 cm/s,
+secular a third of each. This is a zero-tolerance test of *consistency with the field's
+own numbers*, not a fit.
+
+**T-14.4 · Absorption-channel inversion · 2 pts · `sonnet-low` · deps T-8.4**
+`src/gwtb/target/coupling.py` — `required_luminosity(force: float, cross_section: float,
+distance: float) -> float` = `force * 4*pi*distance**2 * c / cross_section` (algebraic
+inverse of `channel_absorption`; same Source line, same validation style; `force` must be
+positive here — a required magnitude, not a signed thrust).
+*AC:* round-trip `channel_absorption(required_luminosity(F, σ, d), σ, d).force == F` to
+rtol 1e-12 over a log-spaced grid of F, σ, d; R6 anchor: F = 43 N, σ = π·500² m²,
+d = `TARGET_RANGE` → **7.39e30 W** rtol 1e-2 (≈ 1.9e4 L_sun — the paper's scale sentence).
+
+**T-14.5 · Tradespace grid · 3 pts · `sonnet-low` · deps T-14.1, T-14.2, T-14.3, T-14.4**
+`src/gwtb/ledger/tradespace.py` — frozen dataclass with exactly these fifteen typed fields:
+`TradespaceCell(detection_distance_m: float, v_infinity_mps: float, diameter_m: float,
+density_kgm3: float, mass_kg: float, lead_time_s: float, miss_required_m: float,
+delta_v_floor_mps: float, delta_v_secular_mps: float, force_floor_n: float,
+luminosity_floor_w: float, luminosity_secular_w: float, gap_decades_floor: float,
+gap_decades_secular: float, secular_valid: bool)`, and
+`tradespace(detection_distances, v_infinities, diameters, densities, achieved_luminosity)
+-> list[TradespaceCell]` over the D-14.7 grid, computing exactly the D-14.1…D-14.6 chain.
+`secular_valid` is `lead_time ≥` the orbital period at `orbit = AU`; the three `*_secular*`
+float fields are `nan` **iff** `secular_valid` is `False` — `nan` in any other field, or a
+finite secular value alongside `secular_valid == False`, is an error. (Deliberate
+asymmetry: there is no `force_secular_n`; the d-cancelled form `L = 4πc·m·b·v∞²/(kσ)`
+needs no intermediate force, and a field nobody computes would invite a silent-wrong fill.)
+**Every consumer of secular fields must filter on `secular_valid`, never on `isnan`** — the
+flag is the contract, the `nan` is just the poison behind it. On this grid the filter bites
+hard: at v∞ ≥ 17.3 km/s only d = 40 AU is secular-valid; at 5–10 km/s, d ∈ {3, 10, 40} AU.
+*AC:* every field finite except the guarded secular `nan`s, with a single loud `ValueError`
+naming the first offending cell otherwise; **d-cancellation (D-14.6), asserted per branch:**
+`gap_decades_floor` agrees across *all* d at fixed (v∞, D, ρ) to atol 1e-9 decades, and
+`gap_decades_secular` agrees across the `secular_valid` subset of d at fixed (v∞, D, ρ)
+to atol 1e-9 (skipping, and counting, subsets with < 2 valid cells — the test asserts the
+floor branch checked ≥ 2 points for every (v∞, D, ρ) and reports how many secular subsets
+were single-point); a test feeds a mixed valid/`nan` column through the aggregation helper
+and asserts the `nan` cells were excluded by the flag, not by luck; `gap_decades_floor`
+strictly increasing in mass at fixed (d, v∞, ρ); spot cell pinned: (d = 40 AU, v∞ = 5 km/s,
+D = 20 m, ρ = 2400) → `luminosity_secular_w` = **1.57e28 W** rtol 2e-2 (planning-session
+arithmetic, confirmed independently at plan review: `4πc·m·b·v∞²/(3σ)` with
+m = 1.005e7 kg, b = 1.563e7 m, σ = 314.16 m²). Note: this spot cell is deliberately *not*
+the grid's minimum-gap cell (that is ρ = 1190 — see T-14.6); the two numbers must not be
+expected to coincide.
+
+**T-14.6 · Campaign R8 · 3 pts · `sonnet-low` · deps T-14.5**
+`tools/run_campaign.py` — `campaign_r8(outdir)` registered as `"R8"` in `CAMPAIGNS`; runs
+`tradespace(...)` on the D-14.7 grid with `achieved_luminosity = 7.5e-2` (same constant as
+`campaign_r6`); writes `R8.json` with the full cell list, the grid, and the achieved value.
+*Falsifier (self-evaluated, like R2–R6):* fires if **(a)** any `gap_decades_*` ≤ 0 anywhere
+(a vanished wall is a defect until proven a discovery — rule 5), or **(b)** the D-14.6
+d-cancellation fails at atol 1e-9 decades, or **(c)** any cell is non-finite outside the
+guarded secular-`nan` case.
+*AC:* `--only R8` runs green; `manifest.json` gains R8 with a verdict; exit-code semantics
+unchanged; R8.json's top level carries `best_case_gap_decades` = the minimum
+`gap_decades_secular` **over `secular_valid` cells only** (filter on the flag, then `min` —
+never bare `min()` over a `nan`-bearing sequence, which is order-dependent and silent), and
+the campaign asserts `28.5 ≤ best_case_gap_decades ≤ 29.5` — plan-review computed the true
+minimum as **29.016 decades**, at (D = 20 m, ρ = 1190, v∞ = 5 km/s): the rubble-pile
+density, not the ρ = 2400 of T-14.5's spot cell, since the lighter body is the easier
+target. That number is the section's punchline and must not be buried.
+
+**T-14.7 · Figure 8: the tradespace · 3 pts · `sonnet` · deps T-14.6**
+`tools/run_campaign.py` (alongside the existing fig writers) — `fig8_tradespace.png`,
+two panels, shared colourblind-safe style of Figs 3–7 (2026-08-07 redraw).
+**Panel a:** heatmap of `gap_decades_secular` over (v∞, diameter) at ρ = 2400 — the axes
+that *survive* the d-cancellation — annotated with the [P13]/[D23]/[S19] anchor points and
+contour labels in decades. **Panel b:** required Δv vs lead time: both D-14.3 bounds as
+lines, the five [G20] medians as points falling between them (the bracketing is *visible*),
+and the [C26] median-warning verticals (12.4 d, 21.5 d, 106.2 d) shading the region the
+discovery literature actually delivers.
+*AC:* legible at single-column width; caption text lives in the figure-legends section
+(T-14.8), not baked into the image; anchor points labelled by name.
+
+**T-14.8 · Paper section R8 + ledger entries · 3 pts · `sonnet` · deps T-14.6, T-14.7**
+`docs/paper/nature-draft.md` — new Results subsection "R8 — The deflection tradespace"
+after R7; a Methods paragraph (the D-14.1…D-14.6 chain, with citations [I], [G12], [G20],
+[C26], carve-out stated); Figure 8 legend; the R8 row in the Numbers-in-this-draft section.
+Content requirements: the d-cancellation stated as the structural finding; the ≈29-decade
+best-corner gap; the [C26] warning-time reality check reframing *detection distance* (not
+survey completeness) as what sets lead time for most size classes; explicit statement that
+this section *quantifies* the wall rather than removing it.
+`docs/INDEX.md` assumption-ledger entries: D-14.2 radial closing; D-14.4 duration = lead
+time; D-14.3 γ = 1 (≤ 0.19-decade optimism); D-14.5 geometric cross-section.
+`docs/CLAIMS.md`: tradespace inputs filed as *established*; the d-cancellation filed as
+*our derivation* (elementary, from D-14.2/D-14.4/D-14.5).
+*AC:* `check_citations.py` green; every number in the section traces to R8.json or a [·]
+source; the survey file's remaining `NEEDS-VERIFY` rows are resolved or explicitly carried.
+
+**T-14.9 · Rebuild the .docx · 1 pts · `sonnet-low` · deps T-14.8**
+Run `tools/build_paper_docx.py` after the md changes land.
+*AC:* exit 0; `docs/paper/nature-draft.docx` mtime newer than `nature-draft.md`.
+*Trap:* the build **overwrites** the docx — it is one-way md → docx, and a LibreOffice lock
+file (`.~lock.nature-draft.docx#`) is present as of 2026-08-08. Confirm the document is
+closed (or the lock is stale) before running; edits made directly in the docx are lost.
+
+**Tier census:** 16 pts `sonnet-low`, 6 pts `sonnet`, **0 pts `opus`** — the planning
+session (this one) absorbed the sprint's entire heavy lift: all decisions above are fixed,
+all formulas supplied, all citations verified. 22 pts against ~22 velocity; no over-commit.
+Drop candidate if needed: T-14.7's panel b (the heatmap alone carries the section; the
+Δv-vs-lead panel is the strongest candidate to move to a follow-up sprint).
+
+---
+
 ### Critical path
 
 `T-1.1 → T-1.3 → T-1.4 → T-1.7 → T-2.1 → T-5.1 → T-6.1 → T-6.5 → T-6.8 → T-9.6 → T-10.1 →

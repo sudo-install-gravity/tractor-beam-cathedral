@@ -153,6 +153,26 @@ overreached. **Every equation number in this registry has now been read at its s
 where the row itself says otherwise (EQ-019 Dolph/Taylor, EQ-023's unnumbered display equation,
 EQ-034's deliberately unnumbered Thorne, EQ-035 — see that row).
 
+✅ **Independent re-verification, 2026-08-08 (T-13.7).** All four rows above (EQ-041, EQ-042,
+EQ-044, EQ-045) were the last citations read only by this project itself rather than by a
+separate pass, per BACKLOG.md's own "read at source, not on report" standard applied to
+itself. A `researcher` agent re-checked all four **independently** — deliberately not shown
+this file's existing readings first, so the check could not merely confirm what it was told.
+**All four agree with the classifications above; no correction is needed.** EQ-041 and
+EQ-045 were independently reproduced exactly. EQ-042 was independently re-derived as the
+*first* derivative `dM₁/dt = P_i` — flagged by the independent pass as "contradicted"
+relative to the (deliberately unqualified) claim it was given, which is precisely the
+finding this row already records; not a disagreement, an independent replication. EQ-044
+could not be reached by the agent's available tools — Blanchet's PDF (285 pages) truncated
+in every fetch path tried (direct arXiv, `ar5iv` [unavailable for this ID], `arxiv-vanity`,
+Springer LRR, INSPIRE, PMC) before eq. (123a)/(302a), a genuine access gap the agent
+reported honestly rather than papering over. Closed the same session: eq. (123a) was located
+directly (page 46, "Theorem 6... formally up to any post-Newtonian order, by (l>2)", with
+explicit `1/c²`/`1/c⁴` terms) and eq. (302a) (page 114, circular-orbit `I_ijk` with PN
+correction terms out to `O(1/c⁶)`, leading term `−νm∆x⟨ijk⟩`) — both matching this row's
+existing text exactly. **T-13.7 closed; the last verification debt this registry names is
+now cleared.**
+
 ⚠️ **Registry/Module-Map drift found and reconciled, 2026-08-02 (`indexer` pass).** Seven live
 modules (`source/multipole_rad.py`, `propagate/polarization.py`, `target/geodesic.py`,
 `target/deflection.py`, `viz/slices.py`, `viz/volume.py`, `viz/export_vtk.py`) were still marked

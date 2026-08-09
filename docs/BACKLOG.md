@@ -1036,7 +1036,7 @@ and credentials, and a gate that cannot run offline would break the local five. 
 *Rationale:* zero runs went unnoticed for 64 commits because nothing looked. This is the same
 "derive, don't assert" fix applied to the pipeline (cf. `test_architecture.py`).
 
-**T-13.5 · De-flake the two wall-clock assertions · 2 pts · `sonnet-low` · deps none**
+**T-13.5 · De-flake the two wall-clock assertions · 2 pts · `sonnet-low` · deps none** ✅
 `tests/unit/test_backend.py` — **both** timing-sensitive tests, not just the first:
 `test_field_grid_numba_10x_faster_on_128_cubed_grid` (line 140) and
 `test_a_512_cubed_grid_completes_within_a_4gb_budget` (line 278).
@@ -1051,6 +1051,18 @@ the measurement, never the tolerance".
 *Trap:* this assertion will be *more* fragile on CI runners than locally — shared vCPUs,
 noisy neighbours. If it proves unfixable there, mark it `@pytest.mark.skipif` on CI with the
 reason recorded, rather than deleting a performance guard.
+
+⚠️ **Found 2026-08-08: this task's own premise was half wrong, and the AC as literally
+stated could not be fully satisfied.** `test_a_512_cubed_grid_completes_within_a_4gb_budget`
+contains **no wall-clock or memory measurement at all** — no `time.perf_counter()`, no
+budget assertion — and git history shows it has been written that way (a pure rtol-1e-12
+correctness check on a reduced grid) since it was added; this is not a regression from an
+earlier, real timing test. Only `test_field_grid_numba_10x_faster_on_128_cubed_grid` is a
+genuine wall-clock assertion, and it is the one de-flaked with best-of-3 timing (minimum
+of three repeated measurements per path, 10× threshold unchanged), stable across three
+consecutive local runs. Recorded per rule 8 rather than silently treating "one of two"
+as "both" — if the 512³ test is meant to carry a real budget check later, that is new
+work, not a de-flake.
 
 **T-13.6 · Retarget T-2.9 behind a green pipeline · 1 pts · `sonnet-low` · deps T-13.2** ✅
 `docs/BACKLOG.md`. Change T-2.9's `deps` from `none` to `T-13.2`.
@@ -1082,7 +1094,7 @@ Both are the same defect class the project keeps finding: **a verification that 
 loudly is not a verification.** A single entry point removes the chance to compose the
 commands wrongly.
 
-**T-13.7 · Trigger a fresh `researcher` pass on EQ-040's neighbours · 2 pts · `sonnet` · deps none**
+**T-13.7 · Trigger a fresh `researcher` pass on EQ-040's neighbours · 2 pts · `sonnet` · deps none** ✅
 Not CI, but the last verification debt outstanding. `docs/INDEX.md` §1: EQ-041/042 ([FH] 4.30,
 4.35), EQ-044 ([B] 123a) and EQ-045 ([FH] 3.11) were read at source 2026-08-03 by this
 project rather than by an independent pass.

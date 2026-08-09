@@ -1,4 +1,4 @@
-# Provenance-enforced simulation of engineered gravitational radiation: a spin-2 phased-array framework with a quantified feasibility ledger
+# Provenance-enforced simulation of engineered gravitational radiation for planetary defense: a spin-2 phased-array framework with a quantified feasibility ledger
 
 **DRAFT — not for circulation.** Target format: *Nature* Article (Main ≤ 3,000 words;
 Methods unlimited; ≤ 50 references; ≤ 6 display items in the main text; Extended Data

@@ -144,6 +144,17 @@ def test_field_grid_numba_10x_faster_on_128_cubed_grid() -> None:
     make this test itself slow; instead it measures numpy's per-point cost
     on a small subset and numba's per-point cost on the full 128^3 grid, and
     compares throughput. Kernel correctness is asserted separately above.
+
+    **Best-of-3 wall-clock timing (T-13.5).** A single measurement of each
+    path is contention-sensitive on a shared or loaded machine: this test
+    was observed to fail under load while the true ~10x throughput gap
+    held, which is a measurement problem, not a regression. Taking the
+    minimum of three repeated timings per path is the standard fix for
+    exactly this: contention can only add delay to a run, never subtract
+    it, so the minimum across repeats is the best available estimate of
+    the uncontended cost. The 10x threshold itself is kept, not loosened —
+    weakening the tolerance to paper over measurement noise would be the
+    inverse of the fix (HANDOVER.md section 5).
     """
     rng = np.random.default_rng(3)
     n_full = 128**3
@@ -152,15 +163,21 @@ def test_field_grid_numba_10x_faster_on_128_cubed_grid() -> None:
     numba_backend = get_backend("numba")
     field_grid(positions, q_ddots, field_points_full[:8], numba_backend)  # warm up JIT
 
-    t0 = time.perf_counter()
-    field_grid(positions, q_ddots, field_points_full, numba_backend)
-    numba_per_point = (time.perf_counter() - t0) / n_full
+    numba_times = []
+    for _ in range(3):
+        t0 = time.perf_counter()
+        field_grid(positions, q_ddots, field_points_full, numba_backend)
+        numba_times.append(time.perf_counter() - t0)
+    numba_per_point = min(numba_times) / n_full
 
     numpy_backend = get_backend("numpy")
     n_subset = 20000
-    t0 = time.perf_counter()
-    field_grid(positions, q_ddots, field_points_full[:n_subset], numpy_backend)
-    numpy_per_point = (time.perf_counter() - t0) / n_subset
+    numpy_times = []
+    for _ in range(3):
+        t0 = time.perf_counter()
+        field_grid(positions, q_ddots, field_points_full[:n_subset], numpy_backend)
+        numpy_times.append(time.perf_counter() - t0)
+    numpy_per_point = min(numpy_times) / n_subset
 
     assert numpy_per_point / numba_per_point >= 10.0
 
@@ -286,6 +303,20 @@ def test_a_512_cubed_grid_completes_within_a_4gb_budget() -> None:
     field_grid_chunked's docstring makes. A 24^3 grid, chunked finely enough
     that peak allocation is a small fraction of the full grid, demonstrates
     the same bounded-memory batching field_grid_chunked would use at 512^3.
+
+    **T-13.5 finding, 2026-08-08.** BACKLOG.md named this test as the second
+    of "two wall-clock assertions" that fail together under load. As
+    written (and per git history, as written since it was added — this is
+    not a regression), this test contains **no wall-clock or memory
+    measurement at all**: it is a pure rtol-1e-12 correctness check on a
+    reduced grid, with no `time.perf_counter()` call and no budget
+    assertion to be flaky about. `test_field_grid_numba_10x_faster_on_128_
+    cubed_grid` above is the genuine wall-clock assertion in this module
+    and has been de-flaked with best-of-3 timing. This docstring records
+    the discrepancy rather than silently reconciling it, per this
+    project's own "make absence loud" rule — if a real memory/time budget
+    check is wanted here later, it does not exist yet and would be new
+    work, not a de-flake of existing work.
     """
     positions = np.array([[0.0, 0.0, 0.0]])
     q_ddots = np.array([[[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 0.0]]])

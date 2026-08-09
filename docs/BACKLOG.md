@@ -993,7 +993,7 @@ of a pipeline, and the paper cannot carry it as written.
 > `actions/permissions` be read directly and may close SPIKE-13.1 without a settings hunt;
 > it is not otherwise required for the project to function.
 
-**SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ⚠️ **owner-only**
+**SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ✅ **escalated, not resolved**
 `docs/adr/0008-ci-never-ran.md`. Cannot be delegated to an agent: every remaining hypothesis
 needs **repository-admin access**, which no available token has.
 *Procedure, in order — stop at the first that explains it:*
@@ -1009,7 +1009,29 @@ of the four explains it, the ADR says so and the spike escalates rather than gue
 **a plausible cause recorded without evidence is worse than an open question** (rule 1's
 reasoning, applied to infrastructure).
 
+**Owner checked all four, 2026-08-09 — none held.** (1) "Allow all actions" is already
+selected. (2) `github.com/settings/actions` 404s — that page doesn't exist for personal
+accounts (only orgs have an account-wide Actions policy), so the hypothesis is inapplicable
+rather than tested-and-clear. (3) No banner; adjacent finding: **Workflow permissions** is
+"read"-only, not "read and write" — but that governs the `GITHUB_TOKEN`'s scope **inside**
+an already-running job, not whether a run triggers, so it cannot produce `total_count: 0`
+and is ruled out for *this* symptom (worth flipping to read+write anyway, separately).
+(4) Free tier, but the repo is public — unlimited minutes, not the constrained allowance.
+**Live test performed the same session, not just settings review:** commit `30efb77` was
+pushed to `main` via the normal path and confirmed on GitHub (`GET .../commits/main`
+returns that exact SHA); the workflow is `state: active` with the expected unrestricted
+`on: push: branches: [main]` trigger, fetched from GitHub's own Contents API, not local
+disk; the repo is healthy (`default_branch: "main"`, not a fork, not archived/disabled,
+public). `GET .../actions/runs` **immediately after** still returned `total_count: 0`.
+**Escalated to GitHub Support per the AC's own instruction** — full evidence trail in
+ADR-0008. T-13.2 now depends on a support ticket, not on repository configuration.
+
 **T-13.2 · Confirm a green CI run on `main` · 1 pts · `sonnet-low` · deps SPIKE-13.1**
+⚠️ **Blocked on a GitHub Support ticket, not on this repository — see ADR-0008.**
+SPIKE-13.1's live diagnostic push (`30efb77`) confirmed the workflow is well-formed,
+registered active, and correctly triggered by, yet a run still did not fire — every
+locally- and account-visible cause is eliminated. Re-attempting "push a commit and see"
+again without a platform-side change first would just reproduce the same negative result.
 `repo-level`. Push any commit to `main` and observe the result.
 *AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/actions/runs --jq .total_count`
 returns **≥ 1**; the newest run has `conclusion == "success"` and **three** completed jobs

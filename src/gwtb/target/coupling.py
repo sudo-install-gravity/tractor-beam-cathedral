@@ -218,6 +218,46 @@ def channel_absorption(luminosity: float, cross_section: float, distance: float)
     return CouplingResult(channel="absorption", force=flux * cross_section)
 
 
+def required_luminosity(force: float, cross_section: float, distance: float) -> float:
+    """Luminosity the absorption channel would need to deliver a given force
+    -- the algebraic inverse of :func:`channel_absorption`.
+
+    .. code-block:: text
+
+        luminosity = force * 4 * pi * distance^2 * c / cross_section
+
+    Source: momentum-flux relation ``F = P/c`` (see
+    :func:`gwtb.ledger.gap_report.emission_gap`); ``docs/PHYSICS.md``
+    "assuming radiated power converts to thrust" -- same source as
+    :func:`channel_absorption`, inverted for ``luminosity``.
+
+    Parameters
+    ----------
+    force
+        Required magnitude of the absorption-channel force, N. Unlike
+        :func:`delta_v`'s ``force`` (which may be signed), this is a
+        required *magnitude* and must be positive.
+    cross_section
+        Target's absorption cross-section, m^2. Must be positive and finite.
+    distance
+        Source-to-target distance, m. Must be positive and finite.
+
+    Returns
+    -------
+    float
+        W. Satisfies
+        ``channel_absorption(required_luminosity(F, sigma, d), sigma, d).force == F``.
+    """
+    if not np.isfinite(force) or force <= 0.0:
+        raise ValueError(f"force must be positive and finite, got {force!r}")
+    if not np.isfinite(cross_section) or cross_section <= 0.0:
+        raise ValueError(f"cross_section must be positive and finite, got {cross_section!r}")
+    if not np.isfinite(distance) or distance <= 0.0:
+        raise ValueError(f"distance must be positive and finite, got {distance!r}")
+
+    return force * 4.0 * np.pi * distance**2 * c / cross_section
+
+
 def channel_gravity_tractor_result(
     tractor_mass: float, separation: float, asteroid_mass: float
 ) -> CouplingResult:
@@ -304,5 +344,6 @@ __all__ = [
     "channel_gravity_tractor_result",
     "channel_tidal",
     "compare_channels",
+    "required_luminosity",
     "tidal_strain",
 ]

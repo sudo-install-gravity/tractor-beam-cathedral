@@ -48,13 +48,25 @@ G_OVER_C5 = G / c**5
 #: Nominal engagement range for the tractor-beam concept, m (40 AU).
 TARGET_RANGE = 40.0 * AU
 
+#: Earth nominal terrestrial mass parameter, m^3 s^-2. IAU 2015 Resolution
+#: B3 nominal value. Source: Prsa, A. et al., "Nominal values for selected
+#: solar and planetary quantities: IAU 2015 Resolution B3," Astron. J. 152,
+#: 41 (2016), arXiv:1605.09788, Table 1.
+GM_EARTH = 3.986004e14
+
+#: Earth nominal equatorial radius, m. IAU 2015 Resolution B3 nominal value.
+#: Source: Prsa et al. 2016 (above), Table 1.
+R_EARTH_EQ = 6.3781e6
+
 __all__ = [
     "AU",
     "G",
+    "GM_EARTH",
     "G_OVER_C4",
     "G_OVER_C5",
     "M_SUN",
     "PARSEC",
+    "R_EARTH_EQ",
     "TARGET_RANGE",
     "c",
 ]

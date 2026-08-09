@@ -1173,7 +1173,7 @@ generalizes R6's single-point "required = 43 N" into a surface, and is expected 
   `{1190 [S19], 2400 [D23]} kg/m³`. Achieved luminosity: `7.5e-2 W`, the same array
   configuration constant `campaign_r6` uses (`lum` in `tools/run_campaign.py:652`).
 
-**T-14.1 · Threat-population anchors · 2 pts · `sonnet-low` · deps none**
+**T-14.1 · Threat-population anchors · 2 pts · `sonnet-low` · deps none** ✅
 `src/gwtb/target/threat.py` — frozen dataclass `ThreatAnchor(name: str, diameter_m: float,
 mass_kg: float, speed_mps: float | None, source: str)`; module constants
 `RHO_RUBBLE_PILE = 1190.0` ([S19]), `RHO_STONY = 2400.0` ([D23]);
@@ -1187,7 +1187,7 @@ close on their own sources' density/diameter — this is the test that the ancho
 self-consistent); every anchor's `source` is non-empty (absence-loud); raises on
 non-positive/non-finite inputs.
 
-**T-14.2 · Gravitational-focusing miss criterion · 2 pts · `sonnet-low` · deps T-8.8**
+**T-14.2 · Gravitational-focusing miss criterion · 2 pts · `sonnet-low` · deps T-8.8** ✅
 `src/gwtb/core/constants.py` — add `GM_EARTH = 3.986004e14` and `R_EARTH_EQ = 6.3781e6`
 (source comments: [IAU] Table 1 — verified at planning, see the citation block above).
 `src/gwtb/target/deflection.py` — `required_miss_distance(v_infinity: float) -> float` =
@@ -1199,7 +1199,7 @@ that no open numbered source exists (researcher, 2026-08-08, 4 attempts).
 `required_miss_distance(1e8)` → `R_EARTH_EQ` rtol 1e-3; strictly decreasing in `v_infinity`;
 raises on `v_infinity ≤ 0` or non-finite.
 
-**T-14.3 · Required Δv, both published regimes · 3 pts · `sonnet-low` · deps T-14.2**
+**T-14.3 · Required Δv, both published regimes · 3 pts · `sonnet-low` · deps T-14.2** ✅
 `src/gwtb/target/deflection.py` — `required_delta_v(miss: float, lead_time: float,
 orbit: float, regime: str) -> float`. `regime="impulsive-floor"`: `miss/lead_time` — an
 **upper bound** on the requirement at every lead (drift is never less than impulsive);
@@ -1216,7 +1216,7 @@ All five bracket — verified at planning: impulsive gives 2.02/1.01/0.67/0.51/0
 secular a third of each. This is a zero-tolerance test of *consistency with the field's
 own numbers*, not a fit.
 
-**T-14.4 · Absorption-channel inversion · 2 pts · `sonnet-low` · deps T-8.4**
+**T-14.4 · Absorption-channel inversion · 2 pts · `sonnet-low` · deps T-8.4** ✅
 `src/gwtb/target/coupling.py` — `required_luminosity(force: float, cross_section: float,
 distance: float) -> float` = `force * 4*pi*distance**2 * c / cross_section` (algebraic
 inverse of `channel_absorption`; same Source line, same validation style; `force` must be
@@ -1225,8 +1225,22 @@ positive here — a required magnitude, not a signed thrust).
 rtol 1e-12 over a log-spaced grid of F, σ, d; R6 anchor: F = 43 N, σ = π·500² m²,
 d = `TARGET_RANGE` → **7.39e30 W** rtol 1e-2 (≈ 1.9e4 L_sun — the paper's scale sentence).
 
-**T-14.5 · Tradespace grid · 3 pts · `sonnet-low` · deps T-14.1, T-14.2, T-14.3, T-14.4**
-`src/gwtb/ledger/tradespace.py` — frozen dataclass with exactly these fifteen typed fields:
+**T-14.5 · Tradespace grid · 3 pts · `sonnet-low` · deps T-14.1, T-14.2, T-14.3, T-14.4** ✅
+⚠️ **Path deviation, found and fixed during implementation:** built at
+`src/gwtb/target/tradespace.py`, **not** the `ledger/` path below. This module
+imports `target/threat.py`, `target/deflection.py` and `target/coupling.py`
+directly, and `target/coupling.py` already imports `ledger/gap_report.py` for
+`GapReport` — placing this module under `ledger/` as originally specified
+creates a *new* `(ledger, target)` package cycle, caught immediately by
+`tests/unit/test_architecture.py`'s `test_the_source_propagate_cycle_is_the_only_one`.
+Unlike the one documented cycle (`source`, `propagate`, a real mutual
+dependency), this one would be an artifact of file placement, not a design
+decision — so the fix keeps the codebase's existing one-directional rule
+(`target` depends on `ledger`, never the reverse) rather than documenting a
+second, spurious cycle in `KNOWN_CYCLES` and the paper's Fig. 1. See the
+module docstring for the full reasoning. All downstream references (T-14.6's
+`campaign_r8`, the module's own tests) import from `gwtb.target.tradespace`.
+`src/gwtb/target/tradespace.py` (as built) — frozen dataclass with exactly these fifteen typed fields:
 `TradespaceCell(detection_distance_m: float, v_infinity_mps: float, diameter_m: float,
 density_kgm3: float, mass_kg: float, lead_time_s: float, miss_required_m: float,
 delta_v_floor_mps: float, delta_v_secular_mps: float, force_floor_n: float,
@@ -1257,7 +1271,7 @@ m = 1.005e7 kg, b = 1.563e7 m, σ = 314.16 m²). Note: this spot cell is deliber
 the grid's minimum-gap cell (that is ρ = 1190 — see T-14.6); the two numbers must not be
 expected to coincide.
 
-**T-14.6 · Campaign R8 · 3 pts · `sonnet-low` · deps T-14.5**
+**T-14.6 · Campaign R8 · 3 pts · `sonnet-low` · deps T-14.5** ✅
 `tools/run_campaign.py` — `campaign_r8(outdir)` registered as `"R8"` in `CAMPAIGNS`; runs
 `tradespace(...)` on the D-14.7 grid with `achieved_luminosity = 7.5e-2` (same constant as
 `campaign_r6`); writes `R8.json` with the full cell list, the grid, and the achieved value.
@@ -1274,7 +1288,7 @@ minimum as **29.016 decades**, at (D = 20 m, ρ = 1190, v∞ = 5 km/s): the rubb
 density, not the ρ = 2400 of T-14.5's spot cell, since the lighter body is the easier
 target. That number is the section's punchline and must not be buried.
 
-**T-14.7 · Figure 8: the tradespace · 3 pts · `sonnet` · deps T-14.6**
+**T-14.7 · Figure 8: the tradespace · 3 pts · `sonnet` · deps T-14.6** ✅
 `tools/run_campaign.py` (alongside the existing fig writers) — `fig8_tradespace.png`,
 two panels, shared colourblind-safe style of Figs 3–7 (2026-08-07 redraw).
 **Panel a:** heatmap of `gap_decades_secular` over (v∞, diameter) at ρ = 2400 — the axes
@@ -1286,7 +1300,7 @@ discovery literature actually delivers.
 *AC:* legible at single-column width; caption text lives in the figure-legends section
 (T-14.8), not baked into the image; anchor points labelled by name.
 
-**T-14.8 · Paper section R8 + ledger entries · 3 pts · `sonnet` · deps T-14.6, T-14.7**
+**T-14.8 · Paper section R8 + ledger entries · 3 pts · `sonnet` · deps T-14.6, T-14.7** ✅
 `docs/paper/nature-draft.md` — new Results subsection "R8 — The deflection tradespace"
 after R7; a Methods paragraph (the D-14.1…D-14.6 chain, with citations [I], [G12], [G20],
 [C26], carve-out stated); Figure 8 legend; the R8 row in the Numbers-in-this-draft section.
@@ -1301,7 +1315,7 @@ time; D-14.3 γ = 1 (≤ 0.19-decade optimism); D-14.5 geometric cross-section.
 *AC:* `check_citations.py` green; every number in the section traces to R8.json or a [·]
 source; the survey file's remaining `NEEDS-VERIFY` rows are resolved or explicitly carried.
 
-**T-14.9 · Rebuild the .docx · 1 pts · `sonnet-low` · deps T-14.8**
+**T-14.9 · Rebuild the .docx · 1 pts · `sonnet-low` · deps T-14.8** ✅
 Run `tools/build_paper_docx.py` after the md changes land.
 *AC:* exit 0; `docs/paper/nature-draft.docx` mtime newer than `nature-draft.md`.
 *Trap:* the build **overwrites** the docx — it is one-way md → docx, and a LibreOffice lock

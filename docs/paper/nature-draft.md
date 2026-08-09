@@ -757,6 +757,99 @@ rearrange the arithmetic so the enormous number is never actually written down. 
 doing precision work at astronomical scale — navigation, radar, interferometry — can hit
 this same trap, which is why we're reporting it separately.
 
+### R8 — The deflection tradespace
+
+**Q.** Across the tradespace of detection distance, closure velocity, threat-object
+diameter and density, is any cell feasible — and does detection distance actually cancel
+out of the required luminosity, as the closed-form derivation predicts?
+
+**Run.** `tradespace` over a 6×6×6×2 grid (432 cells): detection distance 0.1–40 AU
+(Earth's nominal radius and mass parameter throughout are the IAU 2015 values<sup>30</sup>),
+closure speed 5–72 km/s (5 and 10 km/s span slow encounters; 17.3 km/s is the debiased
+mean Earth-impact speed of 20.6 km/s<sup>25</sup> with gravitational focusing removed; 72 km/s
+is a retrograde long-period-comet closure), diameter 20 m – 10 km, and the two measured
+threat-body densities in this manuscript's own anchor set (1190 kg m⁻³, Bennu<sup>28</sup>;
+2400 kg m⁻³, Dimorphos<sup>8</sup>). For each cell: the required miss distance from
+gravitational focusing (elementary two-body mechanics — no citable numbered source was
+found despite four documented search attempts, so this is admitted as our derivation, the
+same treatment Methods gives the uniform-sphere finite-size form factor); the required Δv
+in two published regimes, an impulsive floor and a secular estimate<sup>24</sup>; the force
+implied by applying that Δv continuously over the full lead time; and the luminosity the
+absorption channel (R6) would need to deliver that force, at the source-target distance.
+
+**Report.** Fig. 8. Panel a: required-luminosity gap in decades over (closure speed,
+diameter) at the stony density, evaluated at the largest grid distance (40 AU), with this
+manuscript's own three mass anchors marked. Panel b: required Δv against lead time, both
+regimes, bracketing the five published medians<sup>26</sup> exactly as reported, with the
+discovery-literature warning-time reality check<sup>29</sup> shaded.
+
+**Falsifier.** Any cell reporting `gap_decades ≤ 0` anywhere in the grid — a vanished wall
+is a defect until proven a discovery, per this project's standing rule — or the derived
+d-cancellation failing to hold to within 10⁻⁹ decades.
+
+**Status.** ✅ **CONFIRMED** (`campaign/R8.json`; Fig. 8).
+
+**The detection-distance dependence cancels exactly.** With the lead time fixed by radial
+closing (t = d/v<sub>∞</sub>), the deflecting force applied over the full lead time, and the
+absorption channel's force sized at the source-target distance, the required luminosity
+reduces algebraically to
+
+L<sub>req</sub> = 4π c · m · b<sub>req</sub> · v<sub>∞</sub>² / (k σ),
+
+where k is 1 (impulsive floor) or 3 (secular) and b<sub>req</sub> is the focusing-corrected
+miss distance — **detection distance d does not appear.** Detecting a threat farther away
+buys a longer lead time and therefore a smaller required Δv and force, exactly as
+intuition expects, but it buys **no reduction in the required luminosity**: the inverse-
+square dilution over the longer path exactly cancels what the longer lead time saves. The
+432-cell grid confirms this to floating-point precision (maximum spread across detection
+distance at fixed closure speed, diameter and density: 3.6 × 10⁻¹⁵ decades, eleven orders
+of magnitude inside the 10⁻⁹-decade falsifier bound) — this is not an approximate
+tendency, it is an identity the numerics were never going to disagree with once the model
+was fixed, and it is reported as a structural fact about the coupling channel rather than
+a measurement with error bars.
+
+**The best case in the entire grid is still 29.0 decades short.** The most favourable
+cell — the smallest, lightest object (20 m, rubble-pile density) approached most slowly
+(5 km/s), in the secular regime — requires 7.8 × 10²⁷ W of luminosity against the 7.5 × 10⁻²
+W the R6 configuration achieves: a shortfall of **29.0 decades**, indistinguishable at this
+scale from every other cell in the grid (every cell falls between 29.0 and 34.4 decades —
+a band about five decades wide, dominated entirely by mass and closure speed and not at
+all by how far away the object is first seen). Extending the detection network does not open a path
+through this wall; it only trades one already-small quantity (Δv) for another quantity
+this framework has already shown, independently, to be short by 29–32 decades under R6.
+
+**Detection distance is nonetheless the quantity that determines whether any of this is
+academic.** The Δv literature<sup>24,26</sup> is usually quoted at decades of warning, but a
+2026 simulated-discovery study of the Vera Rubin Observatory<sup>29</sup> finds a median
+warning of 12.4 days for 10–20 m impactors, 21.5 days for 20–50 m, and 106.2 days for
+50–140 m — even above 140 m, only 39% of impactors are found more than a year out. Fig. 8b
+makes this concrete: the region the discovery literature actually delivers sits at the
+extreme short-lead edge of the plot, far to the left of where the five published Δv
+medians land. A detection system reaching 40 AU converts a Chelyabinsk-class<sup>27</sup>
+"zero warning" event into roughly a decade of lead time (t = d/v<sub>∞</sub> ≈ 9.5 yr at
+20 km/s) — which is precisely the regime in which the published cm/s-class Δv figures
+apply at all. This section therefore **quantifies the wall rather than removing it**: the
+luminosity gap does not move with detection distance, but the question of whether a
+smaller, more tractable Δv gap is even reachable in time is answered almost entirely by
+how far away the object is first seen.
+
+***Non-expert summary:*** We asked a natural follow-up question: across every realistic
+combination of how far away we spot the threat, how fast it's closing, and how big and
+dense it is, does the gravity-wave approach ever get within reach — and does spotting it
+earlier actually help? The answer to the first question is no, by a wide and remarkably
+consistent margin: the best case anywhere in 432 different scenarios is still short by
+about 29 orders of magnitude, roughly the same shortfall no matter which scenario you
+pick. The answer to the second question is more interesting and is the real finding here:
+detecting the threat earlier makes the *push* required smaller — exactly what you'd
+expect — but it makes **no difference at all** to how much power the wave-emitting
+apparatus would need, because the benefit of extra warning time is exactly cancelled by
+the object being farther away when you first see it. That is a clean, provable fact about
+the physics, not a rough tendency. What earlier detection *does* buy is relevant to a
+completely different, much more down-to-earth problem: real asteroid surveys typically
+give only days to weeks of warning, not decades, and the modest nudge methods the field
+already relies on only work with decades of notice. So better detection remains valuable —
+just not for the reason this framework was built to explore.
+
 ---
 
 ## Discussion
@@ -1186,6 +1279,65 @@ exceeded our target by ten billion times, with nothing on the page indicating it
 nonsense. Caught on the same day the format was frozen, and fixed by adding a column while
 nothing yet depended on it.
 
+### The deflection tradespace
+
+R8 chains six decisions, each fixed before the grid was run and each independently
+citable or, where the literature offered nothing checkable, explicitly admitted as this
+project's own elementary derivation rather than left unstated.
+
+**Miss criterion.** An object misses Earth if its unperturbed impact parameter exceeds
+b<sub>req</sub>(v<sub>∞</sub>) = R<sub>⊕</sub>√(1 + v<sub>esc</sub>²/v<sub>∞</sub>²) — gravitational focusing, an
+elementary consequence of energy and angular-momentum conservation in an unperturbed
+hyperbolic encounter. No open source with a citable equation *number* for this exact
+combination was found despite four documented search attempts; per this project's rule 1
+a chapter reference is not a citation, so this is admitted as our own derivation rather
+than attached to a guessed source, the same treatment Methods gives the uniform-sphere
+finite-size form factor above.
+
+**Lead time.** t = d/v<sub>∞</sub>, radial closing at the hyperbolic excess speed from a
+detection distance d measured from Earth. Heliocentric encounter geometry is a stated
+approximation, carried in the assumption ledger.
+
+**Required Δv, two published bounds.** The impulsive-floor estimate Δv = b<sub>req</sub>/t is
+an upper bound valid at every lead time. The secular estimate Δv = b<sub>req</sub>/(3t) follows
+ref. 24's eq. (2)–(3) for a tangential impulse on a near-circular orbit, with the paper's
+geometry factor γ set to 1 (real encounters have γ ∈ [0.65, 1] per its Table 1, making
+this estimate optimistic by at most 0.19 decades — negligible against the ~30-decade gaps
+this section reports, and recorded in the assumption ledger rather than silently ignored).
+The secular regime requires multiple orbits for the drift to accumulate and is not
+evaluated below one orbital period of lead time. Both bounds are checked directly against
+ref. 26's five published medians (10–50 yr before impact, 1 R<sub>⊕</sub> miss target): every
+published value falls between the two bounds, at every lead time, with zero tolerance.
+
+**Thrust duration and coupling channel.** The deflecting force is applied continuously
+over the full lead time — the best case for the spike, recorded in the assumption ledger.
+Absorption thrust (R6) is the only net-force radiative channel modelled here — R6
+established that the tidal channel produces strain, not force, and cannot alter a
+trajectory — and the required luminosity is sized at the source-target distance with a
+geometric cross-section πD²/4.
+
+**The d-cancellation follows algebraically, not numerically**, from those four decisions.
+Writing F<sub>req</sub> = m b<sub>req</sub>/(k t²) and L<sub>req</sub> = F<sub>req</sub>·4πd²c/σ, then substituting
+t = d/v<sub>∞</sub>, gives L<sub>req</sub> = 4π c · m · b<sub>req</sub> · v<sub>∞</sub>²/(k σ) — d cancels exactly, for
+either value of k. The grid confirms this to floating-point precision (Results, R8)
+rather than merely asserting it, but the cancellation itself is a property of the
+equations, established once, not re-derived per cell.
+
+***Non-expert summary:*** The chain of assumptions behind the tradespace section, made
+explicit rather than buried in code. How close does an object have to pass to still hit
+Earth — that's elementary orbital mechanics, and we couldn't find a textbook equation
+number for the exact combination we needed, so we worked it out ourselves and say so
+plainly rather than attaching a guessed citation. How much warning time we get from a
+detection distance — a simple "distance over speed" approximation, flagged as an
+approximation. How hard a push that warning time requires — we use two different published
+formulas that bracket the true answer from both sides, and checked our bracket against five
+real published numbers rather than just our own arithmetic. And how much wave power a
+push translates to — reusing the same "does gravity radiation exert force" calculation
+from earlier in the paper. The interesting mathematical fact, which we prove with algebra
+rather than just observe in the numbers, is that detection distance drops out of the very
+last step completely — which is why farther-out detection helps the push but not the power
+requirement, no matter how carefully you set up the numbers.
+
 ### Numerical methods at astronomical scale
 
 Two constructions in this problem fail silently and are documented as findings.
@@ -1433,13 +1585,36 @@ volume/page verification against the published record.)*
     assigned to an AI tool; their use must instead be documented. Springer Nature and
     Science apply the same prohibition. https://www.nature.com/nature-portfolio/editorial-policies/ai
     *(Verified 2026-08-06.)*
+24. Izzo, D. On the deflection of potentially hazardous objects. AAS 05-141 (15th
+    AAS/AIAA Space Flight Mechanics Conference, 2005).
+    https://www.esa.int/gsp/ACT/doc/MAD/pub/ACT-RPR-MAD-2005-OnTheDeflectionOfPotentiallyHazardousObjects.pdf
+    *(Open access. Eqs. (1)–(3) confirmed by eye 2026-08-08 — the PDF's own metadata
+    title is stale and names an unrelated debris-cloud paper; the content is correct.)*
+25. Greenstreet, S., Ngo, H. & Gladman, B. The orbital distribution of Near-Earth
+    Objects inside Earth's orbit. *Icarus* **217**, 355–366 (2012).
+26. Greenstreet, S., Lu, E. T., Loucks, M., Carrico, J., Kichkaylo, T. & Jurić, M.
+    Required deflection impulses as a function of time before impact for Earth-impacting
+    asteroids. *Icarus* **347**, 113792 (2020).
+27. Popova, O. P. *et al.* Chelyabinsk airburst, damage assessment, meteorite recovery,
+    and characterization. *Science* **342**, 1069–1073 (2013).
+28. Scheeres, D. J. *et al.* The dynamic geophysical environment of (101955) Bennu based
+    on OSIRIS-REx measurements. *Nature Astron.* **3**, 352–361 (2019). *(Not to be
+    confused with Lauretta, D. S. *et al.*, *Nature* **568**, 55 (2019), which covers
+    surface particle ejection and is the wrong citation for Bennu's mass and density.)*
+29. Cheng, Q., Scolnic, D., Kurlander, J. A., Chow, I. & Fernandes, M. B. Assessing the
+    Vera Rubin Observatory's ability to discover asteroid impactors before they collide
+    with Earth. arXiv:2601.16255 (2026).
+30. Prša, A. *et al.* Nominal values for selected solar and planetary quantities: IAU
+    2015 Resolution B3. *Astron. J.* **152**, 41 (2016). arXiv:1605.09788.
 
 ***Non-expert summary:*** The sources we rely on. Two entries are unusual and worth
 noticing. **Ref. 15** is cited deliberately *without* an equation number, because the paper
 sits behind a paywall and we couldn't confirm the numbering — and our own rule says a
 guessed number is worse than no number. **Ref. 16** is an antenna textbook, included only
 as the labelled radio-physics baseline; it must never be cited for anything gravitational,
-and the note says so where anyone would see it.
+and the note says so where anyone would see it. **Ref. 28** carries its own correction
+note for the same reason: an earlier, wrong candidate source (Lauretta 2019) was ruled out
+during verification and is named so nobody re-introduces it.
 
 ---
 
@@ -1737,11 +1912,27 @@ so beating the emission wall does not make the concept work. The transducer prob
 scope by charter (conjecture C-1); its absence is a scope statement, not a zero.
 Source: `campaign/R5.json`, `campaign/R6.json`.
 
-***Non-expert summary:*** The seven planned figures. Two are diagrams of how the software
+**Fig. 8 | The deflection tradespace: detection distance cancels, mass and speed do not.**
+**a**, Required-luminosity gap (decades) over closure speed and diameter at the stony
+density (2400 kg m⁻³), evaluated at the grid's largest detection distance (40 AU) — the
+axes that survive the cancellation shown in **b**. Dotted lines mark this manuscript's own
+three mass anchors (Chelyabinsk, Dimorphos, Bennu) by diameter. **b**, Required Δv against
+lead time: the impulsive-floor and secular bounds (solid, dashed), the five published
+medians they bracket (points), and the median discovery-to-impact warning times for three
+size classes from a simulated Vera Rubin Observatory survey (dotted verticals, shaded
+region), showing how far short of the decades-scale lead time the Δv literature assumes.
+Source: `campaign/R8.json`.
+
+***Non-expert summary:*** The eight planned figures. Two are diagrams of how the software
 and its safety machinery are put together. Three show the new rotation rules and the
-alignment requirement. One shows the focusing experiment. The last one is the honest chart:
-a bar per obstacle, each bar's height being how many powers of ten we fall short — including
-a bar for the problem we explicitly refuse to claim we've solved.
+alignment requirement. One shows the focusing experiment. One is the honest chart: a bar
+per obstacle, each bar's height being how many powers of ten we fall short — including a
+bar for the problem we explicitly refuse to claim we've solved. The last one answers a
+natural follow-up question across hundreds of scenarios at once: does spotting the threat
+earlier ever make the core physics problem easier? The left panel shows it doesn't, in a
+strikingly consistent way. The right panel shows what earlier detection *is* good for
+instead — giving real asteroid-deflection methods the years of notice they actually need,
+which current sky surveys mostly do not provide.
 
 ### Extended Data
 
@@ -1789,7 +1980,10 @@ Every numeric value above is one of three kinds, and the distinction must surviv
    the Main, Discussion, Methods and Table 1 are of this kind.
 2. **Campaign output** — produced by `python tools/run_campaign.py`, recorded in
    `docs/paper/campaign/R<n>.json` with a run manifest, and reported in Results, Table 2,
-   Table 3 and Figs. 3–7.
+   Table 3 and Figs. 3–8. R8 (the deflection tradespace, `campaign/R8.json`, 432 cells)
+   is of this kind: every number in that subsection and in Fig. 8, including the 29.0-decade
+   best case and the ≤3.6 × 10⁻¹⁵-decade d-cancellation spread, is read directly from the
+   campaign's own JSON output rather than computed separately for the prose.
 3. **`TBD`** — a hole in a display item. **None remain.**
 
 There are no values of a fourth kind, and none may be introduced. A number that cannot be

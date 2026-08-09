@@ -194,16 +194,17 @@ the discharge of claim B-1, has **no row in the validation table at all.** Per �
 unvalidated benchmark is not passing; an *unlisted* one cannot even be checked for staleness.
 This should be the next `indexer` task.
 
-**Citations verified 2026-08-08 — Sprint 14 planning pass, none yet implemented.** A
-batched `researcher` pass for the planned deflection-tradespace section (paper §R8)
-checked nine sources; the authoritative per-source verification block is the Sprint 14
-header in `docs/BACKLOG.md`, not this file — cross-check there before citing, per that
-document's own note that it wins on disagreement. **No EQ-### rows are added here**:
-D-14.1–D-14.7 (that header's "Decisions fixed at planning") are fixed decisions, not
-yet code, and this registry's convention is one row per *implemented* equation. Rows
-land with T-14.2 (`required_miss_distance`), T-14.3 (`required_delta_v`) and T-14.4
-(`required_luminosity`) once those functions exist. Sources, with the abbreviations
-Sprint 14 uses:
+**Citations verified 2026-08-08 — Sprint 14, landed same day.** A batched `researcher`
+pass for the deflection-tradespace section (paper §R8) checked nine sources; the
+authoritative per-source verification block is the Sprint 14 header in
+`docs/BACKLOG.md`, not this file — cross-check there before citing, per that document's
+own note that it wins on disagreement. **No EQ-### rows are added here**: this
+registry's convention is one row per *implemented, numbered* equation, and
+`required_miss_distance`/`required_delta_v`/`required_luminosity` (T-14.2–T-14.4, now
+live in `target/deflection.py` and `target/coupling.py`) are elementary mechanics —
+uncited by the module's own convention, matching `delta_v`/`miss_distance` above — except
+where `required_delta_v`'s secular regime cites ref. 24's numbered eqs. (2)–(3) directly
+in its docstring. Sources, with the abbreviations Sprint 14 uses:
 
 - **[I]** Izzo, "On the Deflection of Potentially Hazardous Objects," AAS 05-141
   (2005), open ESA PDF, eqs. (1)–(3) confirmed by eye (automated extraction was
@@ -221,18 +222,25 @@ Sprint 14 uses:
   for this claim, do not cite it here.
 - **[D23]** Daly et al., *Nature* 616:443 (2023) — Dimorphos D = 151 m; mass
   4.3e9 kg is DERIVED from that diameter plus an assumed 2400 kg/m³ density, not
-  stated directly by the paper.
-- **[C23]** Cheng et al., *Nature* 616:457 (2023) — DART delta-v = 2.70 mm/s (already
-  the source of `target/deflection.py`'s existing DART cross-check, T-8.7/T-8.8).
+  stated directly by the paper. This is the **same paper** `target/deflection.py`'s
+  pre-existing DART cross-check (T-8.7/T-8.8) already cites for the 2.7 mm/s Δv figure
+  — one source, two independent uses, page 443.
+- **[C23]** Cheng et al., *Nature* 616:457 (2023) — DART momentum-transfer analysis
+  (β ∈ [2.2, 4.9]), verified during the researcher pass. ⚠️ **Correction to this
+  file's own earlier note**: this is a *different* paper from [D23] (page 457, not
+  443) and, on inspection, is **not actually cited by any Sprint 14 code** — no T-14
+  task needed its content, since the DART Δv cross-check already had a citation via
+  [D23]. Verified-but-unused; retained here only as a record of what the batched pass
+  checked, per the "make absence loud" rule applied to research effort as well as code.
 - **[C26]** Cheng, Scolnic, Kurlander, Chow & Fernandes, arXiv:2601.16255 — LSST
-  simulated-discovery median warning times by size.
+  simulated-discovery median warning times by size; cited in paper §R8 and Fig. 8.
 - **[IAU]** Prša et al., *AJ* 152:41 (2016), arXiv:1605.09788, Table 1 — IAU 2015
-  Resolution B3 nominal `GM_EARTH`, `R_EARTH_EQ`; planned for `core/constants.py`
-  (T-14.2).
+  Resolution B3 nominal `GM_EARTH`, `R_EARTH_EQ`; live in `core/constants.py`.
 - **Gravitational focusing**, `b = R⊕√(1+v_esc²/v∞²)` — no citable
   numbered source found (four attempts logged in the Sprint 14 header);
   elementary-mechanics carve-out invoked, the same category as EQ-023's unnumbered
-  display equation and `target/deflection.py`'s own existing carve-out.
+  display equation and `target/deflection.py`'s own existing carve-out. Now live as
+  `target/deflection.py:required_miss_distance`.
 
 None of the above trace to HFGW/Baker literature (epistemic firewall checked, per the
 survey file's own record). `docs/CLAIMS.md` is unchanged by this pass — the Sprint 14
@@ -245,7 +253,7 @@ header states the tradespace inputs file as *established* and the d-cancellation
 
 | Module | Purpose | Public API | Depends on |
 |---|---|---|---|
-| `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4`, `G_OVER_C5`, `TARGET_RANGE`. *(The shorthand `G_OVER_C4/5` stood here until 2026-08-03; both names are now written out, because a completeness check cannot match a shorthand.)* | — |
+| `core/constants.py` | Physical constants with sources | **live** — `G`, `c`, `AU`, `M_SUN`, `PARSEC`, `G_OVER_C4`, `G_OVER_C5`, `TARGET_RANGE`, `GM_EARTH`, `R_EARTH_EQ` (T-14.2, IAU 2015 Resolution B3 nominal values, Prsa et al. *AJ* 152:41 (2016), arXiv:1605.09788, Table 1). *(The shorthand `G_OVER_C4/5` stood here until 2026-08-03; both names are now written out, because a completeness check cannot match a shorthand.)* | — |
 | `core/units.py` | Scaled strain representation | **live** — `StrainScale`, `DEFAULT_REFERENCE` | `constants` |
 | `core/backend.py` | Array-API shim (numpy / numba) | **live** — `get_backend`, `Backend` (T-11.1; no citation requirement, infrastructure only); `field_grid`, `_field_grid_loop` (T-11.2; Numba-JIT-compilable TT-strain superposition over a field-point grid, one already-evaluated `q_ddot` per source shared across the whole grid — see Assumption Ledger for the light-crossing-time restriction this imposes); `SplitPhase`, `split_phase` (T-11.3; FP64 reference phase + FP32-safe differential — use `.phasor()`, **not** `.recombine()`, which is irreducibly lossy at astronomical range); `field_grid_split_phase` (T-11.4; NumPy/CuPy-agnostic per-element phasor kernel for the optional GPU backend); `assert_phase_precision`, `PrecisionError` (T-11.5; guards float32 phase outside `split_phase`'s own authorized differential term); `field_grid_chunked` (T-11.7; memory-bounded chunked evaluation of `field_grid`, identical to rtol 1e-12) | `core/constants`, `core/validation` (**not** `source/quadrupole` — `q_ddots` are caller-supplied, never imported) |
 | `bodies/sphere.py` | Rigid uniform sphere; mass/inertia; rotational-oblateness quadrupole | **live** — `Sphere` (dataclass: `radius`, `density`, `.mass`, `.moment_of_inertia`, `.self_quadrupole()`), `oblateness_quadrupole` (T-4.1/4.2/4.6) | `constants` |
@@ -265,8 +273,10 @@ header states the tradespace inputs file as *established* and the d-cancellation
 | `array/grating.py` | Grating-lobe and spacing constraints | **live** — `max_spacing`, `has_grating_lobes` (T-5.8) | `geometry` |
 | `array/focus.py` | Spatiotemporal focusing; focus kinematics; array trade studies | **live, complete** — `focal_phases` (T-9.5, EQ-029/030), `focused_phasor`/`focused_field` (T-9.6, EQ-032), `spot_size`/`FWHM_COEFFICIENT` (T-10.1, EQ-033), `focus_trajectory` (T-9.7, EQ-049), `dwell_time` (T-10.3, EQ-050), `peak_to_sidelobe` (T-10.4, EQ-051), `band_sweep` (T-10.5, EQ-052), `trade_surface` (T-10.6, EQ-053). The previous version of this row listed the last five as unimplemented. Far-field only per [ADR-0006](adr/0006-focused-field-far-field-regime.md); near-field requests **raise — propagate that error, do not catch it** | `array/beamform`, `core/constants`, `core/validation`, `kinematics/oscillators` (**not** `array/geometry`) |
 | `target/geodesic.py` | Geodesic deviation at the target | **live** — `deviation_acceleration` (T-8.1, EQ-045). This is the mechanism every `target/coupling.py` channel acts through: a GW produces **tidal strain, not net force** | `core/validation` |
-| `target/coupling.py` | All three coupling channels, reported side by side | **live** — `tidal_strain`/`channel_tidal` (T-8.2/8.3), `channel_absorption` (T-8.4), `channel_gravity_tractor` (T-8.5, EQ-023), `CouplingResult` (T-8.3), `channel_gravity_tractor_result`/`compare_channels` (T-8.6). **All three channels from the module's original scope are now live** — the previous version of this row said the other two were unimplemented. Reporting them side by side rather than assuming radiated power converts to thrust is the module's whole point | `core/constants`, `ledger/gap_report` |
-| `target/deflection.py` | Impulse → Δv → miss distance | **live** — `delta_v` (T-8.7), `miss_distance` (T-8.8). **Deliberately uncited**: both are elementary Newtonian mechanics (impulse-momentum; linearized orbital displacement), not GW physics, so rule 1's numbered-equation requirement does not apply — the module docstring says so explicitly. Where a *number* is checked it is cited: `delta_v` reproduces DART's measured Dimorphos deflection (1.16e7 N·s on 4.3e9 kg → 2.7 mm/s) to **rtol 1e-2**, cited to Daly et al. 2023 | `core/constants` (**not** `target/coupling`) |
+| `target/coupling.py` | All three coupling channels, reported side by side | **live** — `tidal_strain`/`channel_tidal` (T-8.2/8.3), `channel_absorption` (T-8.4), `channel_gravity_tractor` (T-8.5, EQ-023), `CouplingResult` (T-8.3), `channel_gravity_tractor_result`/`compare_channels` (T-8.6), `required_luminosity` (T-14.4 — algebraic inverse of `channel_absorption`; round-trips to rtol 1e-12). **All three channels from the module's original scope are now live** — the previous version of this row said the other two were unimplemented. Reporting them side by side rather than assuming radiated power converts to thrust is the module's whole point | `core/constants`, `ledger/gap_report` |
+| `target/deflection.py` | Impulse → Δv → miss distance | **live** — `delta_v` (T-8.7), `miss_distance` (T-8.8), `required_miss_distance` (T-14.2 — gravitational-focusing impact parameter; elementary-mechanics carve-out, no citable numbered source found despite four search attempts, see §1), `required_delta_v` (T-14.3 — two published regimes, `"impulsive-floor"` and `"secular"`; Izzo, AAS 05-141 (2005) eq. (2)/(3) for the secular case, γ=1). **Deliberately uncited** for the elementary-mechanics functions: not GW physics, so rule 1's numbered-equation requirement does not apply — the module docstring says so explicitly. Where a *number* is checked it is cited: `delta_v` reproduces DART's measured Dimorphos deflection (1.16e7 N·s on 4.3e9 kg → 2.7 mm/s) to **rtol 1e-2**, cited to Daly et al. 2023; `required_delta_v` is bracket-tested against Greenstreet et al. 2020's five published medians | `core/constants` (**not** `target/coupling`) |
+| `target/threat.py` | Threat-population anchors for the deflection tradespace | **live** — `ThreatAnchor` (dataclass), `ANCHORS` (Chelyabinsk [P13], Dimorphos [D23] — mass derived from diameter+density, not stated directly — and Bennu [S19]), `RHO_RUBBLE_PILE`/`RHO_STONY`, `mass_from_diameter` (T-14.1). Exempt from citation-CI along with the rest of `target/` — consumes measured literature figures rather than introducing radiation physics | `core/constants` (implicitly, via SI convention; no direct import) |
+| `target/tradespace.py` | The deflection tradespace: detection distance × closure velocity × diameter × density grid (Sprint 14, paper R8) | **live** — `TradespaceCell` (frozen dataclass, 15 fields; `secular_valid` is the contract, `nan` in the three `*_secular*` fields only when `False`), `tradespace`, `best_case_gap_decades` (filters on `secular_valid`, never on `isnan`), grid constants `DETECTION_DISTANCES_M`, `V_INFINITY_MPS`, `DIAMETERS_M`, `DENSITIES_KGM3` (T-14.5). **Built at `target/`, not the `ledger/` path `docs/BACKLOG.md` T-14.5 originally specified** — see the module's own docstring for why: the planned `ledger/` location would have created a new `(ledger, target)` package cycle, since `target/coupling.py` already imports `ledger/gap_report.py`. **Headline result (D-14.6): `gap_decades_*` is independent of `detection_distance_m` at fixed (v∞, D, ρ) — the detection-distance dependence cancels exactly** in the required-luminosity formula, confirmed to floating-point precision (~1e-15, atol budget 1e-9) in `tests/unit/test_tradespace.py` | `target/threat`, `target/deflection`, `target/coupling`, `core/constants` |
 | `ledger/gap_report.py` | Feasibility ledger | **live** — `GapMetric`, `GapReport`, `GapMetric.from_stamped` (T-2.6), plus row-builder wrappers `emission_gap` (T-2.7), `aperture_gap` (T-5.9), `impulse_gap` (T-8.9), `focusing_gap` (T-10.8), `body_quadrupole_gap` (T-4.9); plus `RunManifest` and `run_manifest`, which pin code version, parameters and seeds for a campaign run and are what the manuscript's Data-availability statement promises. **Schema is FROZEN**: `name, achieved, required, units, source_module, provenance` is a contract every epic writes to; `test_gap_report.py` pins the field set *and order* so a breaking change fails loudly. **Use `from_stamped()`** for any value originating as a `StampedResult` — the plain constructor would compile while discarding the stamp | `source/conservation` (for `UNPHYSICAL_STAMP`, `StampedResult`) |
 | `viz/patterns.py` | Beam-pattern visualization (polar + 3D) | **live** — `plot_pattern_polar`, `plot_pattern_3d` (T-7.4/7.5; headless `Agg` backend; reimplements array-factor math vectorized for full-grid rendering rather than calling `beamform.array_factor` per point — kept numerically consistent by shared test coverage, not by a shared code path); `plot_polarization_ellipse` (T-7.6); `plot_trade_surface` (T-10.7, renders `array/focus.py:trade_surface`) | `array/beamform` (mathematically, not by import) |
 | `viz/slices.py` | 2D strain-field slice extraction, heatmaps, propagation animation | **live** — `FieldSlice`, `extract_slice`, `plot_strain_slice` (T-7.1/7.2), `animate_propagation` (T-7.3); headless `Agg` backend as in `patterns.py` | — (the caller supplies the `field` callable, e.g. `propagate/retarded.field_at`; no direct import) |
@@ -307,19 +317,16 @@ margin**, so ADR-0003's reversal condition is not triggered. See
 its backlog entry carries four measured traps that each produce a *passing but meaningless*
 test — read them before writing the tests, not after.
 
-**Planned, not yet built — Sprint 14, recorded 2026-08-08, zero source change.**
-`docs/BACKLOG.md` T-14.1 and T-14.5 specify two new modules — `src/gwtb/target/threat.py`
-and `src/gwtb/ledger/tradespace.py` (paths given in full, deliberately, so this note
-cannot be misread as a live §2 row for a file that does not exist yet — see
-`test_every_module_map_row_points_at_a_real_module` in §"Automated enforcement" below).
-Three **live** modules gain planned additions instead: `core/constants.py` gains
-`GM_EARTH`, `R_EARTH_EQ` (T-14.2, [IAU] Table 1, verified 2026-08-08 — see §1);
-`target/deflection.py` gains `required_miss_distance` (T-14.2) and `required_delta_v`
-(T-14.3); `target/coupling.py` gains `required_luminosity` (T-14.4). **None of these six
-names exists in the code yet — do not add them to the rows above until the tasks land.**
-Adding them now would satisfy nothing (the automated check reads the code, not this
-note) and would misrepresent the code to a reader of this file, which is the one
-failure mode this index exists to prevent.
+✅ **Resolved 2026-08-08 — Sprint 14 landed (T-14.1 through T-14.6).** The note that stood
+here said `target/threat.py` and (as originally specified) `src/gwtb/ledger/tradespace.py`
+were planned, not built, and that six symbols across `core/constants.py`,
+`target/deflection.py` and `target/coupling.py` did not exist yet. All of that is now
+live — see the §2 rows above. One deviation from the plan, found during implementation
+and recorded in both `docs/BACKLOG.md` T-14.5 and the module's own docstring: the
+tradespace module lives at `target/tradespace.py`, not under `ledger/` as originally
+specified, because that location would have created a new package cycle
+(`target/coupling.py` already imports `ledger/gap_report.py`). Retained per this file's
+own convention of not deleting resolved notes, so a reader can see what changed and why.
 
 ---
 
@@ -361,16 +368,10 @@ near those edges.
 | **The finite-size form factor assumes a *volume-filling* `l=2` radial profile** — `δρ` uniform on `[0, R]`, giving `1 − 5(kR)²/98` | `bodies/multipole.py:finite_size_correction`; [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md) eq. 3 vs eq. 5 | The body's quadrupole is distributed through its volume | **A body that acquires its quadrupole by deforming its *surface* has `δρ ∝ δ(r−R)` and `1 − (kR)²/14` instead — 40% larger.** That is exactly the incompressible tidal (`elastic.py:induced_quadrupole`, T-4.3) and rotational (`sphere.py:oblateness_quadrupole`, T-4.6) case, so this correction **must not be applied to either without re-deriving**. Both cases are legitimately "the uniform sphere"; the phrase does not determine the answer. A future source quoting `1/14` is *not* a confirmation of EQ-034 — it confirms the other one |
 | **ADR-0006's cited prototypes were never committed** — `scratchpad/spike_9_6.py`, `spike_9_6b.py` — because `scratchpad/` was untracked until 2026-08-02 | [ADR-0006](adr/0006-focused-field-far-field-regime.md) "Context" | Found while writing [ADR-0007](adr/0007-uniform-sphere-quadrupole-form-factor.md) 2026-08-02 | **Resolved the same day.** A fresh `scratchpad/spike_9_6.py` regenerates every ADR-0006 figure (angular spread, margin, `D/λ` table, sign-convention table, Rayleigh background) from current production code and the geometry already pinned in `tests/unit/test_focused_field.py`; all reproduce, including the peak-to-background ratio of 8.75 against the naive `√N = 8.00`. Recorded rather than silently fixed, per rule 8 — absence of a reproducible prototype in an accepted ADR is itself a finding in a project that optimizes for auditability |
 | **The finite-size correction is a leading-order truncation and goes negative** at `kR = √(98/5)`, i.e. `R/λ = 0.7046` | `bodies/multipole.py:finite_size_correction`; `tests/unit/test_multipole.py::test_finite_size_correction_validity_floor_is_recorded` | `R/λ ≪ 0.1`; departure from unity is 2.0142% already at `R/λ = 0.1` | A wall, not a bug (rule 5). The series `1 − 5(kR)²/98` returns *negative* form factors past the crossing and is meaningless well before it. T-4.7 adds the structured out-of-regime warning at `R/λ > 0.1`. **Do not "fix" the sign** — the fix is to stop calling it out of regime. The exact closed form (ADR-0007 eq. 4) is *not* a remedy: it is cancellation-limited below `kR ≈ 0.05` and is less accurate than the series in the regime that matters |
-
-**Pending — Sprint 14, recorded 2026-08-08, not yet added.** `docs/BACKLOG.md` T-14.8
-schedules four new rows for this table once Sprint 14 lands: radial-closing lead time
-`t = d / v∞` (D-14.2); thrust duration equal to that lead time (D-14.4);
-encounter geometry `γ = 1` in the secular-deflection regime, optimistic by at most
-0.19 decades against the Izzo eq. (3), Table 1 range `γ ∈ [0.65, 1]` (D-14.3); and
-a geometric (not measured) absorption cross-section `σ = π(D/2)²` (D-14.5). None
-is asserted here — per this section's own rule, an approximation belongs in this
-ledger once it is in force in code, not while it is still a planning-session decision.
-Tracked so the omission is visible rather than silent (rule 8) until T-14.8 closes it.
+| **Radial-closing lead time** — `t = d / v∞`, i.e. the detection distance and closure speed alone determine warning time, ignoring heliocentric encounter geometry | `target/tradespace.py:_build_cell` (D-14.2) | Order-of-magnitude lead-time estimates across the tradespace grid | A real encounter's true geometric closing rate differs from radial `v∞` by an angle-dependent factor; this assumption is what lets R8's tradespace be a clean 4-D grid rather than requiring a full orbit-determination Monte Carlo per cell (cf. Greenstreet et al. 2020, ref. 26, which *does* run 10,000 virtual orbits and reports a ~10× spread at fixed lead time from exactly this kind of geometric variation) |
+| **Thrust duration equals the full lead time** — the deflecting force is applied continuously from detection to the original close approach, `duration = t` | `target/tradespace.py:_build_cell` (D-14.4) | Idealised best case for the coupling channel | Any real engagement (spin-up, pointing, duty cycle) shortens the effective duration and *raises* the required force/luminosity proportionally; this assumption therefore makes R8's already-~30-decade gap optimistic, not conservative |
+| **Secular-regime geometry factor γ = 1** — ref. 24's eq. (3) γ ∈ [0.65, 1] for real encounters is fixed to its most favourable value | `target/deflection.py:required_delta_v` (`regime="secular"`, D-14.3) | Whenever the secular Δv regime is used | Makes the secular Δv estimate optimistic by at most `log10(1/0.65) ≈ 0.19` decades — negligible against R8's ~29–34-decade gaps, but a real, directional bias, not a symmetric error, and never to be silently tightened away |
+| **Geometric absorption cross-section** — `σ = π(D/2)²`, the object's projected disk area, not a measured or wavelength-dependent absorption cross-section | `target/tradespace.py:_build_cell` (D-14.5) | The absorption channel (R6) applied to a threat object rather than to R6's own reference target | Consistent with `target/coupling.py:channel_absorption`'s own "naive best case: perfect absorption, no re-radiation" framing — this ledger row exists so the cross-section choice specifically, as distinct from the absorption-fraction choice, is visible on its own |
 
 ---
 

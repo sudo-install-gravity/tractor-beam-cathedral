@@ -32,6 +32,7 @@ import argparse
 import json
 import math
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +48,7 @@ from gwtb.array.geometry import planar_array  # noqa: E402
 from gwtb.bodies.elastic import MATERIALS, induced_quadrupole  # noqa: E402
 from gwtb.bodies.multipole import finite_size_correction  # noqa: E402
 from gwtb.bodies.sphere import Sphere  # noqa: E402
-from gwtb.core.constants import AU, c  # noqa: E402
+from gwtb.core.constants import AU, M_SUN, R_EARTH_EQ, G, c  # noqa: E402
 from gwtb.ledger.gap_report import (  # noqa: E402
     GapReport,
     aperture_gap,
@@ -61,6 +62,16 @@ from gwtb.target.coupling import (  # noqa: E402
     channel_gravity_tractor_result,
     channel_tidal,
     compare_channels,
+)
+from gwtb.target.deflection import required_delta_v  # noqa: E402
+from gwtb.target.threat import ANCHORS  # noqa: E402
+from gwtb.target.tradespace import (  # noqa: E402
+    DENSITIES_KGM3,
+    DETECTION_DISTANCES_M,
+    DIAMETERS_M,
+    V_INFINITY_MPS,
+    best_case_gap_decades,
+    tradespace,
 )
 
 # --- shared configuration (the project's pinned reference geometry) ----------
@@ -694,12 +705,210 @@ def campaign_r6(outdir: Path) -> dict[str, Any]:
     }
 
 
+def campaign_r8(outdir: Path) -> dict[str, Any]:
+    """The deflection tradespace (Sprint 14): across detection distance,
+    closure velocity, threat-object diameter and density, is any cell
+    feasible, and does detection distance actually cancel out of the
+    required luminosity as D-14.6's planning-session derivation predicts?
+    """
+    # Same array configuration constant campaign_r6 uses (`lum`, above).
+    achieved_luminosity = 7.5e-2
+
+    cells = tradespace(
+        DETECTION_DISTANCES_M, V_INFINITY_MPS, DIAMETERS_M, DENSITIES_KGM3, achieved_luminosity
+    )
+
+    # D-14.6 d-cancellation check, per branch, atol 1e-9 decades.
+    d_cancellation_atol = 1.0e-9
+    d_cancellation_ok = True
+    max_spread_floor = 0.0
+    max_spread_secular = 0.0
+    for v in V_INFINITY_MPS:
+        for diam in DIAMETERS_M:
+            for rho in DENSITIES_KGM3:
+                subset = [
+                    c
+                    for c in cells
+                    if c.v_infinity_mps == v and c.diameter_m == diam and c.density_kgm3 == rho
+                ]
+                floor_vals = [c.gap_decades_floor for c in subset]
+                spread = max(floor_vals) - min(floor_vals)
+                max_spread_floor = max(max_spread_floor, spread)
+                if spread > d_cancellation_atol:
+                    d_cancellation_ok = False
+
+                secular_vals = [c.gap_decades_secular for c in subset if c.secular_valid]
+                if len(secular_vals) >= 2:
+                    spread_s = max(secular_vals) - min(secular_vals)
+                    max_spread_secular = max(max_spread_secular, spread_s)
+                    if spread_s > d_cancellation_atol:
+                        d_cancellation_ok = False
+
+    any_non_positive_gap = any(c.gap_decades_floor <= 0.0 for c in cells) or any(
+        c.secular_valid and c.gap_decades_secular <= 0.0 for c in cells
+    )
+    any_non_finite = any(not math.isfinite(c.gap_decades_floor) for c in cells) or any(
+        c.secular_valid and not math.isfinite(c.gap_decades_secular) for c in cells
+    )
+
+    best = best_case_gap_decades(cells)
+    falsified = any_non_positive_gap or not d_cancellation_ok or any_non_finite
+
+    _fig8_tradespace(outdir, achieved_luminosity)
+
+    return {
+        "question": "Across the tradespace of detection distance, closure velocity, "
+        "threat-object diameter and density, is any cell feasible, and does "
+        "detection distance cancel out of the required luminosity as D-14.6 "
+        "predicts?",
+        "falsifier": "any gap_decades_* <= 0 anywhere -- a vanished wall is a defect "
+        "until proven a discovery -- or the D-14.6 d-cancellation failing at "
+        "atol 1e-9 decades, or any cell non-finite outside the guarded "
+        "secular-nan case",
+        "grid": {
+            "detection_distances_m": list(DETECTION_DISTANCES_M),
+            "v_infinity_mps": list(V_INFINITY_MPS),
+            "diameters_m": list(DIAMETERS_M),
+            "densities_kgm3": list(DENSITIES_KGM3),
+        },
+        "achieved_luminosity_w": achieved_luminosity,
+        "cells": [asdict(c) for c in cells],
+        "d_cancellation_max_spread_decades": {
+            "floor": max_spread_floor,
+            "secular": max_spread_secular,
+        },
+        "best_case_gap_decades": best,
+        "figures": ["fig8_tradespace.png"],
+        "verdict": "FALSIFIED" if falsified else "CONFIRMED",
+    }
+
+
+#: Julian year, s. Matches the value used throughout Sprint 14's arithmetic
+#: (docs/BACKLOG.md T-14.3 bracketing test).
+_YEAR_S = 3.15576e7
+
+#: [G20] Greenstreet et al. 2020: median required delta-v (cm/s) for a 1
+#: R_earth miss, at 10/20/30/40/50 years before impact.
+_G20_YEARS = (10, 20, 30, 40, 50)
+_G20_MEDIAN_CM_S = (1.4, 0.76, 0.55, 0.46, 0.38)
+
+#: [C26] Cheng et al. arXiv:2601.16255: median warning time by size class, days.
+_C26_MEDIAN_WARNING_DAYS = {
+    "10-20 m: 12.4 d": 12.4,
+    "20-50 m: 21.5 d": 21.5,
+    "50-140 m: 106.2 d": 106.2,
+}
+
+
+def _fig8_tradespace(outdir: Path, achieved_luminosity: float) -> None:
+    """Figure 8 (T-14.7): the deflection tradespace, two panels.
+
+    Panel a: gap_decades_secular heatmap over (v_infinity, diameter) at
+    rho=2400 kg/m^3 -- the axes that survive the D-14.6 d-cancellation --
+    evaluated at d=40 AU (secular_valid at every grid point there).
+    Panel b: required delta-v vs lead time, both D-14.3 regimes, the five
+    [G20] medians, and the [C26] median-warning verticals.
+    """
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(10.5, 4.6))
+
+    # --- Panel a: (v_infinity, diameter) heatmap at rho=2400, d=40 AU -------
+    rho_panel_a = 2400.0
+    cells_a = tradespace(
+        (40.0 * AU,), V_INFINITY_MPS, DIAMETERS_M, (rho_panel_a,), achieved_luminosity
+    )
+    n_v, n_d = len(V_INFINITY_MPS), len(DIAMETERS_M)
+    z = np.full((n_v, n_d), np.nan)
+    for cell in cells_a:
+        i = V_INFINITY_MPS.index(cell.v_infinity_mps)
+        j = DIAMETERS_M.index(cell.diameter_m)
+        z[i, j] = cell.gap_decades_secular
+    im = ax_a.imshow(z, origin="lower", aspect="auto", cmap="viridis")
+    ax_a.set_xticks(range(n_d))
+    ax_a.set_xticklabels([f"{d:g}" for d in DIAMETERS_M], rotation=40, ha="right")
+    ax_a.set_yticks(range(n_v))
+    ax_a.set_yticklabels([f"{v / 1.0e3:g}" for v in V_INFINITY_MPS])
+    ax_a.set_xlabel("diameter (m)")
+    ax_a.set_ylabel(r"$v_\infty$ (km/s)")
+    ax_a.set_title(r"Required luminosity gap (decades), $\rho$=2400 kg/m$^3$")
+    cs = ax_a.contour(range(n_d), range(n_v), z, colors="white", linewidths=0.8, alpha=0.7)
+    ax_a.clabel(cs, inline=True, fontsize=7, fmt="%.0f")
+    fig.colorbar(im, ax=ax_a, label="gap (decades)", shrink=0.85)
+
+    for anchor in ANCHORS:
+        j = int(np.argmin(np.abs(np.array(DIAMETERS_M) - anchor.diameter_m)))
+        ax_a.axvline(j, color=C_MUTED, ls=":", lw=1.0)
+        ax_a.text(
+            j,
+            n_v - 0.55,
+            f" {anchor.name}",
+            rotation=90,
+            fontsize=7.5,
+            color=C_MUTED,
+            va="top",
+            ha="center",
+        )
+
+    # --- Panel b: required delta-v vs lead time -----------------------------
+    lead_times_s = np.logspace(np.log10(0.02 * _YEAR_S), np.log10(100.0 * _YEAR_S), 200)
+    period_s = 2.0 * np.pi * math.sqrt(AU**3 / (G * M_SUN))
+    floor_v = np.array(
+        [required_delta_v(R_EARTH_EQ, t, AU, "impulsive-floor") * 100.0 for t in lead_times_s]
+    )
+    secular_v = np.array(
+        [
+            required_delta_v(R_EARTH_EQ, t, AU, "secular") * 100.0 if t >= period_s else np.nan
+            for t in lead_times_s
+        ]
+    )
+    lead_years = lead_times_s / _YEAR_S
+
+    ax_b.loglog(lead_years, floor_v, "-", color=C_PRED, lw=1.8, label="impulsive-floor")
+    ax_b.loglog(lead_years, secular_v, "--", color=C_DATA, lw=1.8, label="secular")
+    ax_b.loglog(
+        np.array(_G20_YEARS),
+        np.array(_G20_MEDIAN_CM_S),
+        "o",
+        ms=6,
+        color=C_WRONG,
+        zorder=5,
+        label="[G20] published medians",
+    )
+    for days in _C26_MEDIAN_WARNING_DAYS.values():
+        ax_b.axvline(days / 365.25, color=C_ALT, ls=":", lw=1.1)
+
+    ax_b.set_xlabel("lead time (years)")
+    ax_b.set_ylabel(r"required $\Delta v$ (cm/s)")
+    ax_b.set_title("Required deflection vs. lead time, bracketed against [G20]")
+    ax_b.legend(loc="upper right", fontsize=8)
+
+    ymin, ymax = ax_b.get_ylim()
+    max_c26_years = max(_C26_MEDIAN_WARNING_DAYS.values()) / 365.25
+    ax_b.axvspan(lead_years.min(), max_c26_years, color=C_ALT, alpha=0.08, zorder=0)
+    for i, (label, days) in enumerate(_C26_MEDIAN_WARNING_DAYS.items()):
+        ax_b.text(
+            days / 365.25,
+            ymax * (0.6 - 0.12 * i),
+            label,
+            rotation=90,
+            fontsize=6.5,
+            color=C_ALT,
+            va="top",
+            ha="right",
+        )
+    ax_b.set_ylim(ymin, ymax)
+
+    fig.tight_layout()
+    fig.savefig(outdir / "fig8_tradespace.png")
+    plt.close(fig)
+
+
 CAMPAIGNS: dict[str, Callable[[Path], dict[str, Any]]] = {
     "R2": campaign_r2,
     "R3": campaign_r3,
     "R4": campaign_r4,
     "R5": campaign_r5,
     "R6": campaign_r6,
+    "R8": campaign_r8,
 }
 
 

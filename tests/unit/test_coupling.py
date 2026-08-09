@@ -1,12 +1,13 @@
-"""Unit tests for gwtb.target.coupling (T-8.2, T-8.3, T-8.4, T-8.5, T-8.6)."""
+"""Unit tests for gwtb.target.coupling (T-8.2, T-8.3, T-8.4, T-8.5, T-8.6, T-14.4)."""
 
 from __future__ import annotations
 
 import math
 
+import numpy as np
 import pytest
 
-from gwtb.core.constants import AU
+from gwtb.core.constants import AU, TARGET_RANGE
 from gwtb.target.coupling import (
     CouplingResult,
     channel_absorption,
@@ -14,6 +15,7 @@ from gwtb.target.coupling import (
     channel_gravity_tractor_result,
     channel_tidal,
     compare_channels,
+    required_luminosity,
     tidal_strain,
 )
 
@@ -167,3 +169,42 @@ def test_compare_channels_never_sums_the_rows() -> None:
     assert achieved_by_name["tidal"] == pytest.approx(abs(tidal.strain), rel=1e-12)
     assert achieved_by_name["absorption"] == pytest.approx(abs(absorption.force), rel=1e-12)
     assert achieved_by_name["gravity_tractor"] == pytest.approx(abs(tractor.force), rel=1e-12)
+
+
+# --- T-14.4: required_luminosity -----------------------------------------------
+
+
+def test_required_luminosity_round_trips_with_channel_absorption() -> None:
+    """AC: channel_absorption(required_luminosity(F, sigma, d), sigma, d).force
+    == F to rtol 1e-12 over a log-spaced grid of F, sigma, d."""
+    for force in np.logspace(-3, 3, 4):
+        for cross_section in np.logspace(0, 8, 4):
+            for distance in np.logspace(6, 14, 4):
+                lum = required_luminosity(float(force), float(cross_section), float(distance))
+                result = channel_absorption(lum, float(cross_section), float(distance))
+                assert result.force == pytest.approx(float(force), rel=1e-12)
+
+
+def test_required_luminosity_r6_anchor() -> None:
+    """AC: F=43 N, sigma=pi*500^2 m^2, d=TARGET_RANGE -> 7.39e30 W, rtol 1e-2
+    (approx 1.9e4 L_sun -- the paper's scale sentence)."""
+    cross_section = math.pi * 500.0**2
+    lum = required_luminosity(43.0, cross_section, TARGET_RANGE)
+    assert lum == pytest.approx(7.39e30, rel=1e-2)
+    l_sun = 3.828e26
+    assert lum / l_sun == pytest.approx(1.9e4, rel=2e-2)
+
+
+def test_required_luminosity_rejects_non_positive_force() -> None:
+    with pytest.raises(ValueError, match="force"):
+        required_luminosity(0.0, 1.0, 1.0e9)
+
+
+def test_required_luminosity_rejects_non_positive_cross_section() -> None:
+    with pytest.raises(ValueError, match="cross_section"):
+        required_luminosity(1.0, 0.0, 1.0e9)
+
+
+def test_required_luminosity_rejects_non_positive_distance() -> None:
+    with pytest.raises(ValueError, match="distance"):
+        required_luminosity(1.0, 1.0, 0.0)

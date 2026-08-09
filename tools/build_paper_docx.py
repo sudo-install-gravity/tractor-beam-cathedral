@@ -13,7 +13,18 @@ default conversion does not give us.
    must be stripped before journal submission.
 2. **Every figure legend gets a bordered placeholder frame above it**
    (``FigurePlaceholder``), so there is an obvious slot to drop a diagram into.
-3. A table of contents, because the draft is ~1,500 lines.
+3. A table of contents, because the draft is ~1,500 lines — **placed after the
+   title**, not before it. Pandoc's own ``--toc`` puts the TOC first in the
+   document body when the title comes from the markdown's first ``#`` line
+   rather than YAML metadata (the case here), which reads as contents-before-
+   cover-page. ``tools/_docx_post.py:move_toc_after_title`` fixes the order
+   after pandoc runs; see that module for why this needs post-processing
+   rather than a pandoc flag.
+4. **Page numbers**, centered in the footer — pandoc's default reference
+   document has none. ``tools/_docx_post.py:build_reference_docx`` builds a
+   reference doc with a page-number footer wired in (and injects the two
+   custom styles above into the same reference doc); see that module for
+   why this has to be an input to pandoc rather than output post-processing.
 
 Dependency: pandoc, via the self-contained ``pypandoc_binary`` wheel. It is
 deliberately **not** a project dependency — nothing in ``src/`` needs it and this
@@ -26,13 +37,14 @@ Exit codes: 0 = built, 1 = missing dependency or conversion failure.
 
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 import sys
 import tempfile
 import zipfile
 from pathlib import Path
+
+from _docx_post import build_reference_docx, move_toc_after_title
 
 SRC = Path("docs/paper/nature-draft.md")
 OUT = Path("docs/paper/nature-draft.docx")
@@ -148,33 +160,6 @@ def preprocess(text: str) -> tuple[str, int, int]:
     return "\n".join(out), n_sum, n_fig
 
 
-def build_reference(pandoc: str, work: Path) -> Path:
-    """Pandoc's default reference doc with our two custom styles injected."""
-    ref = work / "reference.docx"
-    with open(ref, "wb") as fh:
-        subprocess.run(
-            [pandoc, "--print-default-data-file", "reference.docx"], stdout=fh, check=True
-        )
-
-    unpacked = work / "ref"
-    with zipfile.ZipFile(ref) as z:
-        z.extractall(unpacked)
-
-    styles = unpacked / "word" / "styles.xml"
-    xml = styles.read_text(encoding="utf-8")
-    if "</w:styles>" not in xml:
-        raise RuntimeError("unexpected reference styles.xml -- pandoc format changed?")
-    styles.write_text(xml.replace("</w:styles>", STYLE_XML + "</w:styles>"), encoding="utf-8")
-
-    out = work / "reference-custom.docx"
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for root, _, files in os.walk(unpacked):
-            for name in files:
-                path = Path(root) / name
-                z.write(path, path.relative_to(unpacked).as_posix())
-    return out
-
-
 def main() -> int:
     try:
         import pypandoc
@@ -207,7 +192,7 @@ def main() -> int:
                 "-t",
                 "docx",
                 "--reference-doc",
-                str(build_reference(pandoc, work)),
+                str(build_reference_docx(pandoc, work, extra_style_xml=STYLE_XML)),
                 "--toc",
                 "--toc-depth=3",
                 "--wrap=none",
@@ -216,6 +201,8 @@ def main() -> int:
             ],
             check=True,
         )
+
+    move_toc_after_title(OUT)
 
     with zipfile.ZipFile(OUT) as z:
         doc = z.read("word/document.xml").decode("utf-8")

@@ -1097,7 +1097,7 @@ protects nothing.
 ordering in place while a task existed to fix it later is exactly how the wrong thing gets
 done first.
 
-**T-13.8 · `tools/gates.py` — run the five gates and report honestly · 2 pts · `sonnet-low` · deps none**
+**T-13.8 · `tools/gates.py` — run the five gates and report honestly · 2 pts · `sonnet-low` · deps none** ✅
 `tools/gates.py` — `main() -> int`. Runs ruff check, ruff format --check, `python -m mypy src`,
 `check_citations.py` and `pytest -q` in order, and prints a pass/fail line per gate.
 *AC:* exits non-zero if **any** gate fails; prints each gate's name and status; never masks a

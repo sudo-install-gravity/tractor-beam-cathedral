@@ -524,24 +524,27 @@ must be redone. **Resolved as above; the recomputed departure is 2.0142%.**
 
 ## 8. Sanity check before you commit
 
+**2026-08-09: use `tools/gates.py`, not the five commands by hand.**
+
 ```
-.venv\Scripts\ruff.exe check src tests tools
-.venv\Scripts\ruff.exe format --check src tests tools
-.venv\Scripts\python.exe -m mypy src
-.venv\Scripts\python.exe tools\check_citations.py
-.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe tools\gates.py
 ```
 
-All five must pass. All five are green as of 2026-08-03 (896 passing, 3 skipped).
+Runs all five gates (ruff check, ruff format --check, mypy, citation discipline, pytest),
+in the same order and with the same arguments as `.github/workflows/ci.yml`, and exits
+non-zero if **any** gate fails — including a gate that couldn't even be launched, or that
+produced no output at all (reported as FAILED, never silently skipped). It exists because
+composing these five commands by hand went wrong twice, both 2026-08-06 (T-13.8;
+`docs/BACKLOG.md`): a broken `mypy.exe` console shim that exited 1 with zero output for an
+hour before anyone noticed, and a chained `... | tail -1 && git commit` that masked a real
+2-test failure because the pipe's exit code was `tail`'s, always 0. All five gates passed
+as of 2026-08-09 (1082 passing, 3 skipped).
 
-> ⚠️ **Use `python -m mypy` / `python -m pytest`, NOT `mypy.exe` / `pytest.exe`.**
-> Found 2026-08-03: both console-script shims in `.venv\Scripts\` are broken on this host —
-> they exit **1 with zero output**. The previously-documented `.venv\Scripts\mypy.exe src`
-> therefore looks exactly like a failing gate carrying no diagnostic, which is this
-> project's own rule-8 failure mode — something vanishing with no signal — reproduced
-> inside its own commit gate. **The code was clean throughout:** `python -m mypy src`
-> reports *Success: no issues found in 38 source files*. `ruff.exe` is unaffected because
-> it is a standalone Rust binary rather than a Python shim. If any `.venv\Scripts\*.exe`
-> ever exits non-zero with no output, reach for the `python -m` form before believing the
-> failure. Then mark finished tasks
+The manual five-command form still works if you need to run gates individually while
+debugging one of them, but **always use `python -m mypy` / `python -m pytest`, never
+`mypy.exe` / `pytest.exe`** — found 2026-08-03: both console-script shims in
+`.venv\Scripts\` are broken on this host and exit 1 with zero output regardless of whether
+the code is clean. `ruff.exe` is unaffected (a standalone Rust binary, not a Python shim).
+`tools/gates.py` already invokes everything via `sys.executable -m`, so this trap cannot
+recur through it. Then mark finished tasks
 ✅ in `BACKLOG.md` so the scheduler stays truthful.

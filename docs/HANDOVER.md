@@ -1,5 +1,17 @@
 # Handover — start here
 
+> **2026-08-08, SPIKE-13.1 in progress.** All four of the spike's listed
+> hypotheses (Actions disabled at repo or account level; free-tier minute
+> exhaustion) are eliminated or don't apply — "Allow all actions" is already
+> selected at the repo level, and personal GitHub accounts have no
+> account-wide Actions toggle to check (unlike organizations). None explains
+> `actions/runs` reporting `total_count: 0` across 64 prior pushes. This
+> commit is a live diagnostic push: if a run appears in
+> `https://github.com/sudo-install-gravity/tractor-beam-cathedral/actions`
+> after this lands, the trigger mechanism works and any failure narrows the
+> problem sharply; if the run count is still zero, none of the diagnosed
+> hypotheses hold and the spike escalates per its own AC rather than guessing.
+
 Current as of **2026-08-02**. **835 tests passing** (3 skipped — CuPy and
 PyVista are optional dependencies, absent on this host), all five sanity
 checks green. Committed and pushed.

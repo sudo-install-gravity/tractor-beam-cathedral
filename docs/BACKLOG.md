@@ -357,7 +357,13 @@ shape-rejection and one dtype-rejection assertion.
 *Why here:* [ADR-0002](adr/0002-array-conventions.md) states these are enforced by this file, but
 no Sprint 1 task created it — an ADR promising an artifact nothing delivered.
 
-**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps T-13.2**
+**T-2.9 · Branch protection (carried from T-0.9) · 1 pts · `sonnet-low` · deps T-13.2** ✅
+**Closed 2026-08-10.** `gh api repos/sudo-install-gravity/tractor-beam-cathedral/branches/main/protection`
+returns `required_status_checks` naming all three matrix jobs (`strict: true`),
+`enforce_admins: true`, `allow_force_pushes: false`, `allow_deletions: false` — the AC,
+confirmed by reading the live setting back, not just by the PUT succeeding. Applied by
+the owner directly (repo-settings changes execute outside the harness's own permission
+boundary); this session supplied the exact payload and verified the result.
 `repo-level`. Require green CI on `main`; block force-push and deletion.
 *AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/branches/main/protection` returns a
 `required_status_checks` block listing `test (3.10)`, `test (3.11)`, `test (3.12)`.

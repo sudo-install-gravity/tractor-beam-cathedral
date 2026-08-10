@@ -132,6 +132,18 @@ project can reach further.
   discipline exists to prevent in the physics; the same standard applies to its
   infrastructure.
 
+## Late development (2026-08-09, after escalation was written)
+
+While preparing the support ticket, the owner found and clicked a button titled
+**"Enable GitHub Actions in this repository"** — a control that had *not* surfaced during
+the Settings → Actions → General review (where "Allow all actions and reusable workflows"
+already appeared selected), and whose existence sits oddly beside the API's own
+`actions/permissions` response of `{"enabled": true, "allowed_actions": "all"}` from the
+same day. If clicking it resolves the issue, the recorded API state and the effective
+backend state were disagreeing — which would itself be the answer this ADR could not
+reach from the outside, and worth reporting to GitHub regardless. The commit carrying
+this note is the live re-test.
+
 ## Claims classification
 
 Infrastructure finding, not a physics claim — outside `docs/CLAIMS.md`'s A/B/C taxonomy.

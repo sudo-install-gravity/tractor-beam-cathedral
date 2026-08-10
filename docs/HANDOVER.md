@@ -27,6 +27,16 @@
 > `required_pull_request_reviews` is `null` (no required approval count), so a PR merges
 > as soon as its checks are green — no separate review-approval step blocks a solo
 > contributor.
+>
+> **First real payoff, same day:** the very first PR under this workflow (#1, closing
+> T-2.9) caught a genuinely stale test on CI that would have landed silently under the
+> old direct-push flow — `test_schedule.py::test_render_recognises_cli_completed_tasks`
+> hard-coded an assertion that the live T-2.9 would render as blocked, which broke the
+> instant T-2.9 actually completed. See the trap note below: **any test that asserts on
+> a specific real, still-open backlog task ID will eventually break this same way** —
+> `test_blocked_tasks_are_excluded` in the same file was already fixed for exactly this
+> once, on 2026-08-06. Prefer a synthetic task graph (see either fixed test for the
+> pattern) over asserting on live backlog state.
 
 > **2026-08-08, SPIKE-13.1 in progress.** All four of the spike's listed
 > hypotheses (Actions disabled at repo or account level; free-tier minute

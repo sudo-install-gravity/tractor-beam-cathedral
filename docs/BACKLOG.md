@@ -1059,7 +1059,13 @@ the first remote run to fail, and treat that as the point of the exercise.**
 **only after** T-13.2 is green, and replaced with the run URL. Removing it before then
 restores a false claim — this task's whole content is *not* doing it early.
 
-**T-13.4 · `tools/check_ci_status.py` · 2 pts · `sonnet-low` · deps T-13.2**
+**T-13.4 · `tools/check_ci_status.py` · 2 pts · `sonnet-low` · deps T-13.2** ✅
+**Verified against live state 2026-08-10**: correctly reported `status='in_progress'`
+while run 31351420162 was running, then `OK` with the run URL once it completed
+successfully for the exact commit checked out. Found and fixed one bug during
+testing: `gh api -f key=value` submits as a POST body and 404s against this GET-only
+endpoint — query params go directly in the URL string instead (documented in
+`HANDOVER.md` §8).
 `tools/check_ci_status.py` — `main() -> int`. Queries `actions/runs` for `main` and reports
 the newest run's conclusion and age.
 *AC:* exit 0 only when the newest `main` run is `success`; exit 1 with a named reason for

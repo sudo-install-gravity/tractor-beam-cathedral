@@ -548,3 +548,23 @@ the code is clean. `ruff.exe` is unaffected (a standalone Rust binary, not a Pyt
 `tools/gates.py` already invokes everything via `sys.executable -m`, so this trap cannot
 recur through it. Then mark finished tasks
 ✅ in `BACKLOG.md` so the scheduler stays truthful.
+
+**2026-08-10: after pushing, check the remote actually ran — `tools/check_ci_status.py`.**
+
+```
+.venv\Scripts\python.exe tools\check_ci_status.py
+```
+
+On-demand only (T-13.4) — deliberately **not** a pytest test and **not** a sixth gate in
+`gates.py`, because it needs network access and `gh` credentials, and a local gate that
+cannot run offline would break the other five. Run it by hand after pushing, when you
+want to confirm the remote pipeline actually validated the commit currently checked out
+(not just that it exists). Exit 0 only when the newest run on `main` is `success` **and**
+matches current `HEAD`; exit 1 with a named reason otherwise (zero runs ever, the newest
+run still in progress, a non-success conclusion, or the newest run being for an older
+commit than HEAD). Exists because zero remote runs went unnoticed for 64 commits — nothing
+ever looked (ADR-0008).
+
+⚠️ **`gh api ... -f key=value` submits as a POST body and 404s against GET-only endpoints
+like `actions/runs`.** Put query params directly in the URL string
+(`actions/runs?branch=main&per_page=1`) instead. Found while writing this script.

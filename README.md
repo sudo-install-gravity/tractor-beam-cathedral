@@ -168,7 +168,8 @@ arithmetic.
 
 | Document | Purpose |
 |---|---|
-| [`docs/HANDOVER.md`](docs/HANDOVER.md) | **Start here** — current state, what to run next, known traps |
+| [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) | **New contributor? Start here** — clone to first PR, with the E2E scenario run end to end |
+| [`docs/HANDOVER.md`](docs/HANDOVER.md) | **Picking this up cold?** — current state, what to run next, known traps |
 | [`CLAUDE.md`](CLAUDE.md) | Operating instructions for AI agents working on this repo |
 | [`docs/PHYSICS.md`](docs/PHYSICS.md) | First-principles derivation of the framework |
 | [`docs/CLAIMS.md`](docs/CLAIMS.md) | Established physics vs. our derivation vs. conjecture, plus the epistemic firewall |
@@ -269,8 +270,9 @@ matches reality. **Mark a task ✅ when you finish it.**
 
 ## Contributing
 
-Read [`CONTRIBUTING.md`](CONTRIBUTING.md), then [`docs/HANDOVER.md`](docs/HANDOVER.md). Three
-rules matter more than the rest:
+New here? [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) gets you from a fresh clone to a
+running end-to-end scenario. Then read [`CONTRIBUTING.md`](CONTRIBUTING.md), then
+[`docs/HANDOVER.md`](docs/HANDOVER.md). Three rules matter more than the rest:
 
 1. **Never implement a physics formula from memory.** Confirm the governing equation and its
    exact equation number against a primary source first. Prefer open-access sources — a citation

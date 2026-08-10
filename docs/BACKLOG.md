@@ -988,9 +988,19 @@ added. One pre-existing cosmetic inconsistency flagged rather than silently rewr
 implementation commit — §1's own body text already has it right). Independently re-verified:
 `tools/gates.py` green (1193 passed, 3 skipped), matching the pass's own reported figures.
 
-**T-12.7 · Contributor on-ramp · 2 pts · `sonnet` · deps T-12.5**
+**T-12.7 · Contributor on-ramp · 2 pts · `sonnet` · deps T-12.5** ✅
 `docs/GETTING_STARTED.md` — from clone to first contribution.
 *AC:* a reader with no prior context can run the E2E scenario.
+**Closed 2026-08-10.** Wrote and cross-linked from `README.md`; found a real, live trap in the
+process of actually running `examples/deflection_scenario.py` (as the AC requires, not just
+describing it): this checkout's editable install had a stale `.pth` file pinning a pre-rename
+absolute path (`Software Dev` with a space vs. the real `Software_Dev`), so `import gwtb` broke
+for any direct script invocation while `pytest` kept working silently, because
+`pyproject.toml`'s own `pythonpath` setting injects `src` independently of the install. Fixed
+locally (`pip install -e ".[dev]"`) and documented as the fix for the next person who hits it.
+`code-reviewer` found one Major — a citation to "`CLAUDE.md` rule 8" that only exists in the
+*global* `~/.claude/CLAUDE.md`, not this project's — corrected. `indexer` confirmed `INDEX.md`
+has no doc-navigation role and correctly made no edit.
 
 **T-12.8 · v1.0 release · 2 pts · `sonnet-low` · deps T-12.1–T-12.7**
 repo-level (tag, release notes, Zenodo). Tag, release notes, Zenodo DOI for citability.

@@ -949,10 +949,32 @@ function like `tidal_strain` — forcing an inapplicable property would be a fab
 test). The coverage claim itself is a checkable artifact (`_COVERED` set plus a test that
 every entry is still importable), not just asserted in a docstring.
 
-**T-12.5 · Complete PHYSICS.md · 3 pts · `opus` · deps all**
+**T-12.5 · Complete PHYSICS.md · 3 pts · `opus` · deps all** ✅
 `docs/PHYSICS.md` — Replace every `[UNVERIFIED]` with a confirmed citation; add derivations for claims B-1…B-5.
 *AC:* no `[UNVERIFIED]` markers remain; every Category B claim has a derivation and a reducing
 limit.
+**Closed 2026-08-10.** All three `[UNVERIFIED]` markers were **documentation lag, not open
+research** — each citation had already been verified elsewhere in the project and PHYSICS.md
+never got the update (memory → Favata eq. 10k, 2026-07-31; geodesic deviation → [FH] eq. 3.11,
+2026-08-03; array relations → Orfanidis ch. 19 eqs. 19.4.1/19.9.6/19.7.6, Sprint 6). All three
+had been sitting behind **chapter references**, so A-6 and A-8 in `CLAIMS.md` were corrected too
+— the last two Category A equation rows to carry one. The AC's "every Category B claim" was read
+literally and taken to **B-1…B-9**, not the task line's B-1…B-5: B-7/B-8/B-9 postdate this task's
+wording, and a ledger that skipped them would not satisfy the AC as written. New §10 indexes all
+nine against their reducing limits. **B-5 was the one genuinely open claim** and is now derived:
+both coupling channels fall as `1/d²` so distance cancels exactly, and the surviving ratio is
+`(v/c)⁶`-suppressed; R6's measured 1.3143e-31 decomposes to 3.3e-16 into mechanism × geometry,
+showing most of its 31 decades is the geometry of the comparison rather than the mechanism.
+**Two claim cells were stale, not blocked** (B-3 named T-10.1/10.2 outstanding, B-4 named T-9.8;
+all three had landed). **`code-reviewer` found one Major and it was real:** B-8's "Reduces to"
+named A-6, the geodesic-deviation claim, which has nothing to do with gravitational focusing of a
+hyperbolic impactor — corrected, and the underlying gap recorded rather than re-papered (B-8
+reduces to elementary mechanics, which is **not** a Category A row; B-9 inherits this). The
+review also challenged ADR-0006's Fresnel-phase figure as 2% off; **checked, and the ADR is right
+— the code's output is the unreliable one**: the sag is 300× below one float64 ULP at 40 AU, so
+`focal_phases`' value there is quantization noise. Recorded in §8.1 as a finding, which makes
+"focusing is numerically degenerate with steering" literal. Every number was recomputed against
+the code before being written; `tools/gates.py` green (1193 passed, 3 skipped).
 
 **T-12.6 · Final index reconciliation · 2 pts · `sonnet-low` · deps all** ✅
 `docs/INDEX.md` — `indexer` pass: registry matches code, assumption ledger complete, validation status current.

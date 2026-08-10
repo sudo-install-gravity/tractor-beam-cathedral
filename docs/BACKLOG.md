@@ -954,9 +954,17 @@ every entry is still importable), not just asserted in a docstring.
 *AC:* no `[UNVERIFIED]` markers remain; every Category B claim has a derivation and a reducing
 limit.
 
-**T-12.6 · Final index reconciliation · 2 pts · `sonnet-low` · deps all**
+**T-12.6 · Final index reconciliation · 2 pts · `sonnet-low` · deps all** ✅
 `docs/INDEX.md` — `indexer` pass: registry matches code, assumption ledger complete, validation status current.
 *AC:* every implemented equation has a registry row; no row points at a missing function.
+**Closed 2026-08-10.** Full-codebase sweep of §1–§4, not incremental: every citation-carrying
+public function in `source/`, `propagate/`, `bodies/`, `target/` confirmed against a registry
+row by grepping current `^def`/`^class` lines (not the row's own prose); §1/§2 had no drift.
+§4 had a real gap — T-12.1 and T-12.4 (both landed 2026-08-10) had no validation-status row,
+added. One pre-existing cosmetic inconsistency flagged rather than silently rewritten (a
+2026-08-08 header paragraph describing only the planning commit, not the same-day
+implementation commit — §1's own body text already has it right). Independently re-verified:
+`tools/gates.py` green (1193 passed, 3 skipped), matching the pass's own reported figures.
 
 **T-12.7 · Contributor on-ramp · 2 pts · `sonnet` · deps T-12.5**
 `docs/GETTING_STARTED.md` — from clone to first contribution.

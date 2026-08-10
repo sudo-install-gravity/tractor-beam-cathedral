@@ -25,6 +25,34 @@ modules) and §3 (pending assumption-ledger entries) — each points at the Spri
 header in `docs/BACKLOG.md` as the authoritative verification record, per that
 document's own note that it wins on disagreement.
 
+**Updated 2026-08-10 (`indexer` T-12.6, final v1.0 reconciliation pass):** ran
+`tests/unit/test_index_integrity.py` (40 assertions, all passing — up from 38 at the
+2026-08-03 baseline noted in the "Automated enforcement" section below, growth not yet
+recorded there) and `tests/unit/test_architecture.py` (12, passing) as the automated
+baseline, then did a full-codebase sweep of §1–§4 by hand. **No drift found in §1
+(Equation Registry) or §2 (Module Map)** — every citation-carrying public function in
+`source/`, `propagate/`, `bodies/`, `target/` has a registry row, and every row's
+target function still exists under the name given (confirmed by grepping the current
+`^def`/`^class` lines, not by trusting the row's prose, per this task's own instruction).
+**No new assumption found** in the code since 2026-08-08 either: the only `src/` changes
+in that window (`91fe97c`, mypy fixes to `array/beamform.py`, `propagate/retarded.py`,
+`viz/patterns.py`, `viz/slices.py`) are dtype/type-annotation changes only, not physics —
+confirmed by reading the diff, not inferred from the commit message. **§4 Validation
+Status was the one section with a real gap**: T-12.1 (`examples/deflection_scenario.py`)
+and T-12.4 (`tests/unit/test_properties.py`), both landed 2026-08-10, had no row. Added
+below. Full suite re-run for this pass: **1193 passed, 3 skipped** (matches the 1193+
+figure this task was given), `test_architecture.py` 12/12, `tools/check_citations.py`
+"OK (14 physics module(s) checked)" — all three green, none newly failing.
+
+⚠️ **Flagged, not fixed:** this file's own **2026-08-08** header two paragraphs above
+says "no source changed," which was true of the *planning* commit it describes
+(`a10da67`) but not of the *implementation* commit that landed later the same day
+(`3df6618`, "Implement Sprint 14") — §1's own body text (the "Citations verified
+2026-08-08 — Sprint 14, landed same day" paragraph) already documents the landed
+functions correctly. The header paragraph is retained verbatim per this file's own
+no-silent-edit convention; a future pass could tighten its wording, but the content
+it points at is accurate.
+
 ---
 
 ## 1. Equation Registry
@@ -453,6 +481,8 @@ passing.
 | Volumetric rendering and VTK export (T-7.7/T-7.8) | — (visualization, no equation) | **PASSING** — `tests/unit/test_volume.py`, `test_export_vtk.py`. **These 2 tests skip without the optional `pyvista` extra.** The asymmetry is deliberate and asserted: `render_volume` **degrades quietly** (returns `None` with a message), `export_field` **raises** `RuntimeError`. When PyVista is present, exported `.vti` reloads via `pyvista.read` with matching shape and values |
 | Trade-surface visualization (T-10.7) | — (visualization; renders EQ-053) | **PASSING** — `tests/unit/test_patterns.py`. Renders headless; **asserted to use log–log axes and to annotate the frequency-invariance of `D/λ`** — i.e. the plot is required to *state the wall it depicts*, not merely draw it |
 | GPU backend, precision guard, chunked evaluation (T-11.4, T-11.5, T-11.7) | — (infrastructure, no equation) | **PASSING** — `tests/unit/test_backend.py`, `test_split_phase.py`. CuPy path agrees with the NumPy reference to rtol 1e-5 (**this 1 test skips without CuPy**, which is not a declared extra) and raises a clear error when CuPy is absent. `assert_phase_precision` **raises on unauthorized float32 phase** and passes float64 regardless of authorization; **`test_split_phase_differential_is_the_one_authorized_float32_call_site`** pins ADR-0002 §5's single carve-out so it cannot quietly widen. Chunked evaluation matches unchunked to rtol 1e-12 independent of chunk size, and a 512³ grid completes within a 4 GB budget |
+| **Property test suite across the public physics API (T-12.4)** | EQ-004 (via `apply_tt`), EQ-005/006 (`strain_tt`/`luminosity`), EQ-001 (`quadrupole_moment`), EQ-002 (`quadrupole_second_derivative`), EQ-023 (`channel_absorption`, `tidal_strain`), elementary Newtonian `delta_v`/`miss_distance` (T-8.7/T-8.8), EQ-041/042 (`dipole_moment`/`dipole_second_derivative`), EQ-045 (`deviation_acceleration`) | **PASSING** — `tests/unit/test_properties.py`, 111 tests (5 seeds each) over 12 public functions in `source/`, `propagate/`, `bodies/`, `target/` — the same four packages `check_citations.py` enforces. Three properties swept over randomized inputs rather than the fixed configurations the rest of the suite uses: TT idempotency/transversality/tracelessness for `apply_tt`; dimensional-consistency scaling (linear/quadratic/inverse/inverse-square, per function) for the rest; and quadrupole/dipole superposition linearity. **Not every property is forced onto every function** — idempotency is meaningless for `delta_v`, superposition linearity is meaningless for a single-body function like `tidal_strain` — so coverage is an explicit `_COVERED` set pinned by `test_every_covered_function_is_still_importable`, rather than an unstated claim. No new equation: this row validates existing EQ-### rows more broadly (random inputs, not new physics), so no new registry entry was added |
+| **End-to-end scenario, geometry to gap report (T-12.1)** | Composition only — EQ-001/002 (multipole), EQ-047 (`superpose_tt`), EQ-005 (`strain_tt`, applied explicitly per grid point since `r` varies across the field slice), EQ-023-class absorption coupling, elementary `delta_v`/`miss_distance`, `ledger/gap_report.py` | **RUNS, not test-suite-gated** — `examples/deflection_scenario.py`: 1 km asteroid at 40 AU, 8×8 planar array (matching every R2–R6 campaign geometry), 5-tone prime-band drive at 1 MHz (chosen because below ~100 kHz this aperture has no beam at all, ADR-0006 trap 1 — see the Assumption Ledger row on sub-wavelength apertures). Executes the full pipeline once and writes two figures plus a gap-report table; added to `tools/gates.py`/`ci.yml`'s checked paths so it cannot silently rot (mypy + ruff only — it is a script, not a pytest suite, so "PASSING" above should be read as "runs clean under the gates," not as an assertion suite). **Two findings caught while building it, both fixed in the script rather than in `src/`**: (1) `superpose_tt`'s raw output is in `QuadrupoleElement.quadrupole`'s units (kg·m²·s⁻²), not strain — the script now applies the `2G/(c⁴r)` prefactor explicitly per grid point rather than mislabeling the raw sum as strain; (2) a naively-chosen 1000 m slice extent produced a flat, structureless blob at 40 AU — resized from `wavelength·distance/aperture` so real lobe structure is visible. Neither finding required a `src/` change; both are recorded here because a wrong unit label is exactly the failure class this project exists to prevent |
 
 **Resolved 2026-07-31.** The note that stood here flagged "1 of 25 assigned batch tasks not
 completed this pass," unidentified. It has been reconciled against `BACKLOG.md`'s ✅ markers,

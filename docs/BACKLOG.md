@@ -936,10 +936,18 @@ separately verified via arXiv:1606.04581 (Weisberg & Huang 2016).
 `tests/benchmarks/test_energy_conservation.py` — Radiated energy integrated over a distant sphere vs. the quadrupole luminosity integral.
 *AC:* agreement to rtol 1e-4.
 
-**T-12.4 · Property test suite · 2 pts · `sonnet-low` · deps all**
+**T-12.4 · Property test suite · 2 pts · `sonnet-low` · deps all** ✅
 `tests/unit/test_properties.py` — dimensional consistency, TT idempotency, superposition
 linearity across the public API.
 *AC:* all public physics functions covered.
+**Closed 2026-08-10.** 111 property tests (5 random seeds each) across 12 public functions
+spanning `source/`, `propagate/`, `bodies/`, `target/` — the citation-CI physics packages,
+same set `tools/check_citations.py` enforces. "Covered" interpreted as: each function
+exercised by whichever of the three named properties actually applies to it (idempotency
+is meaningless for `delta_v`; superposition linearity is meaningless for a single-body
+function like `tidal_strain` — forcing an inapplicable property would be a fabricated
+test). The coverage claim itself is a checkable artifact (`_COVERED` set plus a test that
+every entry is still importable), not just asserted in a docstring.
 
 **T-12.5 · Complete PHYSICS.md · 3 pts · `opus` · deps all**
 `docs/PHYSICS.md` — Replace every `[UNVERIFIED]` with a confirmed citation; add derivations for claims B-1…B-5.

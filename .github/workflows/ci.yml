@@ -29,13 +29,13 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check src tests tools
+        run: ruff check src tests tools examples
 
       - name: Format check (ruff)
-        run: ruff format --check src tests tools
+        run: ruff format --check src tests tools examples
 
       - name: Type check (mypy)
-        run: mypy src
+        run: mypy src examples
 
       - name: Citation discipline
         run: python tools/check_citations.py

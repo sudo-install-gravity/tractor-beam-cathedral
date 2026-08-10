@@ -1383,11 +1383,14 @@ carry it in rescaled units and convert only at the very end.
 
 ### Governance mechanisms
 
-**Citation CI.** ⚠️ **Stated precisely, because the repository's CI has never run**
-(BACKLOG T-2.9): the check below is a real, enforcing gate — it is one of five that must pass
-before any commit, and it has run on every commit in this project's history — but it has run
-**locally**, not in GitHub Actions. Calling it "continuous integration" overstates where the
-enforcement happens, and that wording is flagged for correction rather than left standing.
+**Citation CI.** The check below is one of five gates that must pass before any commit —
+enforced locally on every commit in this project's history, and in GitHub Actions on every
+push (three-version Python matrix; first green run:
+https://github.com/sudo-install-gravity/tractor-beam-cathedral/actions/runs/31350735475).
+*A caveat stood here from 2026-08-06 to 2026-08-10, while the repository's remote CI had
+never run and calling the gate "continuous integration" would have overstated where
+enforcement happened; the cause — GitHub Actions disabled behind a UI-only control while
+the API reported them enabled — and its resolution are recorded in ADR-0008.*
 
 `tools/check_citations.py` parses the AST of every module in the physics
 packages and requires each public function and class to carry

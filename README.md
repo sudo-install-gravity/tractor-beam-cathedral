@@ -81,11 +81,12 @@ own gap would be indistinguishable from the literature above. See [`docs/CLAIMS.
 
 **Pre-alpha, v0.1.0, unreleased.** The repository is **public** as of 2026-08-06.
 
-⚠️ **CI has never run.** `.github/workflows/ci.yml` is present and correct, but GitHub
-Actions reports zero workflow runs across the repository's entire history. The five gates
-below are real and are enforced — locally, on every commit — but they have never executed on
-the remote. Fixing that comes before branch protection (BACKLOG T-2.9), since you cannot
-require a status check that has never reported.
+✅ **CI is live** as of 2026-08-10: every push to `main` runs the five gates on a
+three-version Python matrix (3.10/3.11/3.12) in GitHub Actions —
+[first green run](https://github.com/sudo-install-gravity/tractor-beam-cathedral/actions/runs/31350735475).
+*(A warning stood here from 2026-08-06 to 2026-08-10, while Actions reported zero runs
+across the repository's entire history despite a present-and-correct workflow; the cause
+and resolution are recorded in [ADR-0008](docs/adr/0008-ci-never-ran.md).)*
 
 The planned backlog is essentially complete — but that is a statement about the *modeling
 framework*, not about the concept. Nothing here asserts that gravitational-wave asteroid

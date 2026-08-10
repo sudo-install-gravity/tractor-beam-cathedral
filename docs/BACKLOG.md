@@ -1033,7 +1033,9 @@ run within seconds; no configuration changed. The API had been misreporting
 `enabled: true` the whole time — ADR-0008 "Resolution" records both the fix and the
 GitHub-side API/backend disagreement worth reporting upstream.
 
-**T-13.2 · Confirm a green CI run on `main` · 1 pts · `sonnet-low` · deps SPIKE-13.1**
+**T-13.2 · Confirm a green CI run on `main` · 1 pts · `sonnet-low` · deps SPIKE-13.1** ✅
+**Closed 2026-08-10: run 31350735475 on `91fe97c` — `conclusion: success`, all three
+jobs green (`test (3.10)`, `test (3.11)`, `test (3.12)`), exactly the AC below.**
 **Unblocked 2026-08-10** (SPIKE-13.1 resolved). First-ever run (31350375335, on
 `af6036b`): `test (3.11)` and `test (3.12)` **fully green on clean Ubuntu** — lint,
 format, citations, and all 1082 tests — and `test (3.10)` failed only at the mypy step,
@@ -1051,7 +1053,7 @@ named `test (3.10)`, `test (3.11)`, `test (3.12)`.
 3 tests skip locally for absent CuPy/PyVista, which may behave differently there. **Expect
 the first remote run to fail, and treat that as the point of the exercise.**
 
-**T-13.3 · Make the enforcement claim true in the manuscript · 1 pts · `sonnet-low` · deps T-13.2**
+**T-13.3 · Make the enforcement claim true in the manuscript · 1 pts · `sonnet-low` · deps T-13.2** ✅
 `docs/paper/nature-draft.md` Methods, "Citation CI"; `README.md` Status.
 *AC:* the ⚠️ caveat added 2026-08-06 ("it has run locally, not in GitHub Actions") is removed
 **only after** T-13.2 is green, and replaced with the run URL. Removing it before then

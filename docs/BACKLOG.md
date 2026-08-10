@@ -896,9 +896,19 @@ FP32 **fails** the same check — documenting why the decomposition exists.
 
 ## Sprint 12 — Integration and release (20 pts) → **GATE G4**
 
-**T-12.1 · End-to-end scenario · 3 pts · `sonnet` · deps all**
+**T-12.1 · End-to-end scenario · 3 pts · `sonnet` · deps all** ✅
 `examples/deflection_scenario.py` — 1 km asteroid at 40 AU, N-element array, prime-band drive.
 *AC:* runs to completion; emits field visualization, beam pattern, Δv, miss distance, gap report.
+**Closed 2026-08-10.** Two findings caught and fixed while building it, both worth recording:
+(1) ``superpose_tt`` returns its sum in the units of ``QuadrupoleElement.quadrupole``
+(kg m² s⁻²), **not** strain — feeding that raw into a "strain" plot label would have been
+exactly the physically-mislabeled-output failure mode this project exists to avoid. Fixed
+by applying the ``2·G/(c⁴r)`` prefactor explicitly, per point for the field slice (``r``
+varies across it). (2) a naively-chosen slice extent (1000 m) produced a flat, structureless
+blob at the chosen distance — sized from the beam's own diffraction scale
+(``wavelength · distance / aperture``) instead, which shows real lobe structure. `examples/`
+added to `tools/gates.py` and `.github/workflows/ci.yml`'s ruff/mypy coverage, since neither
+checked it before this task and a file outside the checked paths is a file nothing verifies.
 
 **T-12.2 · Benchmark: Hulse–Taylor · 3 pts · `sonnet` · deps T-1.8** ✅
 `tests/benchmarks/test_hulse_taylor.py` — PSR B1913+16 orbital decay.

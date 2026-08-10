@@ -47,12 +47,12 @@ ROOT = Path(__file__).resolve().parent.parent
 #: ``.github/workflows/ci.yml`` exactly, so this script is the local
 #: equivalent of that pipeline, not an approximation of it.
 GATES: list[tuple[str, list[str]]] = [
-    ("ruff check", [sys.executable, "-m", "ruff", "check", "src", "tests", "tools"]),
+    ("ruff check", [sys.executable, "-m", "ruff", "check", "src", "tests", "tools", "examples"]),
     (
         "ruff format --check",
-        [sys.executable, "-m", "ruff", "format", "--check", "src", "tests", "tools"],
+        [sys.executable, "-m", "ruff", "format", "--check", "src", "tests", "tools", "examples"],
     ),
-    ("mypy", [sys.executable, "-m", "mypy", "src"]),
+    ("mypy", [sys.executable, "-m", "mypy", "src", "examples"]),
     ("citation discipline", [sys.executable, "tools/check_citations.py"]),
     ("pytest", [sys.executable, "-m", "pytest", "-q"]),
 ]

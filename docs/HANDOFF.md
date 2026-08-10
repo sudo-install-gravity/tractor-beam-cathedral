@@ -1,114 +1,100 @@
-# HANDOFF — Opus session: T-12.5 (Complete PHYSICS.md)
+# HANDOFF — Sonnet session: T-12.7, then T-12.8 (the project's last two tasks)
 
-**Written 2026-08-10, supersedes the previous (now fully consumed) Sonnet-batch handoff.**
+**Written 2026-08-10, supersedes the now-consumed Opus/T-12.5 handoff.**
 **Assume zero conversational context.** Everything needed is in the files named here.
+
+## Recommendation: switch THIS session's model to Sonnet, in place
+
+**Switch in place. Do not start a new session.** Context here is free; re-deriving it cold costs
+real tokens for no benefit — this project measured ~190k tokens lost to a single cold subagent
+dispatch that never wrote a file (see `CLAUDE.md`, "Which model runs a task").
+
+T-12.5 was the last `opus`-tier task in the backlog. Everything remaining is Sonnet:
+
+```
+── Session 1 · SONNET · 2 tasks · 4 pts · sprint 12 ────────
+   T-12.7     [standard] 2pt  Contributor on-ramp
+   T-12.8     [low     ] 2pt  v1.0 release  after T-12.7
+```
+
+Run `python tools/schedule.py --next` to confirm this is still current before starting.
+
+T-12.7 is `sonnet` (not `sonnet-low`) because "a reader with no prior context can run it" is a
+judgment call about prose aimed at humans, which is the middle tier's definition. T-12.8 is
+`sonnet-low` — it is a checklist.
 
 ## State of the world
 
-The entire backlog is done except three tasks: T-12.5 (this handoff), T-12.7, T-12.8. CI
-has been green and enforced since 2026-08-10 (SPIKE-13.1/ADR-0008), and **`main` is
-branch-protected — direct pushes no longer work.** See "The PR workflow" below before
-touching git at all; skipping it will produce a rejected push, not a landed commit.
+The entire backlog is done except T-12.7 and T-12.8. As of 2026-08-10:
 
-## Recommendation: switch this session's model to Opus, in place
+- **T-12.5 closed** — `docs/PHYSICS.md` is complete: no `[UNVERIFIED]` markers, every Category B
+  claim (B-1…B-9) carries a derivation and a reducing limit, indexed in its new §10.
+- `tools/gates.py` green: **1193 passed, 3 skipped**.
+- CI green and enforced; `main` is branch-protected (see "The PR workflow" below).
 
-T-12.5 is `opus` tier — the only heavy task left in the project — because it requires
-deriving physics content (claims B-3/B-4/B-5 have no existing derivation to check
-against) and judging citation adequacy, not just executing a fully-specified recipe.
-**Switch in place; do not start a new session.** Context here is free; re-deriving it
-cold costs real tokens for no benefit (measured elsewhere in this project's own
-history: ~190k tokens lost to a cold subagent dispatch that never even started writing
-files). After T-12.5 closes, switch back down to Sonnet for T-12.7/T-12.8 — do that
-switch explicitly too, and update this file when you do, per the project's own tier-switch
-rule (`CLAUDE.md` "Which model runs a task").
+## T-12.7 · Contributor on-ramp · 2 pts · `sonnet` · deps T-12.5 (satisfied)
 
-## The task
+`docs/GETTING_STARTED.md` — **does not exist yet; you are creating it.** From clone to first
+contribution.
+*AC: a reader with no prior context can run the E2E scenario.*
 
-**T-12.5 · Complete PHYSICS.md · 3 pts · `opus` · deps all (satisfied)**
-`docs/PHYSICS.md` — replace every `[UNVERIFIED]` marker with a confirmed citation; add
-derivations for claims B-1…B-5 (`docs/CLAIMS.md`), each with a reducing limit to a
-Category A result. AC: no `[UNVERIFIED]` markers remain; every Category B claim has a
-derivation and a reducing limit.
+The E2E scenario is **`examples/deflection_scenario.py`** (landed 2026-08-10, T-12.1) — geometry
+to gap report in one script. Run it yourself before writing about it; the AC is about a real
+reader succeeding, so a path you did not execute is a guess.
 
-### The three `[UNVERIFIED]` markers, and what's already known about each
+What the document has to carry, at minimum:
 
-Checked this session (`grep -n UNVERIFIED docs/PHYSICS.md`) — all three look like **the
-citation work is already done elsewhere in the project and PHYSICS.md just never got
-updated to match**, not like open research questions. Confirm each independently before
-trusting this, but start here rather than from zero:
+1. **Clone → working venv.** The host is Windows 11 and the venv is at `.venv`. Use
+   `.venv\Scripts\python.exe` for everything; the system Python has no numpy. Name the
+   application — "Windows PowerShell", not "a terminal" (machine-wide rule, `~/.claude/CLAUDE.md`).
+2. **The five-command sanity check** — already written up in `docs/HANDOVER.md` §1. Do not
+   reinvent it; point at it or lift it verbatim.
+3. **Running the E2E scenario**, with what its output means. Its gap report is the project's
+   whole point: it prints the quantitative distance to an actual deflection.
+4. **How to make a change that will be accepted** — the RESEARCH → IMPLEMENT → REVIEW → INDEX
+   workflow, the Definition of Ready/Done, citation discipline (rule 1), and the PR flow below.
+   `CONTRIBUTING.md` already exists; **read it first and cross-link rather than duplicating it.**
+5. **The traps a newcomer will actually hit**, all documented in `docs/HANDOVER.md` §6: cp1252
+   breaking `schedule.py` (set `PYTHONIOENCODING=utf-8`), CRLF on checkout, and the broken
+   Windows console shims — `mypy.exe`/`pytest.exe` exit 1 with no output, so always run
+   `.venv\Scripts\python.exe tools\gates.py` rather than composing the gates by hand.
 
-1. **Line 191, linear GW memory** — cited as "Zel'dovich & Polnarev (1974); Braginsky &
-   Thorne, *Nature* 327:123 (1987) `[UNVERIFIED]`". `docs/CLAIMS.md` A-7 (and its
-   2026-07-31 change-log entry) already re-sourced this to **Favata, *Class. Quantum
-   Grav.* 27:084036 (2010), arXiv:1003.3486, eq. (10k)**, open access, verified — with
-   the 1987 Braginsky & Thorne letter explicitly demoted to "historical provenance only,
-   no numbered equations, does not meet this project's citation bar." PHYSICS.md
-   apparently never got the update. `INDEX.md` §1 (EQ near `source/memory.py`) should
-   confirm the same citation is what the actual code (`source/memory.py:linear_memory`)
-   uses.
-2. **Line 213, array factor / grating-lobe / beamwidth** — cited as "Balanis, Antenna
-   Theory ch. 6 `[UNVERIFIED]`" (a chapter reference — already disqualified by this
-   project's own rule 1, "a chapter is not a citation"). Check `INDEX.md` §1 for
-   EQ-013–EQ-019 (the scalar array-factor equations, `array/beamform.py`'s spin-1
-   baseline) — those rows were verified against open sources during Sprint 6 and should
-   name what to cite here instead. The paper's own reference list (`docs/paper/
-   nature-draft.md`, ref. 16) cites **Orfanidis, *Electromagnetic Waves and Antennas*
-   ch. 19** for the same spin-1 baseline material, labeled explicitly as "cited only for
-   the scalar baseline" — worth checking whether that's the intended replacement or
-   whether `INDEX.md` names something more specific with an equation number.
-3. **Line 252, geodesic deviation** — cited as "MTW §37.2 `[UNVERIFIED]`" (also a chapter
-   reference). `INDEX.md` §1, **EQ-045**, already reads: *"VERIFIED 2026-08-03 — read
-   directly: [FH] eq. 3.11 is `d²Lⁱ/dt² = ½ (d²h^TT_ij/dt²) Lʲ`, matching the
-   implementation exactly."* [FH] = Flanagan & Hughes, *New J. Phys.* 7:204 (2005). This
-   one looks like a pure copy-paste fix: PHYSICS.md's own formula already matches this
-   citation exactly (compare line 249's `d²ξ_i/dt² = ½ (d²h_ij^TT/dt²) ξ_j`).
+Do not restate the physics. `docs/PHYSICS.md` is the argument and it is now complete; this
+document's job is to get someone to the point where they can read it.
 
-### Claims B-1 through B-5: derivation + reducing-limit status (`docs/CLAIMS.md`, checked this session)
+## T-12.8 · v1.0 release · 2 pts · `sonnet-low` · deps T-12.1–T-12.7
 
-Per-claim starting point — **treat CLAIMS.md's own wording as possibly stale too**, the
-same way PHYSICS.md was; cross-check against BACKLOG.md's ✅ markers for the tasks each
-claim cites, since some of those tasks completed after the claim text was last edited:
+Repo-level: tag, release notes, Zenodo DOI for citability.
+*AC: all 8 benchmarks pass; CI green; ledger publishes all four walls quantitatively.*
 
-- **B-1** (spin-2 array synthesis) — **already "Derived & validated"**, ADR-0003, with a
-  2026-08-03 precision amendment. This one may already satisfy T-12.5's bar; check
-  whether ADR-0003 itself contains a derivation with a reducing limit (to A-5/A-8) or
-  whether that needs writing up in PHYSICS.md separately.
-- **B-2** (mass/radius/density degeneracy) — **"Derived; all three breaking mechanisms
-  now validated"** (T-4.1/4.2/4.6, T-4.3, T-4.5/B-7). Likely also close to done; same
-  check as B-1.
-- **B-3** (required aperture `D/λ ≳ r/w`) — **CLAIMS.md says "Not yet derived (T-10.1/10.2
-  outstanding)"**, but T-10.1 and T-10.2 show ✅ in `docs/BACKLOG.md` Sprint 10 — **this
-  claim's status text is stale**, not an open blocker. The independent corroboration
-  CLAIMS.md already cites (`R/R_Fraunhofer ≈ 5.9×10⁹` at 40 AU / 1 kHz, focusing
-  numerically degenerate with steering, `test_focus.py::
-  test_focusing_is_degenerate_with_steering_at_40_au`) is real derivable content —
-  writing it up properly with `array/focus.py:spot_size`'s actual formula as the
-  reducing limit is probably most of this claim's remaining work.
-- **B-4** (prime-frequency spatiotemporal focus) — **CLAIMS.md says "Partially derived
-  ... recurrence period (T-9.8) still outstanding"**, but T-9.8 shows ✅ in
-  `docs/BACKLOG.md` Sprint 9 — **also stale text**, not an open blocker. Recurrence
-  period should already be verified in `tests/unit/test_focus_trajectory.py` or similar;
-  find that test and cite it.
-- **B-5** (radiative coupling negligible vs. near-zone) — **CLAIMS.md says "Not yet
-  derived" outright**, and this one may be genuinely open. But campaign R6
-  (`docs/paper/campaign/R6_channels.md`, `docs/paper/nature-draft.md` Results §"R6") has
-  already **measured** exactly this: "radiative coupling is 1.3×10⁻³¹ of the near-zone
-  channel," falsifier (radiative exceeding near-zone) did not fire. A measurement is not
-  automatically a derivation — check whether the *mechanism* (why radiative flux must be
-  smaller, from `F = P/c` momentum-flux scaling vs. Newtonian `1/r²` near-zone
-  attraction) is written up anywhere as an actual derivation with a reducing limit, or
-  whether that's the real remaining work for this claim specifically.
+⚠️ **The AC says "all 8 benchmarks" but `tests/benchmarks/` currently holds 12 test modules**
+(`test_array_factor`, `test_binary`, `test_body_sensitivity`, `test_diffraction`,
+`test_dipole_cancellation`, `test_energy_conservation`, `test_focusing`, `test_hulse_taylor`,
+`test_memory`, `test_performance`, `test_smoke`, `test_spinning_rod`). The "8" was written at
+Sprint 0 planning and the suite grew past it. **Do not delete four benchmarks to make the number
+match** — that would be deleting a wall in the most literal way. Reconcile the count in the AC,
+say so in the release notes, and note it in the backlog entry when you close the task.
 
-### Workflow (binding, from `CLAUDE.md`)
+The four walls the ledger must publish quantitatively: **diffraction, coupling, magnitude,
+transducer** (`docs/PHYSICS.md` §8; `src/gwtb/ledger/`). Confirm the gap report actually prints
+all four before claiming the AC — C-2's headline figure is **−6.75 to +29.25 decades**, not the
+"~40 orders of magnitude" that predated the R5 campaign and was corrected on 2026-08-03. Do not
+reintroduce the old number into release notes.
 
-RESEARCH → IMPLEMENT → REVIEW → INDEX. For citation fixes, RESEARCH is mostly done above
-(cross-referencing INDEX.md/CLAIMS.md) — verify it, don't skip it. For the B-1…B-5
-derivations, this **is** the RESEARCH stage for whichever claims turn out to need new
-content (B-5 most likely) — if a governing fact can't be verified, it becomes a spike,
-not a forced derivation. Invoke `code-reviewer` before considering the task done
-(physics changes get the dimensional-analysis / spin-2 checks per `CLAUDE.md`). Invoke
-`indexer` after, since PHYSICS.md content changes may need `INDEX.md` cross-references
-updated to point at the new derivations.
+`CITATION.cff` exists at the repo root and will need its version and date updated.
+
+**Zenodo requires a repository-settings-level action** (enabling the GitHub–Zenodo integration).
+That is an outward-facing, hard-to-reverse change to the owner's account. **Ask the owner before
+touching it** — the branch-protection approval from T-2.9 does not carry forward to a different
+kind of change.
+
+## Workflow (binding, from `CLAUDE.md`)
+
+RESEARCH → IMPLEMENT → REVIEW → INDEX. Neither remaining task adds a physics formula, so RESEARCH
+is light — but **invoke `code-reviewer` before considering either task done**, and `indexer` after
+T-12.7 creates a new document. Those three support agents are not a tier and still run at every
+tier; the caution in `CLAUDE.md` is about dispatching *batches of implementation work* to a cold
+agent, which is a different thing.
 
 ## The PR workflow (mandatory — `main` is protected)
 
@@ -125,53 +111,56 @@ git branch -D <short-descriptive-branch-name>   # squash-merges never show as "f
 git remote prune newhome
 ```
 
-**Before merging, always confirm the green check run is for the PR's actual current
-head** (`gh pr view <n> --repo sudo-install-gravity/tractor-beam-cathedral --json
-headRefOid`) — a stale check result from an earlier push in the same PR looks identical
-to a fresh one in a quick glance at `gh pr checks`.
+**Before merging, always confirm the green check run is for the PR's actual current head**
+(`gh pr view <n> --repo sudo-install-gravity/tractor-beam-cathedral --json headRefOid`) — a stale
+check result from an earlier push in the same PR looks identical to a fresh one at a glance.
 
-⚠️ **`gh pr create`/`gh pr checks`/`gh pr merge` without `--repo` resolve against the
-`origin` remote**, which on this checkout is a stale fork (`Thanatos7777/
-tractor_beam_cathedral`), not `sudo-install-gravity/tractor-beam-cathedral` (`newhome`).
-Always pass `--repo sudo-install-gravity/tractor-beam-cathedral` explicitly.
+⚠️ **`gh pr create`/`checks`/`merge` without `--repo` resolve against `origin`**, which on this
+checkout is a stale fork (`Thanatos7777/tractor_beam_cathedral`), not
+`sudo-install-gravity/tractor-beam-cathedral` (`newhome`). Always pass `--repo` explicitly.
 
-**T-2.9 changed repository settings once already (branch protection).** If T-12.5's work
-somehow implies another settings-level change (it shouldn't — this is a docs-only task),
-stop and ask the owner first; don't assume the earlier settings-change approval carries
-forward to a new, different kind of change.
-
-`jq` is **not installed** in this environment — use `gh pr checks <n>`'s plain-text
-output (no `--json`) and grep/string-match it, not `--json`+`jq`.
+`jq` is **not installed** — use `gh pr checks <n>`'s plain-text output and string-match it, not
+`--json` + `jq`.
 
 ## Traps
 
 1. **`gh` identity:** active account is `sudo-install-gravity` (repo owner, admin).
    `Thanatos7777` is also stored but read-only. `gh auth status` confirms.
-2. **Windows console shims are broken** — `mypy.exe`/`pytest.exe` exit 1 with no output.
-   Always run `.venv\Scripts\python.exe tools\gates.py` (all five gates, honest
-   reporting, never composed by hand) rather than the commands individually.
-3. **`examples/` and `docs/` are covered by the gates now**, not just `src/`/`tests/`/
-   `tools/` — `gates.py`'s `GATES` list and `.github/workflows/ci.yml` both check
-   `examples/` for ruff+mypy as of 2026-08-10 (T-12.1). A PHYSICS.md-only change won't
-   trip this, but worth knowing the coverage changed.
-4. **This is a markdown-only task** (`docs/PHYSICS.md`, possibly `docs/CLAIMS.md` and
-   `docs/INDEX.md` cross-references) — no `.py` files should need touching. If you find
-   yourself editing `src/`, stop and reconsider whether this is really T-12.5's scope.
-5. **Backlog task-header grammar is rigid** (`· 1 pts ·`, never `· 1 pt ·`); run
-   `tools/schedule.py --plan` after editing headers.
+2. **Windows console shims are broken** — `mypy.exe`/`pytest.exe` exit 1 with no output. Always
+   run `.venv\Scripts\python.exe tools\gates.py` (all five gates, honest reporting).
+3. **cp1252** — `schedule.py` and any script printing the docs' unicode dies on Windows unless you
+   set `PYTHONIOENCODING=utf-8`. This bites constantly; set it by reflex.
+4. **`examples/` and `docs/` are covered by the gates**, not just `src/`/`tests/`/`tools/`. A new
+   `docs/GETTING_STARTED.md` will not trip ruff/mypy, but anything you add under `examples/` will.
+5. **Backlog task-header grammar is rigid** (`· 2 pts ·`, never `· 2 pt ·`); run
+   `python tools/schedule.py --plan` after editing any header.
+6. **Mark a task ✅ on its header when you finish it** — `tools/schedule.py` reads completion from
+   those markers, so an unmarked finished task will keep being scheduled.
 
 ## When blocked
 
-Record the blocker under the task in `docs/BACKLOG.md` with a date, leave it un-✅'d.
-Never delete a wall (rule 5); never guess a citation and mark it verified (rule 1) — an
-unresolved `[UNVERIFIED]` marker honestly left in place is better than a confident wrong
-one, exactly the standard this project already applied to EQ-040's near-miss.
+Record the blocker under the task in `docs/BACKLOG.md` with a date and leave it un-✅'d. Never
+delete a wall (rule 5); never guess a citation and mark it verified (rule 1). An honest unresolved
+marker beats a confident wrong one — the standard this project applied to EQ-040's near-miss, and
+again to B-8's reduction gap in T-12.5.
 
-## After T-12.5: switch back to Sonnet for T-12.7 and T-12.8
+## Known open items, deliberately not fixed by T-12.5
 
-- **T-12.7** · `docs/GETTING_STARTED.md` · 2 pts · `sonnet` · deps T-12.5. From clone to
-  first contribution; AC: a reader with no prior context can run the E2E scenario
-  (`examples/deflection_scenario.py`, landed 2026-08-10).
-- **T-12.8** · v1.0 release · 2 pts · `sonnet-low` · deps T-12.1–T-12.7. Tag, release
-  notes, Zenodo DOI. AC: all 8 benchmarks pass; CI green; ledger publishes all four walls
-  quantitatively. This is the project's last task.
+Both were found during T-12.5's review and are out of its scope. Neither blocks T-12.7 or T-12.8;
+pick them up only if you have budget after both close.
+
+1. **`docs/adr/0003-spin2-superposition.md` is stale** on the finite-`N` alignment-bias precedent:
+   it still frames the citation question as open, while `CLAIMS.md`'s 2026-08-03 entry and
+   `INDEX.md`'s EQ-054 both record the resolution (D'Addario 2008 eq. 5 is the precedent for the
+   N-dependence skeleton; Ruze gives only the `N → ∞` limit). `PHYSICS.md` §5.1 is consistent with
+   the *current* record, not the stale ADR.
+2. **`docs/INDEX.md` §4 has no validation-status row** for the T-14.5/T-14.6 tradespace grid or
+   B-9's `d²`-cancellation test (`tests/unit/test_tradespace.py`), although §2's module map and
+   `CLAIMS.md` both reference it.
+
+## After T-12.8
+
+That is the last task in the backlog. The project ships v1.0 and the remaining open questions are
+the ones it was built to state honestly rather than close: **C-1** (the transducer, out of scope
+by charter), **C-2** (whether the gap is closable at all — quantified, not resolved), **C-3** (a
+~6×10⁹-wavelength aperture), and **C-4** (any non-radiative coupling that scales).

@@ -152,6 +152,27 @@ needs a spike first, and spikes produce an ADR in `docs/adr/`, not production co
 - [ ] `indexer` invoked; `docs/INDEX.md` current
 - [ ] Feasibility ledger updated if the change affects a gap metric
 
+## Shipping a change — `main` is protected (since 2026-08-10, T-2.9)
+
+`main` requires the three CI matrix jobs (`test (3.10/3.11/3.12)`) to be green,
+including for the repo admin (`enforce_admins: true`), and blocks force-push and
+deletion. **Direct `git push` to `main` no longer works** — a new commit cannot already
+have passed checks that only run after it exists on the remote. Ship every change as:
+
+```
+git checkout -b <short-descriptive-branch-name>
+git push newhome <branch-name>
+gh pr create --repo sudo-install-gravity/tractor-beam-cathedral --base main --head <branch-name> --title "..." --body "..."
+# wait for the three checks to go green, then:
+gh pr merge <number> --repo sudo-install-gravity/tractor-beam-cathedral --squash --delete-branch
+```
+
+Always pass `--repo sudo-install-gravity/tractor-beam-cathedral` explicitly on every
+`gh pr` command — the `origin` remote on this checkout is a stale fork
+(`Thanatos7777/tractor_beam_cathedral`), and `gh pr create` defaults to it silently
+without `--repo`. No required review count is set, so a PR merges as soon as its checks
+pass. Full detail: `docs/HANDOVER.md`'s 2026-08-10 entry.
+
 ## Project layout
 
 ```

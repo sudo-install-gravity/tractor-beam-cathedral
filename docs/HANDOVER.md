@@ -1,5 +1,33 @@
 # Handover — start here
 
+> **2026-08-10, workflow change: `main` is protected — direct pushes no longer work.**
+> T-2.9 landed branch protection (`required_status_checks` naming all three matrix jobs,
+> `strict: true`, `enforce_admins: true`, force-push and deletion blocked). A direct
+> `git push newhome main` is now rejected by GitHub itself ("3 of 3 required status
+> checks are expected") — a brand-new commit can never already have passed checks that
+> only trigger *after* it exists on the remote. **Every change now goes through a PR:**
+>
+> ```
+> git checkout -b <short-descriptive-branch-name>
+> ...edit, commit...
+> git push newhome <branch-name>
+> gh pr create --repo sudo-install-gravity/tractor-beam-cathedral --base main --head <branch-name> --title "..." --body "..."
+> # wait for the three checks to go green on the PR, then:
+> gh pr merge <number> --repo sudo-install-gravity/tractor-beam-cathedral --squash --delete-branch
+> ```
+>
+> ⚠️ **`gh pr create` without `--repo` resolves against the `origin` remote**, which on
+> this checkout is the stale `Thanatos7777/tractor_beam_cathedral` fork, not
+> `sudo-install-gravity/tractor-beam-cathedral` (the `newhome` remote — see the note two
+> paragraphs below on why two remotes exist). Always pass `--repo
+> sudo-install-gravity/tractor-beam-cathedral` explicitly, on every `gh pr` command, or
+> it fails with a confusing `Could not resolve to a Repository` GraphQL error rather than
+> a clear one.
+>
+> `required_pull_request_reviews` is `null` (no required approval count), so a PR merges
+> as soon as its checks are green — no separate review-approval step blocks a solo
+> contributor.
+
 > **2026-08-08, SPIKE-13.1 in progress.** All four of the spike's listed
 > hypotheses (Actions disabled at repo or account level; free-tier minute
 > exhaustion) are eliminated or don't apply — "Allow all actions" is already

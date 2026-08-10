@@ -91,7 +91,10 @@ def field_at(
     if len(sources) == 0:
         raise ValueError("sources must be non-empty")
 
-    total = np.zeros((3, 3), dtype=np.float64)
+    # Annotated as the general float64 ndarray: some numpy stub generations
+    # shape-type np.zeros((3, 3)) as (int, int) while the addition below
+    # widens to (int, ...), which mypy rejects as an assignment mismatch.
+    total: NDArray[np.float64] = np.zeros((3, 3), dtype=np.float64)
     for source in sources:
         displacement = x - source.position
         r = float(np.linalg.norm(displacement))

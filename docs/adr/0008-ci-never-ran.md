@@ -1,6 +1,7 @@
-# ADR 0008 — Why CI has never run: not determined; escalated to GitHub Support
+# ADR 0008 — Why CI never ran: Actions were disabled behind a UI-only control, while the API reported them enabled
 
-- **Status:** Escalated (unresolved)
+- **Status:** Resolved (2026-08-10; escalation to GitHub Support written 2026-08-09, made
+  unnecessary the following day — see "Resolution" below)
 - **Date:** 2026-08-09
 - **Sprint:** 13 (SPIKE-13.1)
 - **Discharges:** the owner-only diagnostic step blocking T-13.2 and everything transitively
@@ -143,6 +144,34 @@ same day. If clicking it resolves the issue, the recorded API state and the effe
 backend state were disagreeing — which would itself be the answer this ADR could not
 reach from the outside, and worth reporting to GitHub regardless. The commit carrying
 this note is the live re-test.
+
+## Resolution (2026-08-10)
+
+**It was the button.** The very next push after clicking it (`af6036b`, the commit
+carrying the note above) triggered workflow run **31350375335** within seconds — the
+repository's first-ever Actions run, after 65+ silent pushes. No workflow, settings, or
+configuration change of any kind accompanied the click; the `ci.yml` that fired is
+byte-identical to the one that had been registered `state: active` since 2026-08-02.
+
+Two conclusions, one of them owed to GitHub as a bug report rather than to this project:
+
+1. **For this project:** the cause was repository-level Actions enablement, exposed only
+   through a UI control that the standard Settings → Actions → General page did not
+   surface during either settings review. The support-ticket escalation is withdrawn as
+   unnecessary. This ADR's method note stands unchanged, though: at the time the
+   escalation was written, every state *observable through the documented interfaces*
+   said Actions were enabled, and escalating beat guessing.
+2. **For GitHub:** `GET /repos/.../actions/permissions` returned
+   `{"enabled": true, "allowed_actions": "all"}` on 2026-08-09, under the repository
+   owner's own credentials, while Actions were in effect disabled — the API and the
+   backend disagreed for at least that long. That misreport is what defeated the entire
+   remote diagnostic effort recorded above, and is worth a (low-priority, non-blocking)
+   bug report to GitHub independent of this project's needs.
+
+The first run's outcome — `test (3.11)` and `test (3.12)` fully green on clean Ubuntu,
+`test (3.10)` failing only at the mypy step on six numpy-stub-generation typing
+divergences — is T-13.2's territory and is recorded there, not here. This ADR's question
+was only ever "why do runs not start"; that question is closed.
 
 ## Claims classification
 

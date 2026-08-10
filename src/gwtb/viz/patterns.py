@@ -49,7 +49,9 @@ def _pattern_db(
     peak = np.max(mags)
     with np.errstate(divide="ignore"):
         db = 20.0 * np.log10(np.where(mags > 0.0, mags / peak, 0.0))
-    return np.maximum(db, floor_db)
+    # np.asarray keeps the return concretely typed: some numpy stub
+    # generations type np.maximum with a scalar operand as Any.
+    return np.asarray(np.maximum(db, floor_db), dtype=np.float64)
 
 
 def plot_pattern_polar(

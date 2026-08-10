@@ -97,8 +97,8 @@ def extract_slice(
         raise ValueError(f"resolution must be at least 2, got {resolution!r}")
 
     i1, i2, i_fixed = _PLANE_AXES[plane]
-    coord1 = np.linspace(-extent, extent, resolution)
-    coord2 = np.linspace(-extent, extent, resolution)
+    coord1 = np.linspace(-extent, extent, resolution, dtype=np.float64)
+    coord2 = np.linspace(-extent, extent, resolution, dtype=np.float64)
 
     values = np.empty((resolution, resolution, 3, 3), dtype=np.float64)
     for a, c1 in enumerate(coord1):

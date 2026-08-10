@@ -184,7 +184,7 @@ def beamwidth_3db(
     ax = np.asarray(axis, dtype=np.float64)
     ax = ax / np.linalg.norm(ax)
 
-    theta = np.linspace(-np.pi / 2.0, np.pi / 2.0, 200001)
+    theta = np.linspace(-np.pi / 2.0, np.pi / 2.0, 200001, dtype=np.float64)
     pattern = _pattern_along_broadside_sweep(pos, w, wavelength, ax, theta)
     peak = np.max(pattern)
     half_power = peak / np.sqrt(2.0)
@@ -244,7 +244,7 @@ def peak_sidelobe_level(
     ax = np.asarray(axis, dtype=np.float64)
     ax = ax / np.linalg.norm(ax)
 
-    theta = np.linspace(-np.pi / 2.0, np.pi / 2.0, 400001)
+    theta = np.linspace(-np.pi / 2.0, np.pi / 2.0, 400001, dtype=np.float64)
     pattern = _pattern_along_broadside_sweep(pos, w, wavelength, ax, theta)
     peak = np.max(pattern)
     peak_idx = int(np.argmax(pattern))

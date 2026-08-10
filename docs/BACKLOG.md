@@ -993,7 +993,7 @@ of a pipeline, and the paper cannot carry it as written.
 > `actions/permissions` be read directly and may close SPIKE-13.1 without a settings hunt;
 > it is not otherwise required for the project to function.
 
-**SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ✅ **escalated, not resolved**
+**SPIKE-13.1 · Why has CI never run? · 2 pts · `opus` · deps none** ✅ **resolved 2026-08-10 — see ADR-0008 "Resolution"**
 `docs/adr/0008-ci-never-ran.md`. Cannot be delegated to an agent: every remaining hypothesis
 needs **repository-admin access**, which no available token has.
 *Procedure, in order — stop at the first that explains it:*
@@ -1026,12 +1026,22 @@ public). `GET .../actions/runs` **immediately after** still returned `total_coun
 **Escalated to GitHub Support per the AC's own instruction** — full evidence trail in
 ADR-0008. T-13.2 now depends on a support ticket, not on repository configuration.
 
+**Resolved 2026-08-10, the day after escalation — it was a UI-only "Enable GitHub Actions
+in this repository" button** the settings reviews never surfaced, clicked by the owner
+while preparing the support ticket. The next push triggered the repository's first-ever
+run within seconds; no configuration changed. The API had been misreporting
+`enabled: true` the whole time — ADR-0008 "Resolution" records both the fix and the
+GitHub-side API/backend disagreement worth reporting upstream.
+
 **T-13.2 · Confirm a green CI run on `main` · 1 pts · `sonnet-low` · deps SPIKE-13.1**
-⚠️ **Blocked on a GitHub Support ticket, not on this repository — see ADR-0008.**
-SPIKE-13.1's live diagnostic push (`30efb77`) confirmed the workflow is well-formed,
-registered active, and correctly triggered by, yet a run still did not fire — every
-locally- and account-visible cause is eliminated. Re-attempting "push a commit and see"
-again without a platform-side change first would just reproduce the same negative result.
+**Unblocked 2026-08-10** (SPIKE-13.1 resolved). First-ever run (31350375335, on
+`af6036b`): `test (3.11)` and `test (3.12)` **fully green on clean Ubuntu** — lint,
+format, citations, and all 1082 tests — and `test (3.10)` failed only at the mypy step,
+on six numpy-stub-generation typing divergences (Python 3.10 resolves an older numpy at
+install time than 3.11/3.12, and dtype inference differs between those stub
+generations). All six call sites made explicitly float64-typed — the fix the project's
+own FP64-everywhere rule would ask for anyway — rather than weakening or version-pinning
+the CI mypy gate.
 `repo-level`. Push any commit to `main` and observe the result.
 *AC:* `gh api repos/sudo-install-gravity/tractor-beam-cathedral/actions/runs --jq .total_count`
 returns **≥ 1**; the newest run has `conclusion == "success"` and **three** completed jobs

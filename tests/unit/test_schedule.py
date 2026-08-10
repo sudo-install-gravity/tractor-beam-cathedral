@@ -283,17 +283,37 @@ def test_render_recognises_cli_completed_tasks(tasks: dict[str, Task]) -> None:
     recognised as finished, and landed in the "UNREACHABLE" list with an
     unresolvable blocking root. Same silent-misreporting class as the T-2.9
     parse bug.
+
+    The "genuine external block" half of this test used to assert on T-2.9
+    directly (mirroring ``test_blocked_tasks_are_excluded``, made synthetic for
+    exactly this reason on 2026-08-06). It broke again the same way on
+    2026-08-10, when T-2.9 was actually completed: a real backlog task is not
+    a stable fixture, because finishing it is the whole point of the project.
+    Fixed identically -- a synthetic blocked task, injected alongside the real
+    graph, that can never legitimately become "done" out from under this test.
     """
     from schedule import render
 
     done = {f"T-1.{n}" for n in range(11)}
-    out = render(plan(tasks, done), tasks, extra_done=done)
+    graph = dict(tasks)
+    blocked = Task(
+        id="T-9.9",
+        title="synthetic external block",
+        points=1,
+        tier="sonnet-low",
+        deps=[],
+        sprint=9,
+        external_block="a human must do something",
+    )
+    graph[blocked.id] = blocked
+
+    out = render(plan(graph, done), graph, extra_done=done)
 
     for tid in sorted(done):
         assert f"  {tid:<10} waits on" not in out, f"{tid} misreported as unreachable"
     assert "waits on ?" not in out, "a stranded task has an unresolvable blocking root"
     # The genuine external block must still be reported.
-    assert "T-2.9" in out
+    assert "T-9.9" in out
 
 
 # --------------------------------------------------------------------------

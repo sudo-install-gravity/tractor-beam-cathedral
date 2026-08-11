@@ -79,7 +79,11 @@ own gap would be indistinguishable from the literature above. See [`docs/CLAIMS.
 
 ## Status
 
-**Pre-alpha, v0.1.0, unreleased.** The repository is **public** as of 2026-08-06.
+**Pre-alpha, [v0.1.0](https://github.com/sudo-install-gravity/tractor-beam-cathedral/releases/tag/v0.1.0)
+released** 2026-08-11 — see [`CHANGELOG.md`](CHANGELOG.md). "Pre-alpha" is load-bearing, not a
+formality: several of the feasibility ledger's own walls remain 20+ decades from closing (§ below),
+and this release is "feature-complete against the Sprint 0 plan," not "ready for the application
+that motivates it." The repository has been **public** since 2026-08-06.
 
 ✅ **CI is live** as of 2026-08-10: every push to `main` runs the five gates on a
 three-version Python matrix (3.10/3.11/3.12) in GitHub Actions —

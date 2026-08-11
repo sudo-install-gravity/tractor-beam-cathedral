@@ -1002,9 +1002,38 @@ locally (`pip install -e ".[dev]"`) and documented as the fix for the next perso
 *global* `~/.claude/CLAUDE.md`, not this project's — corrected. `indexer` confirmed `INDEX.md`
 has no doc-navigation role and correctly made no edit.
 
-**T-12.8 · v1.0 release · 2 pts · `sonnet-low` · deps T-12.1–T-12.7**
+**T-12.8 · v1.0 release · 2 pts · `sonnet-low` · deps T-12.1–T-12.7** ✅
 repo-level (tag, release notes, Zenodo). Tag, release notes, Zenodo DOI for citability.
 *AC:* all 8 benchmarks pass; CI green; ledger publishes all four walls quantitatively.
+**Closed 2026-08-11.** Two AC defects found and recorded rather than papered over, same
+treatment as T-12.5's B-8 finding:
+
+1. **"All 8 benchmarks"** — a Sprint-0-era count. The 9 originally-scoped `Benchmark:` tasks
+   (T-1.9, T-1.10, T-2.8, T-3.9, T-6.9, T-9.8, T-10.2, T-12.2, T-12.3, all ✅) plus 3 additional
+   modules the suite grew (`test_body_sensitivity`, `test_performance`, `test_smoke`) give
+   **12 benchmark modules, 76 tests, all passing.** Not deleting three modules to force the
+   number back to 8 — see rule 5.
+2. **"Ledger publishes all four walls quantitatively"** — three are (diffraction, coupling,
+   magnitude — R5/R6 campaigns and the E2E scenario's own gap report). The fourth,
+   **transducer, is deliberately never quantified**: it is conjecture C-1, out of scope by
+   project charter, and no mechanism is modeled for it to report a number about. Publishing a
+   fabricated figure for it would be worse than the AC going unmet — the honest form is that
+   the ledger reports it as an explicit, named non-result, not silence.
+
+**Owner decisions (asked, not assumed):** tag is `v0.1.0`, matching the existing `pyproject.toml`
+version and the Pre-Alpha classifier, not a `v1.0.0` semver bump — "v1.0 release" in this task's
+title reads as "first citable release," and a project whose ledger's whole point is stating its
+own gap honestly (currently 29+ decades on several walls) should not brand past what it has
+shown. **Zenodo is deferred to the repo owner** — enabling the GitHub–Zenodo integration is an
+outward-facing, hard-to-reverse repository-settings change that T-2.9's branch-protection
+approval does not cover; see `docs/HANDOFF.md` for the exact steps.
+
+`CHANGELOG.md` added; `CITATION.cff` date-released and `README.md`'s status line updated.
+`tools/gates.py` green (1193 passed, 3 skipped); CI green on the release PR (#5, #6, and this
+one, all three matrix jobs). The `v0.1.0` tag and GitHub Release are created as the last step
+of landing this PR — `code-reviewer` correctly flagged that the docs referenced them before
+they existed on the remote; do not treat that as done until `git tag -l` / `gh release list`
+confirm it.
 
 ---
 

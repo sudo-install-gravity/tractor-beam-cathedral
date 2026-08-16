@@ -74,11 +74,7 @@ authors:
     family-names: Day
     alias: sudo-install-gravity
     email: dpaulday@protonmail.com
-    # TODO before submission: register at https://orcid.org (free, a few
-    # minutes) and paste the identifier here. A project intended to outlive its
-    # authors needs a durable identifier that survives an email address; a
-    # GitHub handle is not one.
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    orcid: "https://orcid.org/0009-0007-1522-7282"
 
 contact:
   - given-names: Paul

@@ -3,6 +3,22 @@
 All notable changes to this project are recorded here. The format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); dates are `YYYY-MM-DD`.
 
+## [0.1.1] — 2026-08-16
+
+The release Zenodo actually archives — the GitHub–Zenodo integration was enabled after
+`v0.1.0` published, and Zenodo only archives releases created after the integration is turned
+on. No physics or behavior changed; this version exists to trigger that archive with correct
+metadata in place.
+
+- Added the author's ORCID to `CITATION.cff` (`0009-0007-1522-7282`), closing the placeholder
+  that file carried since its creation — filed specifically so the identifier is present before
+  Zenodo mints a DOI against this metadata, since archived records aren't meant to be quietly
+  edited afterward.
+- Capped `numpy<2.5` in `pyproject.toml`. NumPy 2.5's bundled type stubs started using PEP 695
+  syntax unconditionally, which `mypy` correctly rejects under this project's `python_version =
+  "3.10"` target (the real supported floor) regardless of which interpreter runs it. Broke CI
+  four days after `v0.1.0`, from dependency drift alone — no code change on this project's side.
+
 ## [0.1.0] — 2026-08-11
 
 First citable release (T-12.8, Sprint 12, Gate G4). The framework is feature-complete against
@@ -71,4 +87,5 @@ dependencies absent in this environment).
 - Near-field focusing is out of scope; at the project's 40 AU reference range, focusing is
   numerically degenerate with steering (`docs/PHYSICS.md` §8.1).
 
+[0.1.1]: https://github.com/sudo-install-gravity/tractor-beam-cathedral/releases/tag/v0.1.1
 [0.1.0]: https://github.com/sudo-install-gravity/tractor-beam-cathedral/releases/tag/v0.1.0

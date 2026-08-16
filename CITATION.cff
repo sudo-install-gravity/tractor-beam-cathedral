@@ -69,6 +69,18 @@ date-released: "2026-08-16"
 repository-code: "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
 url: "https://github.com/sudo-install-gravity/tractor-beam-cathedral"
 
+# Zenodo's "concept DOI" -- always resolves to the latest archived version,
+# rather than pinning to v0.1.1 specifically. The first archive was minted from
+# the v0.1.1 GitHub release (the first release created after the GitHub-Zenodo
+# integration was enabled; Zenodo does not backfill releases published before
+# that, hence v0.1.0 itself has no archive). v0.1.1's own version-specific DOI
+# is 10.5281/zenodo.21960957 -- correct to cite this exact snapshot, but do not
+# swap it in here, since this field should stay evergreen across releases.
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21960956"
+    description: "Zenodo archive (concept DOI -- always resolves to the latest version)"
+
 authors:
   - given-names: Paul
     family-names: Day

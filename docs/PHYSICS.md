@@ -595,6 +595,11 @@ figures:
 For comparison: a 1 km asteroid (1.4×10¹² kg) needs ~1.4×10¹⁰ N·s for 0.01 m/s — about 43 N
 sustained over 10 years. DART delivered ~1.2×10⁷ N·s.
 
+⚠️ **Unreviewed finding, 2026-08-17** ([ADR-0009](adr/0009-magnitude-wall-relativistic-validity.md),
+OQ-8): the last row's rod-tip speed is `v = πfL ≈ 3.14×10⁹ m/s ≈ 10.5c` — this formula's own
+`v ≪ c` precondition (§2) fails an order of magnitude before this configuration, with the
+`v = c` crossover at `f ≈ 95.4 kHz` for `L = 1 km`. Not yet triaged.
+
 **Transducer.** Out of scope by charter (conjecture C-1).
 
 ---

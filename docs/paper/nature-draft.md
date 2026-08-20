@@ -2038,14 +2038,14 @@ mistakes* would actually read it.
 1. ~~The repository is not public.~~ ✅ **Public as of 2026-08-06**, verified without
    credentials (`private: false`, `visibility: public`, and an unauthenticated
    `git ls-remote` returns HEAD). Code availability is satisfied.
-   ⚠️ **But a related claim in Methods is not.** Methods states that citation discipline is
-   "enforced in continuous integration" and that the build fails without it. The repository's
-   CI workflow has **never run — `total_count: 0` across its entire history**, despite
-   `.github/workflows/ci.yml` being present, correct, and committed 63 commits ago. The
-   check *script* is real and does run: it is gate 4 of the five-gate local check and has run
-   on every commit. **So the enforcement claim is true locally and false on the remote**, and
-   the Methods wording must be corrected or the CI made to run before submission. See
-   BACKLOG T-2.9.
+   ~~But a related claim in Methods is not: CI had never run remotely.~~ ✅ **RESOLVED
+   2026-08-10 (ADR-0008, T-2.9).** The root cause was a UI-only Actions-disabled control
+   that the API had never surfaced; once found, CI went live and green on the first push and
+   has stayed green on every push since (three-version Python matrix, `main` branch-protected
+   with all three checks required). The Methods claim that citation discipline is "enforced in
+   continuous integration" is now true on the remote as written, not just locally — no wording
+   change needed. See the Governance Mechanisms section's own caveat, which already records
+   this as closed.
 2. ~~No `CITATION.cff`, no author list, no CRediT table.~~ ✅ **Done 2026-08-06.** Author
    list, CRediT statement and a schema-validated `CITATION.cff` are in place, with the
    AI-assistance disclosure carrying per-model commit counts (35 Opus 5, 20 Sonnet 5, of 61
@@ -2055,10 +2055,12 @@ mistakes* would actually read it.
 3. ~~The Results campaign has not been run.~~ ✅ **Run 2026-08-03.** R2–R6 confirmed,
    R5 with a flagged finding. Reproduce with `python tools/run_campaign.py`. Two items
    follow from it: **(a)** the figures are draft-quality — legible and correct, but the
-   author intends to redraw them, and Figs. 1 and 2 (architecture, provenance apparatus)
-   are diagrams no code produces and remain undrawn; **(b)** the campaign contradicted the
-   project's own "roughly 40 orders of magnitude" figure, which is now corrected to a
-   −6.75 to +29.25 decade range in README.md, Methods and PHYSICS.md §8.
+   author intends to redraw them for submission. ~~Figs. 1 and 2 (architecture, provenance
+   apparatus) are diagrams no code produces and remain undrawn.~~ ✅ **Both drawn** —
+   `docs/paper/campaign/fig1_architecture.png` and `fig2_provenance.png` exist alongside
+   figs. 3–8; **(b)** the campaign contradicted the project's own "roughly 40 orders of
+   magnitude" figure, which is now corrected to a −6.75 to +29.25 decade range in README.md,
+   Methods and PHYSICS.md §8.
 4. ~~`docs/INDEX.md` §2 is stale.~~ ~~§4 Validation Status is absent.~~ **Both resolved
    2026-08-02.** §2 was rewritten against the code and §1 gained EQ-035–EQ-053; §4 then
    gained 18 rows covering the ~30 tasks it had never documented, including T-6.5/T-6.6.
@@ -2077,11 +2079,15 @@ mistakes* would actually read it.
    while passing on the committed seed — with a parametrized positive control and a
    committed evidence script. **The Main text and Table 1 caption above are updated
    accordingly; no claim was demoted, and the σ ≤ 2.87° requirement is unaffected.**
-   *One citation question is left open by this fix:* `code-reviewer` flagged Ruze, *Proc.
-   IEEE* **54**(4):633 (1966) as a plausible precedent for the finite-N random-phasor
-   statistics. It is unconfirmed and is a **spin-1** source, so it could at most promote the
-   generic `(1−μ²)/N` structure — never the `4σ²` spin-2 prefactor, which stays Category B.
-   A `researcher` pass is owed before submission.
+   ~~One citation question is left open by this fix:~~ ✅ **RESOLVED 2026-08-03.**
+   `code-reviewer` flagged Ruze, *Proc. IEEE* **54**(4):633 (1966) as a plausible precedent
+   for the finite-N random-phasor statistics. Checked and **rejected**: Ruze gives only the
+   `N → ∞` limit. The finite-N form is D'Addario, *IPN Progress Report* 42-175, JPL/Caltech
+   (2008), eq. 5 — algebraically identical to this project's `μ² + (1−μ²)/N`, and that
+   paper's own eq. 6 is the `N → ∞` reduction it attributes to Ruze. D'Addario is itself a
+   scalar/spin-1 source, so it promotes only the generic `(1−μ²)/N` structure; the `4σ²`
+   spin-2 prefactor is this project's own derivation and stays Category B (`docs/CLAIMS.md`,
+   2026-08-03 entry).
    ✅ **(b) RESOLVED 2026-08-03.** ADR-0003's 1 × 10⁻¹⁴ analytic-TT agreement, quoted in the
    Main, existed **only in the scratch prototype** — the suite checked structure and relative
    behaviour but pinned no absolute analytic value, so the printed figure was not reproducible
@@ -2131,17 +2137,20 @@ mistakes* would actually read it.
    (`tools/run_campaign.py`, `tools/render_mermaid.py`), but the author intends to redraw
    them for submission.
 
-***Non-expert summary:*** Eight things that must be fixed before this can be submitted
-anywhere. **One of the two substantive ones has since been fixed** — see item 4(a). The
+***Non-expert summary:*** Eight things needed fixing before this could be submitted
+anywhere. **All eight are now resolved except one, and that one is not a defect.** The
 paper had quoted a precision figure for the alignment requirement that was better than our
 own automated tests actually checked. Chasing it down produced a genuinely useful surprise:
 the tests weren't sloppy, the *formula* had been described imprecisely. The alignment law
 describes an array with infinitely many emitters; a real one with a finite number behaves
 slightly differently, by an amount nobody had written down. Correcting that made the test
-about twenty times stricter and the claim more accurate at the same time. **The second
-still stands:** one accuracy figure quoted in the paper lives only in a scratch file rather
-than in the reproducible test suite, so a reader could not regenerate it. Separately, one
-citation supporting the Abstract's central assertion has not been independently verified,
-and it must be before anyone reads this. All of these were found by our own audit, of our
-own paper, about our own headline results — which is the method doing its job, and also the
-reason we publish the near-misses rather than quietly patching them.
+about twenty times stricter and the claim more accurate at the same time (item 4(a)). The
+figure that lived only in a scratch file now has three parametrized tests pinning it in the
+reproducible suite (item 4(b)). The citation behind the Abstract's central assertion turned
+out to be pointing at the wrong equation in the right paper — caught by reading the source
+directly rather than trusting the earlier report — and is now re-cited to one that matches
+term for term (item 5). **The only thing genuinely left is item 8:** the figures are
+correct and regenerable but not yet redrawn for a journal's visual standard, which is
+authorial polish, not a finding. All of the substantive items were found by our own audit,
+of our own paper, about our own headline results — which is the method doing its job, and
+also the reason we publish the near-misses rather than quietly patching them.

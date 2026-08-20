@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21960956.svg)](https://doi.org/10.5281/zenodo.21960956)
 
-**`gwtb`** — a modeling and simulation framework for a theoretical asteroid-deflection
+**`gwtb`** — "gravitational wave tractor beam:" a modeling and simulation framework for a theoretical asteroid-deflection
 concept: an array of massive spheres undergoing controlled finite maneuvers, phased so their
 gravitational radiation constructively interferes at a target out to 40 AU.
 
